@@ -1,8 +1,8 @@
 /**********************************************************************************************************************************
  *                                                                                                                                *
- *                                                    San Andreas Object Image                                                    *
+ *                                                San Andreas Object Image Loader                                                 *
  *                                                                                                                                *
- * Copyright © 2016 Abyss Morgan. All rights reserved.                                                                            *
+ * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                                                  *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SA-MP/tree/master/include/core                                                        *
  *                                                                                                                                *
@@ -17,8 +17,8 @@
  * SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0);                            *
  * bool:UnloadObjectImage(&SAOI:index);                                                                                           *
  * bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0);        *
- * CountObjectsForIndex(SAOI:index);                                                                                              *
  * bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);                                                             *
+ * CountObjectsForIndex(SAOI:index);                                                                                              *
  * CountSAOIFileLoaded();                                                                                                         *
  * GetSAOIActiveTime(SAOI:index);                                                                                                 *
  *                                                                                                                                *
