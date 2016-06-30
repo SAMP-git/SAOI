@@ -15,9 +15,11 @@
 #include <streamer>
 
 #include "SAOI.inc"
+#include "ObjectDist.inc"
 
 //Hook: CreateDynamicObject
 stock STREAMER_TAG_OBJECT AC_CreateDynamicObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,worldid = -1,interiorid = -1,playerid = -1,Float:streamdistance = STREAMER_OBJECT_SD,Float:drawdistance = STREAMER_OBJECT_DD,STREAMER_TAG_AREA areaid = STREAMER_TAG_AREA -1,priority = 0){
+	if(streamdistance == -1) streamdistance = CalculateObjectDistance(modelid);
 	new STREAMER_TAG_OBJECT objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,playerid,streamdistance,drawdistance,areaid,priority);
 	Streamer_SetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET);
 	return objectid;
