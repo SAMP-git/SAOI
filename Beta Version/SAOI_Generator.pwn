@@ -1,8 +1,15 @@
 /****************************************************************************************************
  *                                                                                                  *
- * Easy SAOI Creator v1.0 made by Abyss Morgan                                                      *
+ *                                        Easy SAOI Creator                                         *
+ *                                                                                                  *
+ * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                    *
  *                                                                                                  *
  * Download: https://github.com/AbyssMorgan/SA-MP/tree/master/include/core                          *
+ *                                                                                                  *
+ * Plugins: Streamer                                                                                *
+ * Modules: SAOI                                                                                    *
+ *                                                                                                  *
+ * File Version: 1.0                                                                                *
  *                                                                                                  *
  ****************************************************************************************************/
  

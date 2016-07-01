@@ -6,7 +6,10 @@
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SA-MP/tree/master/include/core                                                        *
  *                                                                                                                                *
- * This is beta include!                                                                                                          *
+ * This is Beta Version!                                                                                                          *
+ *                                                                                                                                *
+ * Plugins: Streamer                                                                                                              *
+ * Modules: None                                                                                                                  *
  *                                                                                                                                *
  * File Version: 1.3B                                                                                                             *
  *                                                                                                                                *
@@ -53,7 +56,7 @@
 
 
 #if !defined Streamer_AppendArrayData
-	#error Unknown streamer version
+	#error Unknown Streamer Version
 #endif
 
 #if defined _SAOI_VERSION
