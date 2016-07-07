@@ -11,7 +11,7 @@
  * Plugins: Streamer                                                                                                              *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.3.3                                                                                                            *
+ * File Version: 1.3.4                                                                                                            *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
@@ -27,6 +27,7 @@
  * bool:IsSAOISlotFree(SAOI:index);                                                                                               *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
+ * SAOIToInt(SAOI:variable);                                                                                                      *
  * SAOI:FindFreeSAOIID();                                                                                                         *
  * SAOIStringMod(input[],output[]);                                                                                               *
  *                                                                                                                                *
@@ -47,11 +48,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3.3
+	#error You need SAOI.inc v1.3.4
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3.3
-#elseif (SAOI_LOADER_VERSION < 10303)
-	#error Update you SAOI.inc to v1.3.3
+	#error Update you SAOI.inc to v1.3.4
+#elseif (SAOI_LOADER_VERSION < 10304)
+	#error Update you SAOI.inc to v1.3.4
 #endif
 */
 
@@ -65,7 +66,7 @@
 #endif
 #define _SAOI_VERSION
 
-#define SAOI_LOADER_VERSION 				(10303)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10304)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -117,6 +118,8 @@
 #define PARSE_STEP_MATERIAL_TEXT_START		(MAX_ARG_COUNT+19)
 #define PARSE_STEP_MATERIAL_TEXT_END		(MAX_ARG_COUNT+34)
 
+#define SAOIToInt(%0)						(_:%0)
+
 //BitFunctions.inc
 #define SAOI_GetValueBit(%0,%1)				((%0) >>> (%1) & 0x01)
 #define SAOI_SetValueBit(%0,%1,%2)			((%0) = (((%0) & ~(0x01 << (%1))) | ((0x01 << (%1))*(%2))))
@@ -155,7 +158,7 @@ stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 			break;
 		}
 	}
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(_:i+1)){
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
 		if(SAOIFile[i][saoi_status]){
 			if(!strcmp(tmp_saoi_name,SAOIFile[i][saoi_name],true)){
 				index = i;
@@ -168,7 +171,7 @@ stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 
 stock CountSAOIFileLoaded(){
 	new cnt = 0;
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(_:i+1)){
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
 		if(SAOIFile[i][saoi_status]) cnt++;
 	}
 	return cnt;
@@ -187,7 +190,7 @@ stock bool:IsSAOISlotFree(SAOI:index){
 }
 
 stock SAOI:FindFreeSAOIID(){
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(_:i+1)){
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
 		if(!SAOIFile[i][saoi_status]) return i;
 	}
 	return INVALID_SAOI_FILE;
@@ -842,7 +845,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 			
 			if(parse_step == arg_count){
 				objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,areaid,priority);
-				Streamer_SetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+_:index); //identify objects
+				Streamer_SetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index)); //identify objects
 				if(anti_area == 1){
 					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid,1);
 				}
@@ -853,7 +856,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				parse_step = PARSE_STEP_ARG_END;
 				
 				#if defined DEBUG_SAOI
-					printf("%d %f %f %f %f %f %f %d %d -1 %f %f %d %d ex: %d",modelid,x,y,z,rx,ry,rz,worldid,interiorid,streamdistance,drawdistance,areaid,priority,SAOI_EXTRA_ID_OFFSET+_:index);
+					printf("%d %f %f %f %f %f %f %d %d -1 %f %f %d %d ex: %d",modelid,x,y,z,rx,ry,rz,worldid,interiorid,streamdistance,drawdistance,areaid,priority,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
 				#endif
 			} else if(parse_step == PARSE_STEP_MATERIAL_TEXT_END){
 				parse_step = -1;
@@ -889,7 +892,7 @@ stock bool:UnloadObjectImage(&SAOI:index){
 	new max_idx = SAOIFile[index][saoi_object_cnt], i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
 	while(i <= j && max_idx > 0){
 		if(IsValidDynamicObject(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+_:index)){
+				if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+SAOIToInt(index))){
 				max_idx--;
 				DestroyDynamicObject(i);
 			}

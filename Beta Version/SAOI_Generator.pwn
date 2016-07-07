@@ -11,7 +11,7 @@
  *                                                                                                  *
  * File Version: 1.0.1                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
- * SAOI Version: 1.3.3                                                                              *
+ * SAOI Version: 1.3.4                                                                              *
  *                                                                                                  *
  ****************************************************************************************************/
  
@@ -29,11 +29,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3.3
+	#error You need SAOI.inc v1.3.4
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3.3
-#elseif (SAOI_LOADER_VERSION < 10303)
-	#error Update you SAOI.inc to v1.3.3
+	#error Update you SAOI.inc to v1.3.4
+#elseif (SAOI_LOADER_VERSION < 10304)
+	#error Update you SAOI.inc to v1.3.4
 #endif
 
 //Hook: CreateDynamicObject
