@@ -91,7 +91,7 @@ stock FindDynamicObject(playerid, Float:findradius, Float:streamdistance = 20.0)
 				index = Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID);
 				if(index > SAOI_EXTRA_ID_OFFSET && index < SAOI_EXTRA_ID_OFFSET+_:MAX_SAOI_FILE){
 					index -= SAOI_EXTRA_ID_OFFSET;
-					format(buffer,sizeof buffer,"{89C1FA}SAOI File: {00AAFF}%s\n",SAOIFile[SAOI:index][saoi_name][5]);
+					format(buffer,sizeof buffer,"{89C1FA}SAOI Index: {00AAFF}%d\n",index);
 					strcat(szLIST,buffer);
 				}
 				format(buffer,sizeof buffer,"{89C1FA}Object: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %.0f %d %d)\n",i,moid,vw,int,sd,dd,areaid,priority);
