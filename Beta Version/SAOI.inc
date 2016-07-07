@@ -11,7 +11,7 @@
  * Plugins: Streamer                                                                                                              *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.3B                                                                                                             *
+ * File Version: 1.3.3                                                                                                            *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
@@ -24,6 +24,7 @@
  * CountObjectsForIndex(SAOI:index);                                                                                              *
  * CountSAOIFileLoaded();                                                                                                         *
  * GetSAOIActiveTime(SAOI:index);                                                                                                 *
+ * bool:IsSAOISlotFree(SAOI:index);                                                                                               *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOI:FindFreeSAOIID();                                                                                                         *
@@ -46,11 +47,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3B
+	#error You need SAOI.inc v1.3.3
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3B
-#elseif (SAOI_LOADER_VERSION < 10302)
-	#error Update you SAOI.inc to v1.3B
+	#error Update you SAOI.inc to v1.3.3
+#elseif (SAOI_LOADER_VERSION < 10303)
+	#error Update you SAOI.inc to v1.3.3
 #endif
 */
 
@@ -64,7 +65,7 @@
 #endif
 #define _SAOI_VERSION
 
-#define SAOI_LOADER_VERSION 				(10302)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10303)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -178,6 +179,11 @@ stock SAOIStringMod(input[],output[]){
 		output[i] = (0xFF & input[i]+128);
 	}
 	output[strlen(input)] = EOS;
+}
+
+stock bool:IsSAOISlotFree(SAOI:index){
+	if(!SAOIFile[index][saoi_status]) return true;
+	return false;
 }
 
 stock SAOI:FindFreeSAOIID(){
@@ -880,12 +886,15 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 
 stock bool:UnloadObjectImage(&SAOI:index){
 	if(!SAOIFile[index][saoi_status]) return false;
-	for(new i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT); i <= j; i++){
+	new max_idx = SAOIFile[index][saoi_object_cnt], i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
+	while(i <= j && max_idx > 0){
 		if(IsValidDynamicObject(i)){
-			if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == _:index-SAOI_EXTRA_ID_OFFSET){
+				if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+_:index)){
+				max_idx--;
 				DestroyDynamicObject(i);
 			}
 		}
+		i++;
 	}
 	SAOIFile[index][saoi_status] = false;
 	SAOIFile[index][saoi_name] = EOS;

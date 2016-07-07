@@ -9,20 +9,32 @@
  * Plugins: Streamer                                                                                *
  * Modules: SAOI                                                                                    *
  *                                                                                                  *
- * File Version: 1.0                                                                                *
+ * File Version: 1.0.1                                                                              *
+ * SA:MP Version: 0.3.7                                                                             *
+ * SAOI Version: 1.3.3                                                                              *
  *                                                                                                  *
  ****************************************************************************************************/
  
-#define MY_SAOI_FILE		"Object.saoi"	//example
-#define SAOI_AUTHOR			"Gizmo"			//example
-#define SAOI_VERSION		"1.0r1"			//example
-#define SAOI_DESCRIPTION	"Bank Interior"	//example
+//Example meta:
+#define MY_SAOI_FILE		"Object.saoi"
+#define SAOI_AUTHOR			"Gizmo"
+#define SAOI_VERSION		"1.0r1"
+#define SAOI_DESCRIPTION	"Bank Interior"
 
 #include <a_samp>
 #include <streamer>
 
 #include "SAOI.inc"
 #include "ObjectDist.inc"
+
+//Check Version SAOI.inc
+#if !defined _SAOI_VERSION
+	#error You need SAOI.inc v1.3.3
+#elseif !defined SAOI_LOADER_VERSION
+	#error Update you SAOI.inc to v1.3.3
+#elseif (SAOI_LOADER_VERSION < 10303)
+	#error Update you SAOI.inc to v1.3.3
+#endif
 
 //Hook: CreateDynamicObject
 stock STREAMER_TAG_OBJECT AC_CreateDynamicObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,worldid = -1,interiorid = -1,playerid = -1,Float:streamdistance = STREAMER_OBJECT_SD,Float:drawdistance = STREAMER_OBJECT_DD,STREAMER_TAG_AREA areaid = STREAMER_TAG_AREA -1,priority = 0){
