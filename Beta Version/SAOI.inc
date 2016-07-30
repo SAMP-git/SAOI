@@ -11,7 +11,7 @@
  * Plugins: Streamer                                                                                                              *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.3.4                                                                                                            *
+ * File Version: 1.3.5                                                                                                            *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
@@ -48,11 +48,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3.4
+	#error You need SAOI.inc v1.3.5
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3.4
-#elseif (SAOI_LOADER_VERSION < 10304)
-	#error Update you SAOI.inc to v1.3.4
+	#error Update you SAOI.inc to v1.3.5
+#elseif (SAOI_LOADER_VERSION < 10305)
+	#error Update you SAOI.inc to v1.3.5
 #endif
 */
 
@@ -66,7 +66,7 @@
 #endif
 #define _SAOI_VERSION
 
-#define SAOI_LOADER_VERSION 				(10304)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10305)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -622,9 +622,6 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				h_key[i] = fgetchar(inpf,0,false), idx++;
 			}
 			h_key[h_len] = EOS;
-			#if defined DEBUG_SAOI
-				printf("|%s| == |%s|",h_key,SAOI_HEADER_KEY);
-			#endif
 			if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
 				new author_size, version_size, description_size, key[32];
 				
@@ -738,7 +735,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 						idx += 4;
 					}
 					case 13: {
-						SAOI_MergeValue(areaid,0,0,0,fgetchar(inpf,0,false));
+						SAOI_MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
 						idx += 1;
 					}
 					case 14: {
@@ -753,9 +750,6 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 			} else if(parse_step == PARSE_STEP_MATERIAL_HEAD){
 				SAOI_MergeValue(material_used,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
 				idx += 2;
-				#if defined DEBUG_SAOI
-					printf("material_used: %b",material_used);
-				#endif
 			} else if(parse_step >= PARSE_STEP_MATERIAL_START && parse_step <= PARSE_STEP_MATERIAL_END){
 				if(SAOI_GetValueBit(material_used,(parse_step-PARSE_STEP_MATERIAL_START)) == 1){
 					new txdname[MAX_TXD_NAME], texturename[MAX_TEXTURE_NAME], materialcolor, txdsize, texturenamesize;
@@ -764,9 +758,6 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 					idx += 2;
 					
 					txdsize = fgetchar(inpf,0,false), idx++;
-					#if defined DEBUG_SAOI
-						printf("TXD Size: %d",txdsize);
-					#endif
 					for(new i = 0; i < txdsize; i++){
 						txdname[i] = fgetchar(inpf,0,false), idx++;
 					}
@@ -786,17 +777,10 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 					
 					SetDynamicObjectMaterial(objectid,(parse_step-PARSE_STEP_MATERIAL_START),modelid,txdname,texturename,materialcolor);
 					material_cnt++;
-					
-					#if defined DEBUG_SAOI
-						printf("%d %d %d %s %s %08x",objectid,(parse_step-PARSE_STEP_MATERIAL_START),modelid,txdname,texturename,materialcolor);
-					#endif
 				}
 			} else if(parse_step == PARSE_STEP_MATERIAL_TEXT_HEAD){
 				SAOI_MergeValue(material_text_used,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
 				idx += 2;
-				#if defined DEBUG_SAOI
-					printf("material_text_used: %b",material_text_used);
-				#endif
 			} else if(parse_step >= PARSE_STEP_MATERIAL_TEXT_START && parse_step <= PARSE_STEP_MATERIAL_TEXT_END){
 				if(SAOI_GetValueBit(material_text_used,(parse_step-PARSE_STEP_MATERIAL_TEXT_START)) == 1){
 					new text[MAX_TEXT_NAME], fontface[MAX_FONT_NAME], textsize, materialsize, fontfacesize, bold, fontcolor, backcolor,
@@ -835,10 +819,6 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 					
 					SetDynamicObjectMaterialText(objectid,(parse_step-PARSE_STEP_MATERIAL_TEXT_START),text,materialsize,fontface,fontsize,bold,fontcolor,backcolor,textalignment);
 					material_text_cnt++;
-					
-					#if defined DEBUG_SAOI
-						printf("%d %d %s %d %s %d %d %08x %08x %d",objectid,(parse_step-PARSE_STEP_MATERIAL_TEXT_START),text,materialsize,fontface,fontsize,bold,fontcolor,backcolor,textalignment);
-					#endif
 				}
 			}
 			
@@ -854,10 +834,6 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				}
 				object_cnt++;
 				parse_step = PARSE_STEP_ARG_END;
-				
-				#if defined DEBUG_SAOI
-					printf("%d %f %f %f %f %f %f %d %d -1 %f %f %d %d ex: %d",modelid,x,y,z,rx,ry,rz,worldid,interiorid,streamdistance,drawdistance,areaid,priority,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
-				#endif
 			} else if(parse_step == PARSE_STEP_MATERIAL_TEXT_END){
 				parse_step = -1;
 			}
