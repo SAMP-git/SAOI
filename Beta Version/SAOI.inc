@@ -11,13 +11,13 @@
  * Plugins: Streamer                                                                                                              *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.3.5                                                                                                            *
+ * File Version: 1.4.0                                                                                                            *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
  * SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]);                                                         *
  * SAOI:SaveDynamicObject(objectid,const name[]);                                                                                 *
- * SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0);                            *
+ * SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false);   *
  * bool:UnloadObjectImage(&SAOI:index);                                                                                           *
  * bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0);        *
  * bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);                                                             *
@@ -48,11 +48,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3.5
+	#error You need SAOI.inc v1.4.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3.5
-#elseif (SAOI_LOADER_VERSION < 10305)
-	#error Update you SAOI.inc to v1.3.5
+	#error Update you SAOI.inc to v1.4.0
+#elseif (SAOI_LOADER_VERSION < 10400)
+	#error Update you SAOI.inc to v1.4.0
 #endif
 */
 
@@ -66,11 +66,11 @@
 #endif
 #define _SAOI_VERSION
 
-#define SAOI_LOADER_VERSION 				(10305)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10400)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
-#define SAOI_HEADER_KEY						"SAOI 1.0 ADM"	//You can never change !!!
+#define SAOI_HEADER_KEY						"SAOI 1.1 ADM"	//You can never change !!!
 
 #define INVALID_SAOI_FILE					(SAOI:0)		//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
@@ -78,6 +78,7 @@
 #define MAX_SAOI_FILE_SIZE					(68157440)		//64 MB
 #define MAX_SAOI_FILE						(SAOI:512)		//more ? why not
 #define MAX_SAOI_NAME_SIZE					(64)
+#define MAX_SAOI_AREA						(256)
 
 #define MAX_SAOI_AUTHOR_SIZE 				(32)			//Max Value: 255 (auto resize header, compatible with all version) 
 #define MAX_SAOI_VERSION_SIZE 				(32)			//Max Value: 255 (auto resize header, compatible with all version)
@@ -107,7 +108,7 @@
 #define SAOI_ERROR_NOT_ENOUGH_CAPACITY		(SAOI:-16)		//not enough capacity, to load new file
 #define SAOI_ERROR_INVALID_ARG_COUNT		(SAOI:-17)		//number of arguments exceeds the specified arguments (error structure version)
 
-#define MAX_ARG_COUNT						(15)			//argument number 1 - 15 !!
+#define MAX_ARG_COUNT						(14)			//argument number 1 - 14 !!
 #define PARSE_STEP_ARG_COUNT				(0)
 #define PARSE_STEP_ARG_START				(1)
 #define PARSE_STEP_ARG_END					(MAX_ARG_COUNT)
@@ -117,6 +118,9 @@
 #define PARSE_STEP_MATERIAL_TEXT_HEAD		(MAX_ARG_COUNT+18)
 #define PARSE_STEP_MATERIAL_TEXT_START		(MAX_ARG_COUNT+19)
 #define PARSE_STEP_MATERIAL_TEXT_END		(MAX_ARG_COUNT+34)
+
+#define OBJECT_FLAG_ANTI_AREA				(0)
+#define OBJECT_FLAG_NO_CAMERA_COL			(1)
 
 #define SAOIToInt(%0)						(_:%0)
 
@@ -147,7 +151,8 @@ enum e_saoi {
 	saoi_active_tick
 }
 
-new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi];
+new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
+	SAOIObjectArea[MAX_SAOI_AREA];
 
 stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	new tmp_saoi_name[MAX_SAOI_NAME_SIZE];
@@ -236,35 +241,35 @@ stock SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 		key[i] = random(255)+1;
 	}
 	
-	new s;
-
-	s = 0;
+	new step;
+	
+	step = 0;
 	for(new i = 0; i < author_size; i++){
-		author[i] = ((author[i]+key[s]) & 0xFF);
-		s++;
-		if(s >= 32) s = 0;
+		author[i] = ((author[i]+key[step]) & 0xFF);
+		step++;
+		if(step >= 32) step = 0;
 	}
 	fputchar(outf,author_size,false);
 	for(new i = 0; i < author_size; i++){
 		fputchar(outf,author[i],false);
 	}
 	
-	s = 0;
+	step = 0;
 	for(new i = 0; i < version_size; i++){
-		version[i] = ((version[i]+key[s]) & 0xFF);
-		s++;
-		if(s >= 32) s = 0;
+		version[i] = ((version[i]+key[step]) & 0xFF);
+		step++;
+		if(step >= 32) step = 0;
 	}
 	fputchar(outf,version_size,false);
 	for(new i = 0; i < version_size; i++){
 		fputchar(outf,version[i],false);
 	}
 	
-	s = 0;
+	step = 0;
 	for(new i = 0; i < description_size; i++){
-		description[i] = ((description[i]+key[s]) & 0xFF);
-		s++;
-		if(s >= 32) s = 0;
+		description[i] = ((description[i]+key[step]) & 0xFF);
+		step++;
+		if(step >= 32) step = 0;
 	}
 	fputchar(outf,description_size,false);
 	for(new i = 0; i < description_size; i++){
@@ -286,7 +291,7 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
 	
 	new modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, worldid, interiorid, Float:streamdistance, Float:drawdistance, areaid, priority,
-		arg_count = PARSE_STEP_ARG_END, material_used = 0, material_text_used = 0, anti_area = 0, no_camera_col = 0;
+		arg_count = PARSE_STEP_ARG_END, material_used = 0, material_text_used = 0, object_flag;
 	
 	//Get Object Info
 	modelid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_MODEL_ID);
@@ -301,21 +306,18 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 	areaid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_AREA_ID);
 	priority = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid)) anti_area = 1;
-	if(GetDynamicObjectNoCameraCol(objectid)) no_camera_col = 1;
+	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid)){
+		SAOI_SetValueBit(object_flag,OBJECT_FLAG_ANTI_AREA,1);
+	}
+	if(GetDynamicObjectNoCameraCol(objectid)){
+		SAOI_SetValueBit(object_flag,OBJECT_FLAG_NO_CAMERA_COL,1);
+	}
 	
 	//Count Arg
 	for(new i = PARSE_STEP_ARG_END; i > 7; i--){
 		switch(i){
-			case 15: {
-				if(no_camera_col == 0){
-					arg_count--;
-				} else {
-					break;
-				}
-			}
 			case 14: {
-				if(anti_area == 0){
+				if(object_flag == 0){
 					arg_count--;
 				} else {
 					break;
@@ -419,11 +421,7 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 		fputchar(outf,int4,false);
 	}
 	if(arg_count >= 14){
-		SAOI_ExtractValue(anti_area,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
-	}
-	if(arg_count >= 15){
-		SAOI_ExtractValue(no_camera_col,int1,int2,int3,int4);
+		SAOI_ExtractValue(object_flag,int1,int2,int3,int4);
 		fputchar(outf,int4,false);
 	}
 	
@@ -553,28 +551,27 @@ stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 			key[i] = fgetchar(inpf,0,false);
 		}
 		
+		new step;
 		
-		new s;
-		
-		s = 0;
+		step = 0;
 		for(new i = 0; i < author_size; i++){
-			author[i] = ((author[i]+key[s]) & 0xFF);
-			s++;
-			if(s >= 32) s = 0;
+			author[i] = ((author[i]+key[step]) & 0xFF);
+			step++;
+			if(step >= 32) step = 0;
 		}
 		
-		s = 0;
+		step = 0;
 		for(new i = 0; i < version_size; i++){
-			version[i] = ((version[i]+key[s]) & 0xFF);
-			s++;
-			if(s >= 32) s = 0;
+			version[i] = ((version[i]+key[step]) & 0xFF);
+			step++;
+			if(step >= 32) step = 0;
 		}
 		
-		s = 0;
+		step = 0;
 		for(new i = 0; i < description_size; i++){
-			description[i] = ((description[i]+key[s]) & 0xFF);
-			s++;
-			if(s >= 32) s = 0;
+			description[i] = ((description[i]+key[step]) & 0xFF);
+			step++;
+			if(step >= 32) step = 0;
 		}
 		
 	} else {
@@ -586,7 +583,7 @@ stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0){
+stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false){
 	object_cnt = 0, material_cnt = 0, material_text_cnt = 0, load_time = 0;
 	new SAOI:index = FindFreeSAOIID();
 	if(index == INVALID_SAOI_FILE) return SAOI_ERROR_NOT_ENOUGH_CAPACITY;
@@ -613,7 +610,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	}
 	
 	new modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, worldid = -1, interiorid = -1, Float:streamdistance = 300.0, Float:drawdistance = 0.0, areaid = -1, priority = 0,
-		arg_count = 0, material_used = 0, material_text_used = 0, objectid, anti_area = 0, no_camera_col = 0;
+		arg_count = 0, material_used = 0, material_text_used = 0, objectid, object_flag = 0;
 	
 	while(idx < asize){
 		if(!parse_header){
@@ -645,27 +642,27 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				}
 				
 				
-				new s;
+				new step;
 				
-				s = 0;
+				step = 0;
 				for(new i = 0; i < author_size; i++){
-					author[i] = ((author[i]+key[s]) & 0xFF);
-					s++;
-					if(s >= 32) s = 0;
+					author[i] = ((author[i]+key[step]) & 0xFF);
+					step++;
+					if(step >= 32) step = 0;
 				}
 				
-				s = 0;
+				step = 0;
 				for(new i = 0; i < version_size; i++){
-					version[i] = ((version[i]+key[s]) & 0xFF);
-					s++;
-					if(s >= 32) s = 0;
+					version[i] = ((version[i]+key[step]) & 0xFF);
+					step++;
+					if(step >= 32) step = 0;
 				}
 				
-				s = 0;
+				step = 0;
 				for(new i = 0; i < description_size; i++){
-					description[i] = ((description[i]+key[s]) & 0xFF);
-					s++;
-					if(s >= 32) s = 0;
+					description[i] = ((description[i]+key[step]) & 0xFF);
+					step++;
+					if(step >= 32) step = 0;
 				}
 				
 				parse_header = true;
@@ -683,7 +680,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				}
 				//Reset Data
 				objectid = 0, material_used = 0, material_text_used = 0, worldid = -1, interiorid = -1, streamdistance = 300.0,
-				drawdistance = 0.0, areaid = -1, priority = 0, anti_area = 0, no_camera_col = 0;
+				drawdistance = 0.0, areaid = -1, priority = 0, object_flag = 0;
 			} else if(parse_step >= PARSE_STEP_ARG_START && parse_step <= arg_count){
 				switch(parse_step){
 					case 1: {
@@ -739,11 +736,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 						idx += 1;
 					}
 					case 14: {
-						SAOI_MergeValue(anti_area,0,0,0,fgetchar(inpf,0,false));
-						idx += 1;
-					}
-					case 15: {
-						SAOI_MergeValue(no_camera_col,0,0,0,fgetchar(inpf,0,false));
+						SAOI_MergeValue(object_flag,0,0,0,fgetchar(inpf,0,false));
 						idx += 1;
 					}
 				}
@@ -822,14 +815,17 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				}
 			}
 			
-			
 			if(parse_step == arg_count){
-				objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,areaid,priority);
+				if(areaid == -1 || !use_saoi_area){
+					objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,areaid,priority);
+				} else {
+					objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,SAOIObjectArea[areaid],priority);
+				}
 				Streamer_SetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index)); //identify objects
-				if(anti_area == 1){
+				if(SAOI_GetValueBit(object_flag,OBJECT_FLAG_ANTI_AREA) == 1){
 					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid,1);
 				}
-				if(no_camera_col == 1){
+				if(SAOI_GetValueBit(object_flag,OBJECT_FLAG_NO_CAMERA_COL) == 1){
 					SetDynamicObjectNoCameraCol(objectid);
 				}
 				object_cnt++;

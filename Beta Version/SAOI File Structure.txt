@@ -1,17 +1,35 @@
-SAOI File Structure:
+SAOI File Structure
+
+Extension:      saoi
+Name:           San Andreas Object Image
+Data Type:      Binary
+Structure type: Dynamic expandable
+Version:        1.1
+Author:         Abyss Morgan
 
 File: {
 	$HEADER_KEY
-	$AUTOR_DATA (encrypted)
+	$AUTOR_DATA
 	$DATA
 }
 
 $HEADER_KEY: {
-	static "SAOI 1.0 ADM"
+	static "SAOI 1.1 ADM"
+}
+
+$AUTOR_DATA: {
+	authorsize = strlen(author);
+	author size:authorsize
+	
+	versionsize = strlen(version);
+	version size:versionsize
+	
+	descriptionsize = strlen(description);
+	description size:descriptionsize
 }
 
 $DATA: {
-	arg_number size:8b data: 7 - 15
+	arg_number size:8b data: 7 - 14
 
 	modelid size:16b
 	Float:x size:32b
@@ -26,10 +44,12 @@ $DATA: {
 	Float:drawdistance size:32b
 	areaid size:32b
 	priority size:8b
-	anti_area size:8b
-	no_camera_col size:8b
+	object_flag {
+		anti_area size:1b
+		no_camera_col size:1b
+	} size:8b
 
-	material_used size:16b data: binary idx 0 - 15 values: 0b00000000 - 0b00001000
+	material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
 
 	[for everyone material_used]
 	modelid size:16b
@@ -39,7 +59,7 @@ $DATA: {
 	texturename size:texturenamesize
 	materialcolor size:32b
 
-	material_text_used size:16b data: binary idx 0 - 15 values: 0b00000000 - 0b00001000
+	material_text_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
 
 	[for everyone material_text_used]
 	textsize = strlen(text) size:16b
@@ -52,15 +72,4 @@ $DATA: {
 	fontcolor size:32b
 	backcolor size:32b
 	textalignment size:8b
-}
-
-$AUTOR_DATA: {
-	authorsize = strlen(author);
-	author size:authorsize
-	
-	versionsize = strlen(version);
-	version size:versionsize
-	
-	descriptionsize = strlen(description);
-	description size:descriptionsize
 }

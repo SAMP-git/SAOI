@@ -11,7 +11,7 @@
  *                                                                                                  *
  * File Version: 1.0.2                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
- * SAOI Version: 1.3.5                                                                              *
+ * SAOI Version: 1.4.0                                                                              *
  *                                                                                                  *
  * Notice:                                                                                          *
  * Required directory /scriptfiles/SAOI                                                             *
@@ -58,11 +58,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.3.5
+	#error You need SAOI.inc v1.4.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.3.5
-#elseif (SAOI_LOADER_VERSION < 10305)
-	#error Update you SAOI.inc to v1.3.5
+	#error Update you SAOI.inc to v1.4.0
+#elseif (SAOI_LOADER_VERSION < 10400)
+	#error Update you SAOI.inc to v1.4.0
 #endif
 
 #define SAOI_SecToTimeDay(%0)		((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
