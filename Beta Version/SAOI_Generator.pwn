@@ -24,8 +24,8 @@
 #include <a_samp>
 #include <streamer>
 
-#include "SAOI.inc"
-#include "ObjectDist.inc"
+#include <SAOI>
+#include <ObjectDist>
 
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION

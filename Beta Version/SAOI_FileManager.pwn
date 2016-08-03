@@ -17,6 +17,7 @@
  * Required directory /scriptfiles/SAOI                                                             *
  *                                                                                                  *
  * Commands:                                                                                        *
+ * /saoicmd - show saoi cmd                                                                         *
  * /addobjinfo - adds descriptions of objects                                                       *
  * /delobjinfo - removes descriptions of objects                                                    *
  * /objstatus - show total object status                                                            *
@@ -25,6 +26,7 @@
  * /saoiload - load saoi file                                                                       *
  * /saoiunload - unload saoi file                                                                   *
  * /saoireload - reload saoi file                                                                   *
+ * /saoilist - show loaded saoi files                                                               *
  *                                                                                                  *
  ****************************************************************************************************/
  
@@ -38,7 +40,7 @@
 	#include <zcmd>
 #endif
 #include <SAM/StreamerFunction>
-#include "SAOI.inc"
+#include <SAOI>
 
 #define SAOI_FILE_LIST				"/SAOI/SaoiFiles.txt"
 #define MAX_FIND_OBJ				(1000)
@@ -46,6 +48,7 @@
 
 #define DIALOG_SAOI_INFO			(1000)
 #define DIALOG_SAOI_LIST			(1001)
+#define DIALOG_SAOI_NUL				(1002)
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
@@ -320,7 +323,26 @@ CMD:saoilist(playerid){
 			strcat(szLIST,buffer);
 		}
 	}
+	if(isnull(szLIST)){
+		szLIST = "Lack loaded files";
+	}
 	ShowPlayerDialog(playerid,DIALOG_SAOI_LIST,DIALOG_STYLE_LIST,"Saoi File List", szLIST, "Select", "Exit");
+	return 1;
+}
+
+CMD:saoicmd(playerid){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	new szLIST[1024];
+	strcat(szLIST,"{00FF00}/addobjinfo - {00AAFF}adds descriptions of objects\n");
+	strcat(szLIST,"{00FF00}/delobjinfo - {00AAFF}removes descriptions of objects\n");
+	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
+	strcat(szLIST,"{00FF00}/saoicapacity - {00AAFF}shows the status of use of slots\n");
+	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");
+	strcat(szLIST,"{00FF00}/saoiload - {00AAFF}load saoi file\n");
+	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
+	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
+	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Saoi Command", szLIST, "Select", "Exit");
 	return 1;
 }
 
