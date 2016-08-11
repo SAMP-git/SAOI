@@ -11,7 +11,7 @@
  * Plugins: Streamer                                                                                                              *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.4.0                                                                                                            *
+ * File Version: 1.4.1                                                                                                            *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
@@ -29,7 +29,6 @@
  * Extended Functions:                                                                                                            *
  * SAOIToInt(SAOI:variable);                                                                                                      *
  * SAOI:FindFreeSAOIID();                                                                                                         *
- * SAOIStringMod(input[],output[]);                                                                                               *
  *                                                                                                                                *
  **********************************************************************************************************************************
  *                                                                                                                                *
@@ -48,11 +47,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.4.0
+	#error You need SAOI.inc v1.4.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.0
-#elseif (SAOI_LOADER_VERSION < 10400)
-	#error Update you SAOI.inc to v1.4.0
+	#error Update you SAOI.inc to v1.4.1
+#elseif (SAOI_LOADER_VERSION < 10401)
+	#error Update you SAOI.inc to v1.4.1
 #endif
 */
 
@@ -66,7 +65,7 @@
 #endif
 #define _SAOI_VERSION
 
-#define SAOI_LOADER_VERSION 				(10400)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10401)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -137,6 +136,8 @@
 #define SAOI_MergeValueEx(%1,%2,%3,%4)		(((%1) << 24) | ((%2) << 16) | ((%3) << 8) | (%4))
 #define SAOI_MergeFloatEx(%1,%2,%3,%4)		(Float:(((%1) << 24) | ((%2) << 16) | ((%3) << 8) | (%4)))
 
+#define SAOI_IntMod(%0)						(0xFF & (%0)+128)
+
 #if !defined isnull
 	#define isnull(%1) ((!(%1[0])) || (((%1[0]) == '\1') && (!(%1[1]))))
 #endif
@@ -180,13 +181,6 @@ stock CountSAOIFileLoaded(){
 		if(SAOIFile[i][saoi_status]) cnt++;
 	}
 	return cnt;
-}
-
-stock SAOIStringMod(input[],output[]){
-	for(new i = 0, j = strlen(input); i < j; i++){
-		output[i] = (0xFF & input[i]+128);
-	}
-	output[strlen(input)] = EOS;
 }
 
 stock bool:IsSAOISlotFree(SAOI:index){
@@ -445,15 +439,13 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 			fputchar(outf,int3,false), fputchar(outf,int4,false);
 			
 			fputchar(outf,strlen(txdname),false);
-			SAOIStringMod(txdname,txdname);
 			for(new k = 0, l = strlen(txdname); k < l; k++){
-				fputchar(outf,txdname[k],false);
+				fputchar(outf,SAOI_IntMod(txdname[k]),false);
 			}
 			
-			SAOIStringMod(texturename,texturename);
 			fputchar(outf,strlen(texturename),false);
 			for(new k = 0, l = strlen(texturename); k < l; k++){
-				fputchar(outf,texturename[k],false);
+				fputchar(outf,SAOI_IntMod(texturename[k]),false);
 			}
 			
 			SAOI_ExtractValue(materialcolor,int1,int2,int3,int4);
@@ -480,17 +472,15 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 			SAOI_ExtractValue(len,int1,int2,int3,int4);
 			fputchar(outf,int3,false), fputchar(outf,int4,false);
 			
-			SAOIStringMod(text,text);
 			for(new k = 0, l = strlen(text); k < l; k++){
-				fputchar(outf,text[k],false);
+				fputchar(outf,SAOI_IntMod(text[k]),false);
 			}
 			
 			fputchar(outf,materialsize,false);
 			
 			fputchar(outf,strlen(fontface),false);
-			SAOIStringMod(fontface,fontface);
 			for(new k = 0, l = strlen(fontface); k < l; k++){
-				fputchar(outf,fontface[k],false);
+				fputchar(outf,SAOI_IntMod(fontface[k]),false);
 			}
 			
 			fputchar(outf,fontsize,false);
@@ -752,19 +742,17 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 					
 					txdsize = fgetchar(inpf,0,false), idx++;
 					for(new i = 0; i < txdsize; i++){
-						txdname[i] = fgetchar(inpf,0,false), idx++;
+						txdname[i] = SAOI_IntMod(fgetchar(inpf,0,false)), idx++;
 					}
 					txdname[txdsize] = EOS;
-					SAOIStringMod(txdname,txdname);
 					
 					texturenamesize = fgetchar(inpf,0,false), idx++;
 					
 					for(new i = 0; i < texturenamesize; i++){
-						texturename[i] = fgetchar(inpf,0,false), idx++;
+						texturename[i] = SAOI_IntMod(fgetchar(inpf,0,false)), idx++;
 					}
 					texturename[texturenamesize] = EOS;
-					SAOIStringMod(texturename,texturename);
-					
+
 					SAOI_MergeValue(materialcolor,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
 					idx += 4;
 					
@@ -783,21 +771,19 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 					idx += 2;
 					
 					for(new i = 0; i < textsize; i++){
-						text[i] = fgetchar(inpf,0,false), idx++;
+						text[i] = SAOI_IntMod(fgetchar(inpf,0,false)), idx++;
 					}
 					text[textsize] = EOS;
-					SAOIStringMod(text,text);
-					
+
 					materialsize = fgetchar(inpf,0,false), idx++;
 					
 					fontfacesize = fgetchar(inpf,0,false), idx++;
 					
 					for(new i = 0; i < fontfacesize; i++){
-						fontface[i] = fgetchar(inpf,0,false), idx++;
+						fontface[i] = SAOI_IntMod(fgetchar(inpf,0,false)), idx++;
 					}
 					fontface[fontfacesize] = EOS;
-					SAOIStringMod(fontface,fontface);
-					
+	
 					fontsize = fgetchar(inpf,0,false), idx++;
 					
 					bold = fgetchar(inpf,0,false), idx++;

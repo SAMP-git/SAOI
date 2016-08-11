@@ -61,11 +61,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.4.0
+	#error You need SAOI.inc v1.4.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.0
-#elseif (SAOI_LOADER_VERSION < 10400)
-	#error Update you SAOI.inc to v1.4.0
+	#error Update you SAOI.inc to v1.4.1
+#elseif (SAOI_LOADER_VERSION < 10401)
+	#error Update you SAOI.inc to v1.4.1
 #endif
 
 #define SAOI_SecToTimeDay(%0)		((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
