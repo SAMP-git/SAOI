@@ -8,16 +8,22 @@
  *                                                                                                                                *
  * This is Beta Version!                                                                                                          *
  *                                                                                                                                *
- * Plugins: Streamer                                                                                                              *
+ * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.4.1                                                                                                            *
+ * File Version: 1.4.2                                                                                                            *
+ * SA:MP Version: 0.3.7                                                                                                           *
+ * Streamer Version: 2.8.2                                                                                                        *
+ * SScanf Version: 2.8.2                                                                                                          *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
  * SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]);                                                         *
  * SAOI:SaveDynamicObject(objectid,const name[]);                                                                                 *
  * SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false);   *
+ * SAOI:SAOIHeaderCopy(const input[],const output[]);                                                                             *
+ * SAOI:SetSAOIBumperIP(const name[],server_ip[]);                                                                                *
+ * SAOI:SetSAOIBumperPort(const name[],server_port);                                                                              *
  * bool:UnloadObjectImage(&SAOI:index);                                                                                           *
  * bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0);        *
  * bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);                                                             *
@@ -58,6 +64,10 @@
 
 #if !defined Streamer_AppendArrayData
 	#error Unknown Streamer Version
+#endif
+
+#if !defined sscanf
+	#error [ADM] Unknown SScanf Version
 #endif
 
 #if defined _SAOI_VERSION
@@ -106,6 +116,8 @@
 #define SAOI_ERROR_OUTPUT_EXTENSION			(SAOI:-15)		//invalid output extension
 #define SAOI_ERROR_NOT_ENOUGH_CAPACITY		(SAOI:-16)		//not enough capacity, to load new file
 #define SAOI_ERROR_INVALID_ARG_COUNT		(SAOI:-17)		//number of arguments exceeds the specified arguments (error structure version)
+#define SAOI_ERROR_INVALID_SERVER_IP		(SAOI:-18)		//bumper: invalid server ip
+#define SAOI_ERROR_INVALID_SERVER_PORT		(SAOI:-19)		//bumper: invalid server port
 
 #define MAX_ARG_COUNT						(14)			//argument number 1 - 14 !!
 #define PARSE_STEP_ARG_COUNT				(0)
@@ -121,7 +133,13 @@
 #define OBJECT_FLAG_ANTI_AREA				(0)
 #define OBJECT_FLAG_NO_CAMERA_COL			(1)
 
+#define SAOI_BUMPER_IP						(201)
+#define SAOI_BUMPER_PORT					(202)
+
 #define SAOIToInt(%0)						(_:%0)
+
+#define SAOI_Comp(%0,%1)					((((%0)+128) & 0xFF) != (%1))
+
 
 //BitFunctions.inc
 #define SAOI_GetValueBit(%0,%1)				((%0) >>> (%1) & 0x01)
@@ -503,6 +521,52 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
+stock SAOI:SetSAOIBumperIP(const name[],server_ip[]){
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append);
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	new serv_ipsum[4], saoi_ipsum[4];
+	sscanf(server_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
+	
+	saoi_ipsum[0] = ((serv_ipsum[3]+128) & 0xFF);
+	saoi_ipsum[1] = ((serv_ipsum[2]+128) & 0xFF);
+	saoi_ipsum[2] = ((serv_ipsum[1]+128) & 0xFF);
+	saoi_ipsum[3] = ((serv_ipsum[0]+128) & 0xFF);
+	
+	fputchar(outf,SAOI_BUMPER_IP,false);
+	for(new i = 0; i < 4; i++){
+		fputchar(outf,saoi_ipsum[i],false);
+	}
+
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+}
+
+stock SAOI:SetSAOIBumperPort(const name[],server_port){
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append);
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	new serv_portsum[4], saoi_portsum[4];
+	SAOI_ExtractValue(server_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
+	
+	saoi_portsum[0] = ((serv_portsum[3]+128) & 0xFF);
+	saoi_portsum[1] = ((serv_portsum[2]+128) & 0xFF);
+	saoi_portsum[2] = ((serv_portsum[1]+128) & 0xFF);
+	saoi_portsum[3] = ((serv_portsum[0]+128) & 0xFF);
+	
+	fputchar(outf,SAOI_BUMPER_PORT,false);
+	for(new i = 0; i < 4; i++){
+		fputchar(outf,saoi_portsum[i],false);
+	}
+
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+}
+
 stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
@@ -571,6 +635,85 @@ stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	
 	fclose(inpf);
 	return SAOI_ERROR_SUCCESS;
+}
+
+stock SAOI:SAOIHeaderCopy(const input[],const output[]){
+	if(!fexist(input)) return SAOI_ERROR_INPUT_NOT_EXIST;
+	if(fexist(output)) return SAOI_ERROR_OUTPUT_EXIST;
+	new File:inpf = fopen(input,io_read);
+	if(!inpf) return SAOI_ERROR_INPUT_NOT_OPEN;
+	new File:outf = fopen(output,io_append);
+	if(!outf){
+		fclose(inpf);
+		return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	}
+	new h_len = strlen(SAOI_HEADER_KEY), h_key[32];
+	for(new i = 0; i < h_len; i++){
+		h_key[i] = fgetchar(inpf,0,false);
+	}
+	h_key[h_len] = EOS;
+	if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
+		new key[32],
+			author[MAX_SAOI_AUTHOR_SIZE],
+			version[MAX_SAOI_VERSION_SIZE],
+			description[MAX_SAOI_DESCRIPTION_SIZE],
+			author_size,
+			version_size,
+			description_size;
+		
+		//load
+		author_size = fgetchar(inpf,0,false);
+		for(new i = 0; i < author_size; i++){
+			author[i] = fgetchar(inpf,0,false);
+		}
+		
+		version_size = fgetchar(inpf,0,false);
+		for(new i = 0; i < version_size; i++){
+			version[i] = fgetchar(inpf,0,false);
+		}
+		
+		description_size = fgetchar(inpf,0,false);
+		for(new i = 0; i < description_size; i++){
+			description[i] = fgetchar(inpf,0,false);
+		}
+		
+		for(new i = 0; i < 32; i++){
+			key[i] = fgetchar(inpf,0,false);
+		}
+		
+		
+		//save
+		fwrite(outf,SAOI_HEADER_KEY);
+		
+		fputchar(outf,author_size,false);
+		for(new i = 0; i < author_size; i++){
+			fputchar(outf,author[i],false);
+		}
+		
+		fputchar(outf,version_size,false);
+		for(new i = 0; i < version_size; i++){
+			fputchar(outf,version[i],false);
+		}
+		
+		fputchar(outf,description_size,false);
+		for(new i = 0; i < description_size; i++){
+			fputchar(outf,description[i],false);
+		}
+		
+		for(new i = 0; i < 32; i++){
+			fputchar(outf,key[i],false);
+		}
+		
+	} else {
+		fclose(inpf);
+		fclose(outf);
+		fremove(output);
+		return SAOI_ERROR_INVALID_HEADER;
+	}
+	fclose(inpf);
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+	
 }
 
 stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false){
@@ -665,8 +808,37 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				//Get Arg Count
 				arg_count = fgetchar(inpf,0,false), idx++;
 				if(arg_count > MAX_ARG_COUNT){
-					fclose(inpf);
-					return SAOI_ERROR_INVALID_ARG_COUNT;
+					switch(arg_count){
+						case SAOI_BUMPER_IP: {
+							new serv_ipsum[4], saoi_ipsum[4], serv_ip[16];
+							GetServerVarAsString("bind",serv_ip,sizeof(serv_ip));
+							for(new i = 0; i < 4; i++){
+								saoi_ipsum[i] = fgetchar(inpf,0,false), idx++;
+							}
+							sscanf(serv_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
+							if(SAOI_Comp(serv_ipsum[0],saoi_ipsum[3]) || SAOI_Comp(serv_ipsum[1],saoi_ipsum[2]) || SAOI_Comp(serv_ipsum[2],saoi_ipsum[1]) || SAOI_Comp(serv_ipsum[3],saoi_ipsum[0])){
+								fclose(inpf);
+								return SAOI_ERROR_INVALID_SERVER_IP;
+							}
+							continue;
+						}
+						case SAOI_BUMPER_PORT: {
+							new serv_port = GetServerVarAsInt("port"), serv_portsum[4], saoi_portsum[4];
+							for(new i = 0; i < 4; i++){
+								saoi_portsum[i] = fgetchar(inpf,0,false), idx++;
+							}
+							SAOI_ExtractValue(serv_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
+							if(SAOI_Comp(serv_portsum[0],saoi_portsum[3]) || SAOI_Comp(serv_portsum[1],saoi_portsum[2]) || SAOI_Comp(serv_portsum[2],saoi_portsum[1]) || SAOI_Comp(serv_portsum[3],saoi_portsum[0])){
+								fclose(inpf);
+								return SAOI_ERROR_INVALID_SERVER_PORT;
+							}
+							continue;
+						}
+						default: {
+							fclose(inpf);
+							return SAOI_ERROR_INVALID_ARG_COUNT;
+						}
+					}
 				}
 				//Reset Data
 				objectid = 0, material_used = 0, material_text_used = 0, worldid = -1, interiorid = -1, streamdistance = 300.0,
