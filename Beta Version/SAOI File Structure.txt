@@ -26,6 +26,8 @@ $AUTOR_DATA: {
 	
 	descriptionsize = strlen(description);
 	description size:descriptionsize
+	
+	saoi_controller size:32b
 }
 
 $DATA: {
