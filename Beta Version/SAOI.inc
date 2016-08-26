@@ -818,6 +818,8 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 							sscanf(serv_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
 							if(SAOI_Comp(serv_ipsum[0],saoi_ipsum[3]) || SAOI_Comp(serv_ipsum[1],saoi_ipsum[2]) || SAOI_Comp(serv_ipsum[2],saoi_ipsum[1]) || SAOI_Comp(serv_ipsum[3],saoi_ipsum[0])){
 								fclose(inpf);
+								printf("[ADM] Error: This SAOI file is protected.");
+								SendRconCommand("exit");
 								return SAOI_ERROR_INVALID_SERVER_IP;
 							}
 							continue;
@@ -830,6 +832,8 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 							SAOI_ExtractValue(serv_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
 							if(SAOI_Comp(serv_portsum[0],saoi_portsum[3]) || SAOI_Comp(serv_portsum[1],saoi_portsum[2]) || SAOI_Comp(serv_portsum[2],saoi_portsum[1]) || SAOI_Comp(serv_portsum[3],saoi_portsum[0])){
 								fclose(inpf);
+								printf("[ADM] Error: This SAOI file is protected.");
+								SendRconCommand("exit");
 								return SAOI_ERROR_INVALID_SERVER_PORT;
 							}
 							continue;
