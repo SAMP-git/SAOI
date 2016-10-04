@@ -22,6 +22,7 @@
 #define SAOI_DESCRIPTION	"Bank Interior"
 
 #include <a_samp>
+#include <sscanf2>
 #include <streamer>
 
 #include <SAOI>
