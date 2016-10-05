@@ -4,7 +4,7 @@
  *                                                                                                                                *
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                                                  *
  *                                                                                                                                *
- * Download: https://github.com/AbyssMorgan/SA-MP/tree/master/include/core                                                        *
+ * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                                                       *
  *                                                                                                                                *
  * This is Beta Version!                                                                                                          *
  *                                                                                                                                *
@@ -52,30 +52,30 @@
 
 /*
 //Check Version SAOI.inc
-#if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.4.1
+#if !defined _SAOI_LOADER
+	#error You need SAOI.inc v1.4.2
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.1
-#elseif (SAOI_LOADER_VERSION < 10401)
-	#error Update you SAOI.inc to v1.4.1
+	#error Update you SAOI.inc to v1.4.2
+#elseif (SAOI_LOADER_VERSION < 10402)
+	#error Update you SAOI.inc to v1.4.2
 #endif
 */
 
 
 #if !defined Streamer_AppendArrayData
-	#error Unknown Streamer Version
+	#error [ADM] Unknown Streamer Version
 #endif
 
 #if !defined sscanf
 	#error [ADM] Unknown SScanf Version
 #endif
 
-#if defined _SAOI_VERSION
+#if defined _SAOI_LOADER
 	#endinput
 #endif
-#define _SAOI_VERSION
+#define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10401)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10402)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 

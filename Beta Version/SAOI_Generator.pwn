@@ -4,7 +4,7 @@
  *                                                                                                  *
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                    *
  *                                                                                                  *
- * Download: https://github.com/AbyssMorgan/SA-MP/tree/master/include/core                          *
+ * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                         *
  *                                                                                                  *
  * Plugins: Streamer                                                                                *
  * Modules: SAOI                                                                                    *
@@ -29,12 +29,12 @@
 #include <ObjectDist>
 
 //Check Version SAOI.inc
-#if !defined _SAOI_VERSION
-	#error You need SAOI.inc v1.4.1
+#if !defined _SAOI_LOADER
+	#error You need SAOI.inc v1.4.2
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.1
-#elseif (SAOI_LOADER_VERSION < 10401)
-	#error Update you SAOI.inc to v1.4.1
+	#error Update you SAOI.inc to v1.4.2
+#elseif (SAOI_LOADER_VERSION < 10402)
+	#error Update you SAOI.inc to v1.4.2
 #endif
 
 //Hook: CreateDynamicObject
