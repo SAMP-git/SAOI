@@ -19,6 +19,7 @@
 ## How to use SAOI:
 - Download and extract SAOI Generator (Windows).zip
 - Place the objects in a text file that contains the code of objects in pawn.
+
 ##### Example:
 ```
 //do not create callbacks OnFilterScriptInit!
@@ -41,6 +42,7 @@ SetDynamicObjectMaterial(tmpobj,3,10817,"airportgnd_sfse","black64",0x00000000);
 - Create folder scriptfiles\SAOI
 - Create file scriptfiles\SAOI\SaoiFiles.txt
 - Place the file name is in the file SaoiFiles.txt
+
 ##### Example:
 ```
 text.saoi
