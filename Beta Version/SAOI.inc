@@ -5,6 +5,7 @@
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                                                  *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                                                       *
+ * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
  *                                                                                                                                *
  * This is Beta Version!                                                                                                          *
  *                                                                                                                                *
