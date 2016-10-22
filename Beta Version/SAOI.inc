@@ -1019,6 +1019,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 		format(buffer,sizeof buffer,"Description: %s",description);
 		printf(buffer);
 	}
+	printf(" ");
 	return index;
 }
 

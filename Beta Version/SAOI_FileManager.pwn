@@ -11,7 +11,10 @@
  *                                                                                                  *
  * File Version: 1.0.2                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
- * SAOI Version: 1.4.0                                                                              *
+ * Streamer Version: 2.8.2                                                                          *
+ * SScanf Version: 2.8.2                                                                            *
+ * SAOI Version: 1.4.2                                                                              *
+ * StreamerFunction Version: 2.5.4                                                                  *
  *                                                                                                  *
  * Notice:                                                                                          *
  * Required directory /scriptfiles/SAOI                                                             *
@@ -52,11 +55,11 @@
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
-	#error [ADM] You need StreamerFunction.inc v2.3.4
+	#error [ADM] You need StreamerFunction.inc v2.5.4
 #elseif !defined Streamer_Spec_Version
-	#error [ADM] Update you StreamerFunction.inc to v2.3.4
-#elseif (Streamer_Spec_Version < 20304)
-	#error [ADM] Update you StreamerFunction.inc to v2.3.4
+	#error [ADM] Update you StreamerFunction.inc to v2.5.4
+#elseif (Streamer_Spec_Version < 20504)
+	#error [ADM] Update you StreamerFunction.inc to v2.5.4
 #endif
 
 //Check Version SAOI.inc
@@ -220,6 +223,7 @@ CMD:saoiinfo(playerid,params[]){
 	
 	szLIST = "";
 	GetSAOIFileHeader(path,author,version,description);
+	if(isnull(description)) description = "---";
 	GetSAOILoadData(index,fname,object_cnt,material_cnt,material_text_cnt,load_time,active_tick);
 	
 	format(buffer,sizeof buffer,"{00AAFF}Index: {00FF00}%d {00AAFF}SAOI Name: {00FF00}%s {00AAFF}Path: {00FF00}%s\n",SAOIToInt(index),params,path);
@@ -342,7 +346,7 @@ CMD:saoicmd(playerid){
 	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Saoi Command", szLIST, "Select", "Exit");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Saoi Command", szLIST, "Exit", "");
 	return 1;
 }
 
@@ -364,6 +368,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 }
 
 public OnFilterScriptInit(){
+	printf(" ");
 	new start_time = GetTickCount();
 	if(!fexist(SAOI_FILE_LIST)){
 		printf("Create file: %s",SAOI_FILE_LIST);
