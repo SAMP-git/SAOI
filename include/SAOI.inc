@@ -4,7 +4,7 @@
  *                                                                                                                                *
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                                                  *
  *                                                                                                                                *
- * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                                                       *
+ * Download: https://github.com/AbyssMorgan/SAOI/tree/master/include                                                              *
  * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
  *                                                                                                                                *
  * This is Beta Version!                                                                                                          *
@@ -12,7 +12,7 @@
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.4.2                                                                                                            *
+ * File Version: 1.4.3                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -32,6 +32,9 @@
  * CountSAOIFileLoaded();                                                                                                         *
  * GetSAOIActiveTime(SAOI:index);                                                                                                 *
  * bool:IsSAOISlotFree(SAOI:index);                                                                                               *
+ * GetSAOIFileSize(SAOI:index);                                                                                                   *
+ * bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);                          *
+ * SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);                              *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOIToInt(SAOI:variable);                                                                                                      *
@@ -54,11 +57,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.2
+	#error You need SAOI.inc v1.4.3
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.2
-#elseif (SAOI_LOADER_VERSION < 10402)
-	#error Update you SAOI.inc to v1.4.2
+	#error Update you SAOI.inc to v1.4.3
+#elseif (SAOI_LOADER_VERSION < 10403)
+	#error Update you SAOI.inc to v1.4.3
 #endif
 */
 
@@ -76,7 +79,7 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10402)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10403)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -136,6 +139,7 @@
 
 #define SAOI_BUMPER_IP						(201)
 #define SAOI_BUMPER_PORT					(202)
+#define SAOI_BUMPER_POS						(203)
 
 #define SAOIToInt(%0)						(_:%0)
 
@@ -168,11 +172,64 @@ enum e_saoi {
 	saoi_material_cnt,
 	saoi_material_text_cnt,
 	saoi_load_time,
-	saoi_active_tick
+	saoi_active_tick,
+	saoi_object_offset,
+	saoi_size,
+	Float:saoi_posX,
+	Float:saoi_posY,
+	Float:saoi_posZ,
+	Float:saoi_posA,
+	saoi_vw,
+	saoi_int
 }
 
 new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
 	SAOIObjectArea[MAX_SAOI_AREA];
+
+stock GetSAOIFileSize(SAOI:index){
+	return SAOIFile[index][saoi_size];
+}
+
+stock bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
+	if(!SAOIFile[index][saoi_status]) return false;
+	x = SAOIFile[index][saoi_posX];
+	y = SAOIFile[index][saoi_posY];
+	z = SAOIFile[index][saoi_posZ];
+	angle = SAOIFile[index][saoi_posA];
+	virtualworld = SAOIFile[index][saoi_vw];
+	interior = SAOIFile[index][saoi_int];
+	return true;
+}
+
+stock SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior){
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append), int1, int2, int3, int4;
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	fputchar(outf,SAOI_BUMPER_POS,false);
+	
+	SAOI_ExtractFloat(x,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(y,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(z,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(angle,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractValue(virtualworld,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+
+	SAOI_ExtractValue(interior,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+}
 
 stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	new tmp_saoi_name[MAX_SAOI_NAME_SIZE];
@@ -735,6 +792,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	new parse_step, bool:parse_header, author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE];
 	
 	SAOIFile[index][saoi_status] = true;
+	SAOIFile[index][saoi_object_offset] = INVALID_STREAMER_ID;
 	format(SAOIFile[index][saoi_name],MAX_SAOI_NAME_SIZE,"%s",name);
 	for(new i = strlen(SAOIFile[index][saoi_name])-1; i >= 0; i--){
 		if(SAOIFile[index][saoi_name][i] == '.'){
@@ -745,6 +803,13 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	
 	new modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, worldid = -1, interiorid = -1, Float:streamdistance = 300.0, Float:drawdistance = 0.0, areaid = -1, priority = 0,
 		arg_count = 0, material_used = 0, material_text_used = 0, objectid, object_flag = 0;
+	
+	SAOIFile[index][saoi_posX] = 0.0;
+	SAOIFile[index][saoi_posY] = 0.0;
+	SAOIFile[index][saoi_posZ] = 0.0;
+	SAOIFile[index][saoi_posA] = 0.0;
+	SAOIFile[index][saoi_vw] = 0;
+	SAOIFile[index][saoi_int] = 0;
 	
 	while(idx < asize){
 		if(!parse_header){
@@ -810,6 +875,16 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				arg_count = fgetchar(inpf,0,false), idx++;
 				if(arg_count > MAX_ARG_COUNT){
 					switch(arg_count){
+						case SAOI_BUMPER_POS: {
+							SAOIFile[index][saoi_posX] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							SAOIFile[index][saoi_posY] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false)); 
+							SAOIFile[index][saoi_posZ] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							SAOIFile[index][saoi_posA] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							SAOIFile[index][saoi_vw] = SAOI_MergeValueEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							SAOIFile[index][saoi_int] = SAOI_MergeValueEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							idx += 24;
+							continue;
+						}
 						case SAOI_BUMPER_IP: {
 							new serv_ipsum[4], saoi_ipsum[4], serv_ip[16];
 							GetServerVarAsString("bind",serv_ip,sizeof(serv_ip));
@@ -984,6 +1059,9 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				} else {
 					objectid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,SAOIObjectArea[areaid],priority);
 				}
+				if(SAOIFile[index][saoi_object_offset] == INVALID_STREAMER_ID){
+					SAOIFile[index][saoi_object_offset] = objectid;
+				}
 				Streamer_SetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index)); //identify objects
 				if(SAOI_GetValueBit(object_flag,OBJECT_FLAG_ANTI_AREA) == 1){
 					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid,1);
@@ -999,6 +1077,9 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 			parse_step++;
 		}
 	}
+	
+	SAOIFile[index][saoi_size] = flength(inpf);
+	
 	fclose(inpf);
 	
 	load_time = GetTickCount()-NTTime;
@@ -1025,7 +1106,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 
 stock bool:UnloadObjectImage(&SAOI:index){
 	if(!SAOIFile[index][saoi_status]) return false;
-	new max_idx = SAOIFile[index][saoi_object_cnt], i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
+	new max_idx = SAOIFile[index][saoi_object_cnt], i = SAOIFile[index][saoi_object_offset], j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
 	while(i <= j && max_idx > 0){
 		if(IsValidDynamicObject(i)){
 				if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+SAOIToInt(index))){
@@ -1042,6 +1123,14 @@ stock bool:UnloadObjectImage(&SAOI:index){
 	SAOIFile[index][saoi_material_text_cnt] = 0;
 	SAOIFile[index][saoi_load_time] = 0;
 	SAOIFile[index][saoi_active_tick] = 0;
+	SAOIFile[index][saoi_size] = 0;
+	SAOIFile[index][saoi_posX] = 0.0;
+	SAOIFile[index][saoi_posY] = 0.0;
+	SAOIFile[index][saoi_posZ] = 0.0;
+	SAOIFile[index][saoi_posA] = 0.0;
+	SAOIFile[index][saoi_vw] = 0;
+	SAOIFile[index][saoi_int] = 0;
+	SAOIFile[index][saoi_object_offset] = INVALID_STREAMER_ID;
 	index = INVALID_SAOI_FILE;
 	return true;
 }

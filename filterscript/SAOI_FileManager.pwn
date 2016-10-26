@@ -4,16 +4,17 @@
  *                                                                                                  *
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                    *
  *                                                                                                  *
- * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                         *
+ * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                           *
  *                                                                                                  *
  * Plugins: Streamer, SScanf                                                                        *
- * Modules: SAOI, StreamerFunction, IZCMD/ZCMD                                                      *
+ * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                              *
  *                                                                                                  *
- * File Version: 1.0.2                                                                              *
+ * File Version: 1.1.0                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
  * Streamer Version: 2.8.2                                                                          *
  * SScanf Version: 2.8.2                                                                            *
  * SAOI Version: 1.4.2                                                                              *
+ * 3DTryg Version: 3.0.2                                                                            *
  * StreamerFunction Version: 2.5.4                                                                  *
  *                                                                                                  *
  * Notice:                                                                                          *
@@ -30,12 +31,19 @@
  * /saoiunload - unload saoi file                                                                   *
  * /saoireload - reload saoi file                                                                   *
  * /saoilist - show loaded saoi files                                                               *
+ * /streaminfo - show stream info                                                                   *
+ * /saoitp - teleport to saoi flag                                                                  *
  *                                                                                                  *
  ****************************************************************************************************/
  
 #define FILTERSCRIPT
 
 #include <a_samp>
+
+#if !defined _actor_included
+	#include <a_actor>
+#endif
+
 #include <sscanf2>
 #include <streamer>
 #tryinclude <izcmd>
@@ -43,15 +51,17 @@
 	#include <zcmd>
 #endif
 #include <SAM/StreamerFunction>
+#include <SAM/3DTryg>
 #include <SAOI>
 
 #define SAOI_FILE_LIST				"/SAOI/SaoiFiles.txt"
-#define MAX_FIND_OBJ				(1000)
+#define MAX_FIND_OBJ				(2048)
 #define MAX_PATH					(70)
 
 #define DIALOG_SAOI_INFO			(1000)
 #define DIALOG_SAOI_LIST			(1001)
-#define DIALOG_SAOI_NUL				(1002)
+#define DIALOG_SAOI_ITEM			(1002)
+#define DIALOG_SAOI_NUL				(1003)
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
@@ -62,20 +72,30 @@
 	#error [ADM] Update you StreamerFunction.inc to v2.5.4
 #endif
 
+//Check Version 3DTryg.inc
+#if !defined _3D_Tryg
+	#error [ADM] You need 3DTryg.inc v3.0.2
+#elseif !defined Tryg3D_Version
+	#error [ADM] Update you 3DTryg.inc to v3.0.2
+#elseif (Tryg3D_Version < 30002)
+	#error [ADM] Update you 3DTryg.inc to v3.0.2
+#endif
+
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.2
+	#error You need SAOI.inc v1.4.3
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.2
-#elseif (SAOI_LOADER_VERSION < 10402)
-	#error Update you SAOI.inc to v1.4.2
+	#error Update you SAOI.inc to v1.4.3
+#elseif (SAOI_LOADER_VERSION < 10403)
+	#error Update you SAOI.inc to v1.4.3
 #endif
 
 #define SAOI_SecToTimeDay(%0)		((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
 #define SAOI_MSToTimeDay(%0)		SAOI_SecToTimeDay((%0)/1000)
 
 new Text3D:FindObjLabel[MAX_FIND_OBJ],
-	bool:FindObj = false;
+	bool:FindObj = false,
+	SAOI:PlayerLastSAOI[MAX_PLAYERS];
 
 stock PrintSAOIErrorName(SAOI:index){
 	switch(index){
@@ -97,6 +117,8 @@ stock PrintSAOIErrorName(SAOI:index){
 		case SAOI_ERROR_OUTPUT_EXTENSION: 		printf("Error invalid output extension");
 		case SAOI_ERROR_NOT_ENOUGH_CAPACITY: 	printf("Error not enough capacity, to load new file");
 		case SAOI_ERROR_INVALID_ARG_COUNT: 		printf("Error number of arguments exceeds the specified arguments");
+		case SAOI_ERROR_INVALID_SERVER_IP:		printf("Error invalid server ip");
+		case SAOI_ERROR_INVALID_SERVER_PORT:	printf("Error invalid server port");
 	}
 }
 
@@ -109,8 +131,7 @@ stock FindDynamicObject(playerid, Float:findradius, Float:streamdistance = 20.0)
 		if(cnt >= MAX_FIND_OBJ) break;
 		if(IsValidDynamicObject(i)){
 			GetDynamicObjectPos(i,x,y,z);
-			new Float:distance = VectorSize(px-x,py-y,pz-z);
-			if(distance <= findradius){
+			if(VectorSize(px-x,py-y,pz-z) <= findradius){
 				vw = GetDynamicObjectVW(i);
 				int = GetDynamicObjectINT(i);
 				moid = GetDynamicObjectModel(i);
@@ -203,15 +224,15 @@ CMD:objstatus(playerid){
 CMD:saoicapacity(playerid){
 	if(!IsPlayerAdmin(playerid)) return 0;
 	new buffer[256];
-	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d/%d {00AAFF}Next free ID: {00FF00}%d",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(FindFreeSAOIID()));
+	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(FindFreeSAOIID()));
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	return 1;
 }
 
 CMD:saoiinfo(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name/id> (Only the file name, without extension)");
-	new buffer[512], path[MAX_PATH], SAOI:index;
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name> (Only the file name, without extension)");
+	new buffer[512], path[MAX_PATH], SAOI:index, Float:x, Float:y, Float:z, Float:angle, vw, int;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!IsSAOIFileLoaded(path,index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
@@ -225,6 +246,7 @@ CMD:saoiinfo(playerid,params[]){
 	GetSAOIFileHeader(path,author,version,description);
 	if(isnull(description)) description = "---";
 	GetSAOILoadData(index,fname,object_cnt,material_cnt,material_text_cnt,load_time,active_tick);
+	GetSAOIPositionFlag(index,x,y,z,angle,vw,int);
 	
 	format(buffer,sizeof buffer,"{00AAFF}Index: {00FF00}%d {00AAFF}SAOI Name: {00FF00}%s {00AAFF}Path: {00FF00}%s\n",SAOIToInt(index),params,path);
 	strcat(szLIST,buffer);
@@ -236,8 +258,64 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Active time: {00FF00}%d:%02d:%02d:%02d {00AAFF}Load time: {00FF00}%d {00AAFF}ms\n",SAOI_MSToTimeDay(GetTickCount()-active_tick),load_time);
 	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}File Size: {00FF00}%d {00AAFF}B\n",GetSAOIFileSize(index));
+	strcat(szLIST,buffer);
 	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_INFO,DIALOG_STYLE_MSGBOX,"Saoi File Information", szLIST, "Return", "Exit");
+	if(x == 0.0 && y == 0.0 && z == 0.0 && angle == 0.0 && vw == 0 && int == 0){
+		format(buffer,sizeof buffer,"{00AAFF}Position: {00FF00}Not found saved position.\n");
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}Position: {00FF00}%.4f %.4f %.4f {00AAFF}Angle: {00FF00}%.1f {00AAFF}World: {00FF00}%d {00AAFF}Interior: {00FF00}%d\n",x,y,z,angle,vw,int);
+	}
+	strcat(szLIST,buffer);
+	
+	ShowPlayerDialog(playerid,DIALOG_SAOI_INFO,DIALOG_STYLE_MSGBOX,"SAOI File Information", szLIST, "Exit", "Return");
+	return 1;
+}
+
+CMD:streaminfo(playerid){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	new buffer[256], szLIST[3096];
+	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d / %d\n",CountObjects(),MAX_OBJECTS);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Vehicles: {00FF00}%d / %d\n",CountVehicles(),MAX_VEHICLES);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Players: {00FF00}%d / %d\n",CountPlayers(true,false),GetMaxPlayers()-CountPlayers(false,true));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}NPC: {00FF00}%d / %d\n",CountPlayers(false,true),GetServerVarAsInt("maxnpc"));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Actors: {00FF00}%d / %d\n",CountActors(),MAX_ACTORS);
+	strcat(szLIST,buffer);
+	strcat(szLIST,"\n");
+	format(buffer,sizeof buffer,"{00AAFF}DynamicObjects: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
+		CountDynamicObjects(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_OBJECT),Streamer_GetVisibleItems(STREAMER_TYPE_OBJECT,playerid)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}DynamicPickup: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
+		CountDynamicPickups(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP),Streamer_GetVisibleItems(STREAMER_TYPE_PICKUP,playerid)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}DynamicCP: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
+		CountDynamicCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_CP)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}DynamicRaceCP: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
+		CountDynamicRaceCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_RACE_CP)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}DynamicMapIcon: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
+		CountDynamicMapIcons(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_MAP_ICON),Streamer_GetVisibleItems(STREAMER_TYPE_MAP_ICON,playerid)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Dynamic3DText: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
+		CountDynamic3DTextLabels(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_3D_TEXT_LABEL),Streamer_GetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL,playerid)
+	);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}DynamicArea: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
+		CountDynamicAreas(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_AREA)
+	);
+	strcat(szLIST,buffer);
+	
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FF00}Philon info:",szLIST,"Wyjdz","");
 	return 1;
 }
 
@@ -330,7 +408,31 @@ CMD:saoilist(playerid){
 	if(isnull(szLIST)){
 		szLIST = "Lack loaded files";
 	}
-	ShowPlayerDialog(playerid,DIALOG_SAOI_LIST,DIALOG_STYLE_LIST,"Saoi File List", szLIST, "Select", "Exit");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_LIST,DIALOG_STYLE_LIST,"SAOI File List", szLIST, "Select", "Exit");
+	return 1;
+}
+
+CMD:saoitp(playerid,params[]){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoitp <name> (Only the file name, without extension)");
+	
+	new buffer[256], path[MAX_PATH], SAOI:index;
+	format(path,sizeof(path),"/SAOI/%s.saoi",params);
+	
+	if(!IsSAOIFileLoaded(path,index)){
+		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
+		return SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	}
+	
+	new Float:x, Float:y, Float:z, Float:angle, vw, int;
+	GetSAOIPositionFlag(index,x,y,z,angle,vw,int);
+	
+	if(x == 0.0 && y == 0.0 && z == 0.0 && angle == 0.0 && vw == 0 && int == 0) return SendClientMessage(playerid,0xB01010FF,"Not found saved position!");
+	
+	SetPlayerPos(playerid,x,y,z);
+	SetPlayerFacingAngle(playerid,angle);
+	SetPlayerVirtualWorld(playerid,vw);
+	SetPlayerInterior(playerid,int);
 	return 1;
 }
 
@@ -346,22 +448,33 @@ CMD:saoicmd(playerid){
 	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Saoi Command", szLIST, "Exit", "");
+	strcat(szLIST,"{00FF00}/saoitp - {00AAFF}teleport to saoi flag\n");
+	strcat(szLIST,"{00FF00}/streaminfo - {00AAFF}show stream info\n");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Command", szLIST, "Exit", "");
 	return 1;
 }
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
-	if(response){
-		switch(dialogid){
-			case DIALOG_SAOI_LIST: {
-				new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE];
-				GetSAOILoadData(SAOI:(listitem+1),fname);
-				sscanf(fname,"'/SAOI/'s[64]",nname);
-				cmd_saoiinfo(playerid,nname);
+	switch(dialogid){
+		case DIALOG_SAOI_LIST: {
+			if(!response) return 0;
+			PlayerLastSAOI[playerid] = SAOI:(listitem+1);
+			ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","Select","Return");
+		}
+		case DIALOG_SAOI_ITEM: {
+			if(!response) return cmd_saoilist(playerid);
+			new fname[MAX_PATH],nname[MAX_SAOI_NAME_SIZE];
+			GetSAOILoadData(PlayerLastSAOI[playerid],fname);
+			sscanf(fname,"'/SAOI/'s[64]",nname);
+			switch(listitem){
+				case 0: return cmd_saoiinfo(playerid,nname);
+				case 1: return cmd_saoireload(playerid,nname);
+				case 2: return cmd_saoiunload(playerid,nname);
+				case 3: return cmd_saoitp(playerid,nname);
 			}
-			case DIALOG_SAOI_INFO: {
-				cmd_saoilist(playerid);
-			}
+		}
+		case DIALOG_SAOI_INFO: {
+			if(!response) return ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","Select","Return");
 		}
 	}
 	return 0;

@@ -28,6 +28,12 @@ SetDynamicObjectMaterial(tmpobj,0,10817,"airportgnd_sfse","black64",0x00000000);
 SetDynamicObjectMaterial(tmpobj,1,10817,"airportgnd_sfse","black64",0x00000000);
 SetDynamicObjectMaterial(tmpobj,2,10817,"airportgnd_sfse","black64",0x00000000);
 SetDynamicObjectMaterial(tmpobj,3,10817,"airportgnd_sfse","black64",0x00000000);
+
+//additional
+SetSAOIPositionFlag(MY_SAOI_FILE,1025.1938,1356.8513,10.8377,183.2121,0,0);
+
+SetSAOIBumperIP(MY_SAOI_FILE,"127.0.0.1");
+SetSAOIBumperPort(MY_SAOI_FILE,7777);
 ```
 
 - Place the file in the folder "pawn_code"
@@ -61,6 +67,11 @@ myobject.saoi
 - /saoiunload - unload saoi file
 - /saoireload - reload saoi file
 - /saoilist - show loaded saoi files
+- /streaminfo - show stream info
+- /saoitp - teleport to saoi flag
+
+## SAOI File Manager Video:
+https://www.youtube.com/watch?v=bNXAT_MzQUI
 
 
 ## Fragment file:
@@ -79,6 +90,9 @@ myobject.saoi
 - CountSAOIFileLoaded();
 - GetSAOIActiveTime(SAOI:index);
 - bool:IsSAOISlotFree(SAOI:index);
+- GetSAOIFileSize(SAOI:index);
+- bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);
+- SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);
 
 
 ## SAOI Extended Functions:

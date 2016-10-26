@@ -4,7 +4,7 @@
  *                                                                                                  *
  * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                    *
  *                                                                                                  *
- * Download: https://github.com/AbyssMorgan/SAOI/blob/master/Beta%20Version                         *
+ * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                           *
  *                                                                                                  *
  * Plugins: Streamer                                                                                *
  * Modules: SAOI                                                                                    *
@@ -30,11 +30,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.2
+	#error You need SAOI.inc v1.4.3
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.2
-#elseif (SAOI_LOADER_VERSION < 10402)
-	#error Update you SAOI.inc to v1.4.2
+	#error Update you SAOI.inc to v1.4.3
+#elseif (SAOI_LOADER_VERSION < 10403)
+	#error Update you SAOI.inc to v1.4.3
 #endif
 
 //Hook: CreateDynamicObject
