@@ -7,8 +7,6 @@
  * Download: https://github.com/AbyssMorgan/SAOI/tree/master/include                                                              *
  * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
  *                                                                                                                                *
- * This is Beta Version!                                                                                                          *
- *                                                                                                                                *
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *

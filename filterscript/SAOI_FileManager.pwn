@@ -433,6 +433,7 @@ CMD:saoitp(playerid,params[]){
 	SetPlayerFacingAngle(playerid,angle);
 	SetPlayerVirtualWorld(playerid,vw);
 	SetPlayerInterior(playerid,int);
+	SetCameraBehindPlayer(playerid);
 	return 1;
 }
 

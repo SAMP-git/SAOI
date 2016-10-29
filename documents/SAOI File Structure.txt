@@ -31,47 +31,71 @@ $AUTOR_DATA: {
 }
 
 $DATA: {
-	arg_number size:8b data: 7 - 14
+	arg_number size:8b data: 7 - 14, 201 - 203 {
+		ARG: 7 - 14 {
+			modelid size:16b
+			Float:x size:32b
+			Float:y size:32b
+			Float:z size:32b
+			Float:rx size:32b
+			Float:ry size:32b
+			Float:rz size:32b
+			worldid size:32b
+			interiorid size:32b
+			Float:streamdistance size:32b
+			Float:drawdistance size:32b
+			areaid size:32b
+			priority size:8b
+			object_flag {
+				anti_area size:1b
+				no_camera_col size:1b
+			} size:8b
 
-	modelid size:16b
-	Float:x size:32b
-	Float:y size:32b
-	Float:z size:32b
-	Float:rx size:32b
-	Float:ry size:32b
-	Float:rz size:32b
-	worldid size:32b
-	interiorid size:32b
-	Float:streamdistance size:32b
-	Float:drawdistance size:32b
-	areaid size:32b
-	priority size:8b
-	object_flag {
-		anti_area size:1b
-		no_camera_col size:1b
-	} size:8b
+			material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
 
-	material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
+			[for everyone material_used]
+			modelid size:16b
+			txdsize = strlen(txdname) size:8b
+			txdname size:txdsize
+			texturenamesize = strlen(texturename) size:8b
+			texturename size:texturenamesize
+			materialcolor size:32b
 
-	[for everyone material_used]
-	modelid size:16b
-	txdsize = strlen(txdname) size:8b
-	txdname size:txdsize
-	texturenamesize = strlen(texturename) size:8b
-	texturename size:texturenamesize
-	materialcolor size:32b
+			material_text_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
 
-	material_text_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
+			[for everyone material_text_used]
+			textsize = strlen(text) size:16b
+			text size:textsize
+			materialsize size:8b
+			fontfacesize = strlen(fontface) size:8b
+			fontface size:fontfacesize
+			fontsize size:8b
+			bold size:8b
+			fontcolor size:32b
+			backcolor size:32b
+			textalignment size:8b
+		}
+		
+		ARG: 201 {
+			//ip bumper!
+			server_ip size:32b
+		}
+		
+		ARG: 202 {
+			//port bumper!
+			server_port size:32b
+		}
+		
+		ARG: 203 {
+			//position bumper!
+			Float:x size:32b
+			Float:y size:32b
+			Float:z size:32b
+			Float:a size:32b
+			vw size:32b
+			int size:32b
+		}
+	}
 
-	[for everyone material_text_used]
-	textsize = strlen(text) size:16b
-	text size:textsize
-	materialsize size:8b
-	fontfacesize = strlen(fontface) size:8b
-	fontface size:fontfacesize
-	fontsize size:8b
-	bold size:8b
-	fontcolor size:32b
-	backcolor size:32b
-	textalignment size:8b
+	
 }
