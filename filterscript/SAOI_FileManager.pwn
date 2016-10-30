@@ -315,7 +315,7 @@ CMD:streaminfo(playerid){
 	);
 	strcat(szLIST,buffer);
 	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FF00}Philon info:",szLIST,"Wyjdz","");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Stream info",szLIST,"Wyjdz","");
 	return 1;
 }
 
@@ -428,7 +428,7 @@ CMD:saoitp(playerid,params[]){
 	GetSAOIPositionFlag(index,x,y,z,angle,vw,int);
 	
 	if(x == 0.0 && y == 0.0 && z == 0.0 && angle == 0.0 && vw == 0 && int == 0) return SendClientMessage(playerid,0xB01010FF,"Not found saved position!");
-	
+	Streamer_UpdateEx(playerid,x,y,z,vw,int,-1,500);
 	SetPlayerPos(playerid,x,y,z);
 	SetPlayerFacingAngle(playerid,angle);
 	SetPlayerVirtualWorld(playerid,vw);
