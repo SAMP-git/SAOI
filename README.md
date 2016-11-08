@@ -14,7 +14,7 @@
 - Ability to load, unload the selected files
 - Compression performance. Ratio ~33%
 - Filtering ip/port server, if anyone needs
-
+- Position Flag
 
 ## How to use SAOI:
 - Download and extract SAOI Generator (Windows).zip
@@ -60,6 +60,10 @@ myobject.saoi
 - /saoicmd - show saoi cmd
 - /addobjinfo - adds descriptions of objects
 - /delobjinfo - removes descriptions of objects
+- /addpickupinfo - adds descriptions of pickups
+- /delpickupinfo - removes descriptions of pickups
+- /addmapiconinfo - adds descriptions of mapicons
+- /delmapiconinfo - removes descriptions of mapicons
 - /objstatus - show total object status
 - /saoicapacity - shows the status of use of slots
 - /saoiinfo - show saoi file information
@@ -69,6 +73,12 @@ myobject.saoi
 - /saoilist - show loaded saoi files
 - /streaminfo - show stream info
 - /saoitp - teleport to saoi flag
+- /tptoobj - teleport to object
+- /delobject - destroy dynamic object
+- /delpickup - destroy dynamic pickup
+- /delmapicon - destroy dynamic mapicon
+- /objmaterial - get object materials
+- /objmaterialtext - get object material text
 
 ## SAOI File Manager Video:
 https://www.youtube.com/watch?v=bNXAT_MzQUI

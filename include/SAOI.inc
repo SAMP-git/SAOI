@@ -49,6 +49,7 @@
  * - Encrypted information: Author, Version, Description                                                                          *
  * - Ability to load, unload the selected files                                                                                   *
  * - Compression performance. Ratio ~33%                                                                                          *
+ * - Position Flag                                                                                                                *
  *                                                                                                                                *
  **********************************************************************************************************************************/
 
