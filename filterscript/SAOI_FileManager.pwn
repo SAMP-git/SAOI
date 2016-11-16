@@ -484,6 +484,8 @@ CMD:saoiinfo(playerid,params[]){
 		return SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	}
 	
+	PlayerLastSAOI[playerid] = index;
+	
 	new szLIST[1024], author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE],
 		fname[MAX_SAOI_NAME_SIZE], object_cnt, material_cnt, material_text_cnt, load_time, active_tick;
 	
