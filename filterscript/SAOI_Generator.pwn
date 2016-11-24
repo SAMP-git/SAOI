@@ -2,7 +2,7 @@
  *                                                                                                  *
  *                                        Easy SAOI Creator                                         *
  *                                                                                                  *
- * Copyright © 2016 Abyss Morgan & Crayder. All rights reserved.                                    *
+ * Copyright © 2016 Abyss Morgan. All rights reserved.                                              *
  *                                                                                                  *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                           *
  *                                                                                                  *
