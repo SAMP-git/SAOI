@@ -6,11 +6,13 @@
  *                                                                                                  *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                           *
  *                                                                                                  *
- * Plugins: Streamer                                                                                *
- * Modules: SAOI                                                                                    *
+ * Plugins: Streamer, SScanf                                                                        *
+ * Modules: SAOI, ObjectDist                                                                        *
  *                                                                                                  *
  * File Version: 1.0.1                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
+ * Streamer Version: 2.8.2                                                                          *
+ * SScanf Version: 2.8.2                                                                            *
  * SAOI Version: 1.4.0                                                                              *
  *                                                                                                  *
  ****************************************************************************************************/
