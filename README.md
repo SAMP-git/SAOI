@@ -15,6 +15,7 @@
 - Compression performance. Ratio ~33%
 - Filtering ip/port server, if anyone needs
 - Position Flag
+- Creation Date
 
 ## How to use SAOI:
 - Download and extract SAOI Generator (Windows).zip
@@ -57,6 +58,7 @@ myobject.saoi
 
 
 ## SAOI_FileManager Commands:
+- /saoi - shows statistics saoi 
 - /saoicmd - show saoi cmd
 - /addobjinfo - adds descriptions of objects
 - /delobjinfo - removes descriptions of objects
@@ -64,6 +66,8 @@ myobject.saoi
 - /delpickupinfo - removes descriptions of pickups
 - /addmapiconinfo - adds descriptions of mapicons
 - /delmapiconinfo - removes descriptions of mapicons
+- /addvehicleinfo - adds descriptions of vehicles
+- /delvehicleinfo - removes descriptions of vehicles
 - /objstatus - show total object status
 - /saoicapacity - shows the status of use of slots
 - /saoiinfo - show saoi file information
@@ -103,7 +107,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - GetSAOIFileSize(SAOI:index);
 - bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);
 - SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);
-
+- bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output)); 
 
 ## SAOI Extended Functions:
 - SAOIToInt(SAOI:variable);

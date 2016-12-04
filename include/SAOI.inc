@@ -10,7 +10,7 @@
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.4.3                                                                                                            *
+ * File Version: 1.4.4                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -33,6 +33,7 @@
  * GetSAOIFileSize(SAOI:index);                                                                                                   *
  * bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);                          *
  * SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);                              *
+ * bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output));                                                    *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOIToInt(SAOI:variable);                                                                                                      *
@@ -50,17 +51,18 @@
  * - Ability to load, unload the selected files                                                                                   *
  * - Compression performance. Ratio ~33%                                                                                          *
  * - Position Flag                                                                                                                *
+ * - Creation Date
  *                                                                                                                                *
  **********************************************************************************************************************************/
 
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.3
+	#error You need SAOI.inc v1.4.4
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.3
-#elseif (SAOI_LOADER_VERSION < 10403)
-	#error Update you SAOI.inc to v1.4.3
+	#error Update you SAOI.inc to v1.4.4
+#elseif (SAOI_LOADER_VERSION < 10404)
+	#error Update you SAOI.inc to v1.4.4
 #endif
 */
 
@@ -78,7 +80,7 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10403)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10404)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -139,6 +141,7 @@
 #define SAOI_BUMPER_IP						(201)
 #define SAOI_BUMPER_PORT					(202)
 #define SAOI_BUMPER_POS						(203)
+#define SAOI_BUMPER_CREATED					(204)
 
 #define SAOIToInt(%0)						(_:%0)
 
@@ -179,7 +182,8 @@ enum e_saoi {
 	Float:saoi_posZ,
 	Float:saoi_posA,
 	saoi_vw,
-	saoi_int
+	saoi_int,
+	saoi_created[32]
 }
 
 new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
@@ -187,6 +191,12 @@ new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
 
 stock GetSAOIFileSize(SAOI:index){
 	return SAOIFile[index][saoi_size];
+}
+
+stock bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output)){
+	if(!SAOIFile[index][saoi_status]) return false;
+	format(output,max_dest,"%s",SAOIFile[index][saoi_created]);
+	return true;
 }
 
 stock bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
@@ -286,6 +296,11 @@ stock SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_readwrite);
 	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	new year,month,day,hour,minute,second;
+	getdate(year,month,day);
+	gettime(hour,minute,second);
+	
 	fwrite(outf,SAOI_HEADER_KEY);
 	//Create Header
 	new author_size = strlen(author),
@@ -348,6 +363,22 @@ stock SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 	for(new i = 0; i < 32; i++){
 		fputchar(outf,((256-key[i]) & 0xFF),false);
 	}
+
+	fputchar(outf,SAOI_BUMPER_CREATED,false);
+	
+	new int1, int2, int3, int4;
+	SAOI_ExtractValue(year,int1,int2,int3,int4);
+	fputchar(outf,SAOI_IntMod(int3),false);
+	fputchar(outf,SAOI_IntMod(int4),false);
+	
+	fputchar(outf,SAOI_IntMod(month),false);
+	fputchar(outf,SAOI_IntMod(day),false);
+	fputchar(outf,SAOI_IntMod(hour),false);
+	fputchar(outf,SAOI_IntMod(minute),false);
+	fputchar(outf,SAOI_IntMod(second),false);
+	
+	#pragma unused int1,int2
+	
 	fclose(outf);
 	return SAOI_ERROR_SUCCESS;
 }
@@ -865,6 +896,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				
 				parse_header = true;
 			} else {
+				SAOIFile[index][saoi_status] = false;
 				fclose(inpf);
 				return SAOI_ERROR_INVALID_HEADER;
 			}
@@ -874,6 +906,18 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				arg_count = fgetchar(inpf,0,false), idx++;
 				if(arg_count > MAX_ARG_COUNT){
 					switch(arg_count){
+						case SAOI_BUMPER_CREATED: {
+							new year,month,day,hour,minute,second;
+							year = SAOI_MergeValueEx(0,0,SAOI_IntMod(fgetchar(inpf,0,false)),SAOI_IntMod(fgetchar(inpf,0,false)));
+							month = SAOI_IntMod(fgetchar(inpf,0,false));
+							day = SAOI_IntMod(fgetchar(inpf,0,false));
+							hour = SAOI_IntMod(fgetchar(inpf,0,false));
+							minute = SAOI_IntMod(fgetchar(inpf,0,false));
+							second = SAOI_IntMod(fgetchar(inpf,0,false));
+							format(SAOIFile[index][saoi_created],32,"%04d.%02d.%02d %02d:%02d:%02d",year,month,day,hour,minute,second);
+							idx += 7;
+							continue;
+						}
 						case SAOI_BUMPER_POS: {
 							SAOIFile[index][saoi_posX] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
 							SAOIFile[index][saoi_posY] = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false)); 
@@ -914,6 +958,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 							continue;
 						}
 						default: {
+							SAOIFile[index][saoi_status] = false;
 							fclose(inpf);
 							return SAOI_ERROR_INVALID_ARG_COUNT;
 						}
@@ -1130,6 +1175,7 @@ stock bool:UnloadObjectImage(&SAOI:index){
 	SAOIFile[index][saoi_vw] = 0;
 	SAOIFile[index][saoi_int] = 0;
 	SAOIFile[index][saoi_object_offset] = INVALID_STREAMER_ID;
+	format(SAOIFile[index][saoi_created],32,"");
 	index = INVALID_SAOI_FILE;
 	return true;
 }

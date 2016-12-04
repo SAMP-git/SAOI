@@ -6,30 +6,34 @@
  *                                                                                                  *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                           *
  *                                                                                                  *
- * Plugins: Streamer, SScanf, MapAndreas/ColAndreas                                                 *
+ * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                            *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                              *
  *                                                                                                  *
- * File Version: 1.2.0                                                                              *
+ * File Version: 1.3.0                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
  * Streamer Version: 2.8.2                                                                          *
  * SScanf Version: 2.8.2                                                                            *
  * MapAndreas Version: 1.2.1                                                                        *
  * ColAndreas Version: 1.4.0                                                                        *
- * SAOI Version: 1.4.2                                                                              *
+ * SAOI Version: 1.4.4                                                                              *
  * 3DTryg Version: 3.0.4                                                                            *
  * StreamerFunction Version: 2.5.5                                                                  *
+ * YSF Version: R16                                                                                 *
  *                                                                                                  *
  * Notice:                                                                                          *
  * Required directory /scriptfiles/SAOI                                                             *
  *                                                                                                  *
  * Commands:                                                                                        *
  * /saoicmd - show saoi cmd                                                                         *
+ * /saoi - shows statistics saoi                                                                    *
  * /addobjinfo - adds descriptions of objects                                                       *
  * /delobjinfo - removes descriptions of objects                                                    *
  * /addpickupinfo - adds descriptions of pickups                                                    *
  * /delpickupinfo - removes descriptions of pickups                                                 *
  * /addmapiconinfo - adds descriptions of mapicons                                                  *
  * /delmapiconinfo - removes descriptions of mapicons                                               *
+ * /addvehicleinfo - adds descriptions of vehicles                                                  *
+ * /delvehicleinfo - removes descriptions of vehicles                                               *
  * /objstatus - show total object status                                                            *
  * /saoicapacity - shows the status of use of slots                                                 *
  * /saoiinfo - show saoi file information                                                           *
@@ -58,15 +62,16 @@
 
 #include <sscanf2>
 #include <streamer>
+#tryinclude <YSF>
 
 #tryinclude <izcmd>
 #if !defined CMD
 	#include <zcmd>
 #endif
 
-#tryinclude <ColAndreas>
+#tryinclude <colandreas>
 #if !defined COLANDREAS
-	#include <MapAndreas>
+	#include <mapandreas>
 #endif
 
 #include <SAM/StreamerFunction>
@@ -106,11 +111,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.3
+	#error You need SAOI.inc v1.4.4
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.3
-#elseif (SAOI_LOADER_VERSION < 10403)
-	#error Update you SAOI.inc to v1.4.3
+	#error Update you SAOI.inc to v1.4.4
+#elseif (SAOI_LOADER_VERSION < 10404)
+	#error Update you SAOI.inc to v1.4.4
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -122,11 +127,21 @@
 
 new Text3D:FindObjectLabel[MAX_FIND_OBJECT],
 	bool:FindObject = false,
+	FindObjectCnt,
 	Text3D:FindPickupLabel[MAX_FIND_PICKUP],
 	bool:FindPickup = false,
+	FindPickupCnt,
 	Text3D:FindMapIconLabel[MAX_FIND_MAPICON],
 	bool:FindMapIcon = false,
+	FindMapIconCnt,
 	SAOI:PlayerLastSAOI[MAX_PLAYERS];
+	
+#if defined _YSF_included
+	new Text3D:FindVehicleLabel[MAX_VEHICLES],
+		FindVehiclePickup[MAX_VEHICLES],
+		bool:FindVeh = false,
+		FindVehCnt;
+#endif
 
 stock PrintSAOIErrorName(SAOI:index){
 	switch(index){
@@ -187,6 +202,7 @@ stock FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 20.0){
 				cnt++;
 			}
 		}
+		FindObjectCnt = cnt;
 	}
 }
 
@@ -222,6 +238,7 @@ stock FindDynamicPickup(playerid,Float:findradius,Float:streamdistance = 20.0){
 				cnt++;
 			}
 		}
+		FindPickupCnt = cnt;
 	}
 }
 
@@ -261,6 +278,7 @@ stock FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 20.0){
 				cnt++;
 			}
 		}
+		FindMapIconCnt = cnt;
 	}
 }
 
@@ -270,6 +288,36 @@ stock RemoveFindDynamicMapIconLabel(){
 	}
 }
 
+#if defined _YSF_included
+	stock FindVehicle(Float:streamdistance = 20.0){
+		new buffer[256], szLIST[768], cnt = 0, Float:x, Float:y, Float:z, Float:angle, color1, color2;
+		
+		for(new i = 0, j = GetVehiclePoolSize(); i <= j; i++){
+			if(IsValidVehicle(i)){
+				GetVehicleSpawnInfo(i,x,y,z,angle,color1,color2);
+				szLIST = "";
+				format(buffer,sizeof buffer,"{89C1FA}Vehicle: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d)\n",i,GetVehicleModel(i),GetVehicleVirtualWorld(i),GetVehicleInterior(i));
+				strcat(szLIST,buffer);
+				format(buffer,sizeof buffer,"{89C1FA}Spawn: {00AAFF}(%.7f,%.7f,%.7f,%.7f)\n",x,y,z,angle);
+				strcat(szLIST,buffer);
+				format(buffer,sizeof buffer,"{89C1FA}Color: {00AAFF}(%d %d)",color1,color2);
+				strcat(szLIST,buffer);
+				FindVehicleLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				FindVehiclePickup[cnt] = CreateDynamicPickup(1316,1,x,y,z,-1,-1,-1,streamdistance);
+				cnt++;
+			}
+		}
+		FindVehCnt = cnt;
+	}
+
+	stock RemoveFindVehicleLabel(){
+		for(new i = 0; i < MAX_VEHICLES; i++){
+			if(IsValidDynamic3DTextLabel(FindVehicleLabel[i])) DestroyDynamic3DTextLabel(FindVehicleLabel[i]);
+			if(IsValidDynamicPickup(FindVehiclePickup[i])) DestroyDynamicPickup(FindVehiclePickup[i]);
+		}
+	}
+#endif
+
 stock fcreate(const name[]){
 	if(!fexist(name)){
 		new File:cfile = fopen(name,io_readwrite);
@@ -278,6 +326,62 @@ stock fcreate(const name[]){
 		return 1;
 	}
 	return 0;
+}
+
+CMD:saoi(playerid){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	
+	new szLIST[3096], buffer[256], fname[MAX_PATH],
+		object_cnt, material_cnt, material_text_cnt, load_time,
+		t_object_cnt = 0, t_material_cnt = 0, t_material_text_cnt = 0, t_load_time = 0;
+	
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+		if(!IsSAOISlotFree(i)){
+			GetSAOILoadData(i,fname,object_cnt,material_cnt,material_text_cnt,load_time);
+			t_object_cnt += object_cnt;
+			t_material_cnt += material_cnt;
+			t_material_text_cnt += material_text_cnt;
+			t_load_time += load_time;
+		}
+	}
+	szLIST = "";
+	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(FindFreeSAOIID()));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d {00AAFF}Load Time: {00FF00}%d {00AAFF}ms\n",t_object_cnt,t_material_cnt,t_material_text_cnt,t_load_time);
+	strcat(szLIST,buffer);
+	
+	if(FindObject){
+		format(buffer,sizeof buffer,"{00AAFF}Object Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindObjectCnt,MAX_FIND_OBJECT);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}Object Info: {FF0000}NO\n");
+	}
+	strcat(szLIST,buffer);
+	
+	if(FindPickup){
+		format(buffer,sizeof buffer,"{00AAFF}Pickup Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindPickupCnt,MAX_FIND_PICKUP);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}Pickup Info: {FF0000}NO\n");
+	}
+	strcat(szLIST,buffer);
+	
+	if(FindMapIcon){
+		format(buffer,sizeof buffer,"{00AAFF}MapIcon Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindMapIconCnt,MAX_FIND_MAPICON);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}MapIcon Info: {FF0000}NO\n");
+	}
+	strcat(szLIST,buffer);
+	
+	#if defined _YSF_included
+		if(FindVeh){
+			format(buffer,sizeof buffer,"{00AAFF}Vehicle Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindVehCnt,MAX_VEHICLES);
+		} else {
+			format(buffer,sizeof buffer,"{00AAFF}Vehicle Info: {FF0000}NO\n");
+		}
+		strcat(szLIST,buffer);
+	#endif
+	
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Statistics", szLIST, "Exit", "");
+	return 1;
 }
 
 CMD:addpickupinfo(playerid,params[]){
@@ -403,6 +507,32 @@ CMD:delmapicon(playerid,params[]){
 	return 1;
 }
 
+#if defined _YSF_included
+	CMD:addvehicleinfo(playerid,params[]){
+		if(!IsPlayerAdmin(playerid)) return 0;
+		if(FindVeh) return SendClientMessage(playerid,0xB01010FF,"The function is active, usage /delvehicleinfo");
+		if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addvehicleinfo <streamdistance (1-300)>");
+		new Float:sd;
+		sscanf(params,"f",sd);
+		if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
+		new buffer[256];
+		format(buffer,sizeof buffer,"The vehicle description was included, coverage %.0fm",sd);
+		SendClientMessage(playerid,0xFFFFFFFF,buffer);
+		FindVehicle(sd);
+		FindVeh = true;
+		return 1;
+	}
+
+	CMD:delvehicleinfo(playerid){
+		if(!IsPlayerAdmin(playerid)) return 0;
+		if(!FindVeh) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
+		RemoveFindVehicleLabel();
+		FindVeh = false;
+		SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of vehicles");
+		return 1;
+	}
+#endif
+
 CMD:tptoobj(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /tptoobj <objectid>");
@@ -487,7 +617,7 @@ CMD:saoiinfo(playerid,params[]){
 	PlayerLastSAOI[playerid] = index;
 	
 	new szLIST[1024], author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE],
-		fname[MAX_SAOI_NAME_SIZE], object_cnt, material_cnt, material_text_cnt, load_time, active_tick;
+		fname[MAX_SAOI_NAME_SIZE], object_cnt, material_cnt, material_text_cnt, load_time, active_tick, created_data[32];
 	
 	szLIST = "";
 	GetSAOIFileHeader(path,author,version,description);
@@ -512,6 +642,14 @@ CMD:saoiinfo(playerid,params[]){
 		format(buffer,sizeof buffer,"{00AAFF}Position: {00FF00}Not found saved position.\n");
 	} else {
 		format(buffer,sizeof buffer,"{00AAFF}Position: {00FF00}%.4f %.4f %.4f {00AAFF}Angle: {00FF00}%.1f {00AAFF}World: {00FF00}%d {00AAFF}Interior: {00FF00}%d\n",x,y,z,angle,vw,int);
+	}
+	strcat(szLIST,buffer);
+	
+	GetSAOIFileCreationData(index,created_data);
+	if(isnull(created_data)){
+		format(buffer,sizeof buffer,"{00AAFF}Created: {00FF00}Not found created data.\n");
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}Created: {00FF00}%s\n",created_data);
 	}
 	strcat(szLIST,buffer);
 	
@@ -693,12 +831,17 @@ CMD:saoitp(playerid,params[]){
 CMD:saoicmd(playerid){
 	if(!IsPlayerAdmin(playerid)) return 0;
 	new szLIST[2048];
+	strcat(szLIST,"{00FF00}/saoi - {00AAFF}shows statistics saoi\n");
 	strcat(szLIST,"{00FF00}/addobjinfo - {00AAFF}adds descriptions of objects\n");
 	strcat(szLIST,"{00FF00}/delobjinfo - {00AAFF}removes descriptions of objects\n");
 	strcat(szLIST,"{00FF00}/addpickupinfo - {00AAFF}adds descriptions of pickups\n");
 	strcat(szLIST,"{00FF00}/delpickupinfo - {00AAFF}removes descriptions of pickups\n");
 	strcat(szLIST,"{00FF00}/addmapiconinfo - {00AAFF}adds descriptions of mapicons\n");
 	strcat(szLIST,"{00FF00}/delmapiconinfo - {00AAFF}removes descriptions of mapicons\n");
+	#if defined _YSF_included
+		strcat(szLIST,"{00FF00}/addvehicleinfo - {00AAFF}adds descriptions of vehicles\n");
+		strcat(szLIST,"{00FF00}/delvehicleinfo - {00AAFF}removes descriptions of vehicles\n");
+	#endif
 	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
 	strcat(szLIST,"{00FF00}/saoicapacity - {00AAFF}shows the status of use of slots\n");
 	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");

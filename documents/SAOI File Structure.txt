@@ -95,6 +95,16 @@ $DATA: {
 			vw size:32b
 			int size:32b
 		}
+		
+		ARG 204 {
+			//created data bumper!
+			year size:16b
+			month size:8b
+			day size:8b
+			hour size:8b
+			minute size:8b
+			second size:8b
+		}
 	}
 
 	
