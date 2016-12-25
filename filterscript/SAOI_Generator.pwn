@@ -32,11 +32,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.3
+	#error You need SAOI.inc v1.5.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.3
-#elseif (SAOI_LOADER_VERSION < 10403)
-	#error Update you SAOI.inc to v1.4.3
+	#error Update you SAOI.inc to v1.5.0
+#elseif (SAOI_LOADER_VERSION < 10500)
+	#error Update you SAOI.inc to v1.5.0
 #endif
 
 //Hook: CreateDynamicObject
@@ -54,12 +54,24 @@ stock STREAMER_TAG_OBJECT AC_CreateDynamicObject(modelid,Float:x,Float:y,Float:z
 #endif
 #define CreateDynamicObject AC_CreateDynamicObject
 
+//Hook: RemoveBuildingForPlayer
+stock AC_RemoveBuildingForPlayer(playerid,modelid,Float:x,Float:y,Float:z,Float:radius){
+	#pragma unused playerid
+	SaveRemoveBuilding(MY_SAOI_FILE,modelid,x,y,z,radius);
+}
+
+#if defined _ALS_RemoveBuildingForPlayer
+	#undef RemoveBuildingForPlayer
+#else
+	#define _ALS_RemoveBuildingForPlayer
+#endif
+#define RemoveBuildingForPlayer AC_RemoveBuildingForPlayer
 
 stock PutObjectHere(){
+	new playerid;
 	//Put Object Here
 	
-	
-	
+
 	//Put Object Here
 }
 

@@ -10,7 +10,7 @@
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 1.4.4                                                                                                            *
+ * File Version: 1.5.0                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -24,20 +24,34 @@
  * SAOI:SetSAOIBumperIP(const name[],server_ip[]);                                                                                *
  * SAOI:SetSAOIBumperPort(const name[],server_port);                                                                              *
  * bool:UnloadObjectImage(&SAOI:index);                                                                                           *
- * bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0);        *
+ * bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0,         *
+ *                      &removed_object=0);                                                                                       *
  * bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);                                                             *
  * CountObjectsForIndex(SAOI:index);                                                                                              *
  * CountSAOIFileLoaded();                                                                                                         *
  * GetSAOIActiveTime(SAOI:index);                                                                                                 *
- * bool:IsSAOISlotFree(SAOI:index);                                                                                               *
  * GetSAOIFileSize(SAOI:index);                                                                                                   *
  * bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);                          *
  * SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);                              *
- * bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output));                                                    *
+ * bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output));                                                   *
+ * SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius);                                            *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOIToInt(SAOI:variable);                                                                                                      *
- * SAOI:FindFreeSAOIID();                                                                                                         *
+ * bool:SAOI_IsSlotFree(SAOI:index);                                                                                              *
+ * SAOI:SAOI_GetFreeID();                                                                                                         *
+ * SAOI_GetFreeRemoveBuildingID();                                                                                                *
+ * SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius);                                                  *
+ * SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius);                               *
+ * SAOI_DropRemoveBuildings(SAOI:index);                                                                                          *
+ * SAOI_OnErrorCleanup(SAOI:index,object_count);                                                                                  *
+ * SAOI_RemoveBuildingsForPlayer(playerid);                                                                                       *
+ * SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index);                                                                            *
+ * SAOI_CountRemovedBuildings();                                                                                                  *
+ * SAOI_GetMemoryLoaded();                                                                                                        *
+ *                                                                                                                                *
+ * Callbacks:                                                                                                                     *
+ * OnSAOIRemovedBuildingsForPlayer(playerid,buildings);                                                                           *
  *                                                                                                                                *
  **********************************************************************************************************************************
  *                                                                                                                                *
@@ -50,22 +64,23 @@
  * - Encrypted information: Author, Version, Description                                                                          *
  * - Ability to load, unload the selected files                                                                                   *
  * - Compression performance. Ratio ~33%                                                                                          *
+ * - Filtering ip/port server, if anyone needs                                                                                    *
  * - Position Flag                                                                                                                *
- * - Creation Date
+ * - Creation Date                                                                                                                *
+ * - RemoveBuildingForPlayer                                                                                                      *
  *                                                                                                                                *
  **********************************************************************************************************************************/
 
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.4
+	#error You need SAOI.inc v1.5.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.4
-#elseif (SAOI_LOADER_VERSION < 10404)
-	#error Update you SAOI.inc to v1.4.4
+	#error Update you SAOI.inc to v1.5.0
+#elseif (SAOI_LOADER_VERSION < 10500)
+	#error Update you SAOI.inc to v1.5.0
 #endif
 */
-
 
 #if !defined Streamer_AppendArrayData
 	#error [ADM] Unknown Streamer Version
@@ -80,7 +95,7 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10404)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10500)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -142,11 +157,13 @@
 #define SAOI_BUMPER_PORT					(202)
 #define SAOI_BUMPER_POS						(203)
 #define SAOI_BUMPER_CREATED					(204)
+#define SAOI_BUMPER_REMOVEBUILDING			(205)
 
 #define SAOIToInt(%0)						(_:%0)
 
 #define SAOI_Comp(%0,%1)					((((%0)+128) & 0xFF) != (%1))
 
+#define SAOIProt::							stock
 
 //BitFunctions.inc
 #define SAOI_GetValueBit(%0,%1)				((%0) >>> (%1) & 0x01)
@@ -167,12 +184,22 @@
 	#define isnull(%1) ((!(%1[0])) || (((%1[0]) == '\1') && (!(%1[1]))))
 #endif
 
+enum e_remove_building {
+	SAOI:saoi_index,
+	saoi_modelid,
+	Float:saoi_x,
+	Float:saoi_y,
+	Float:saoi_z,
+	Float:saoi_r
+}
+
 enum e_saoi {
 	bool:saoi_status,
 	saoi_name[MAX_SAOI_NAME_SIZE],
 	saoi_object_cnt,
 	saoi_material_cnt,
 	saoi_material_text_cnt,
+	saoi_removed_cnt,
 	saoi_load_time,
 	saoi_active_tick,
 	saoi_object_offset,
@@ -187,19 +214,136 @@ enum e_saoi {
 }
 
 new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
-	SAOIObjectArea[MAX_SAOI_AREA];
+	SAOIObjectArea[MAX_SAOI_AREA],
+	SAOIRemoveBuildings[MAX_OBJECTS][e_remove_building],
+	SAOIRemoveUpperbound = -1,
+	SAOIPlayerFirstSpawn[MAX_PLAYERS];
+	
+forward OnSAOIRemovedBuildingsForPlayer(playerid,buildings);
 
-stock GetSAOIFileSize(SAOI:index){
+SAOIProt:: SAOI_CountRemovedBuildings(){
+	new cnt = 0;
+	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
+		if(SAOIRemoveBuildings[i][saoi_modelid] != 0){
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+SAOIProt:: SAOI_GetFreeRemoveBuildingID(){
+	for(new i = 0; i < MAX_OBJECTS; i++){
+		if(SAOIRemoveBuildings[i][saoi_modelid] == 0){
+			if(i > SAOIRemoveUpperbound) SAOIRemoveUpperbound = i;
+			return i;
+		}
+	}
+	return MAX_OBJECTS;
+}
+
+SAOIProt:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius){
+	if(SAOIRemoveBuildings[remove_id][saoi_modelid] == 0) return 0;
+	modelid = SAOIRemoveBuildings[remove_id][saoi_modelid];
+	x = SAOIRemoveBuildings[remove_id][saoi_x];
+	y = SAOIRemoveBuildings[remove_id][saoi_y];
+	z = SAOIRemoveBuildings[remove_id][saoi_z];
+	radius = SAOIRemoveBuildings[remove_id][saoi_r];
+	index = SAOIRemoveBuildings[remove_id][saoi_index];
+	return 1;
+}
+
+SAOIProt:: SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius){
+	if(!SAOIFile[index][saoi_status]) return false;
+	new remove_id = SAOI_GetFreeRemoveBuildingID();
+	if(remove_id == MAX_OBJECTS) return MAX_OBJECTS;
+	SAOIRemoveBuildings[remove_id][saoi_modelid] = modelid;
+	SAOIRemoveBuildings[remove_id][saoi_x] = x;
+	SAOIRemoveBuildings[remove_id][saoi_y] = y;
+	SAOIRemoveBuildings[remove_id][saoi_z] = z;
+	SAOIRemoveBuildings[remove_id][saoi_r] = radius;
+	SAOIRemoveBuildings[remove_id][saoi_index] = index;
+	return remove_id;
+}
+
+SAOIProt:: SAOI_DropRemoveBuildings(SAOI:index){
+	if(!SAOIFile[index][saoi_status]) return 0;
+	new cnt = 0;
+	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
+		if(SAOIRemoveBuildings[i][saoi_index] == index){
+			SAOIRemoveBuildings[i][saoi_modelid] = 0;
+			SAOIRemoveBuildings[i][saoi_x] = 0.0;
+			SAOIRemoveBuildings[i][saoi_y] = 0.0;
+			SAOIRemoveBuildings[i][saoi_z] = 0.0;
+			SAOIRemoveBuildings[i][saoi_r] = 0.0;
+			SAOIRemoveBuildings[i][saoi_index] = INVALID_SAOI_FILE;
+			if(i == SAOIRemoveUpperbound) SAOIRemoveUpperbound--;
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+SAOIProt:: SAOI_RemoveBuildingsForPlayer(playerid){
+	new cnt = 0;
+	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
+		if(SAOIRemoveBuildings[i][saoi_modelid] != 0){
+			RemoveBuildingForPlayer(playerid,SAOIRemoveBuildings[i][saoi_modelid],SAOIRemoveBuildings[i][saoi_x],SAOIRemoveBuildings[i][saoi_y],SAOIRemoveBuildings[i][saoi_z],SAOIRemoveBuildings[i][saoi_r]);
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+SAOIProt:: SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index){
+	if(!SAOIFile[index][saoi_status]) return 0;
+	new cnt = 0;
+	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
+		if(SAOIRemoveBuildings[i][saoi_modelid] != 0 && SAOIRemoveBuildings[i][saoi_index] == index){
+			RemoveBuildingForPlayer(playerid,SAOIRemoveBuildings[i][saoi_modelid],SAOIRemoveBuildings[i][saoi_x],SAOIRemoveBuildings[i][saoi_y],SAOIRemoveBuildings[i][saoi_z],SAOIRemoveBuildings[i][saoi_r]);
+			cnt++;
+		}
+	}
+	return cnt;
+}
+
+SAOIProt:: bool:SAOI_IsSlotFree(SAOI:index){
+	return (!SAOIFile[index][saoi_status]);
+}
+
+SAOIProt:: SAOI:SAOI_GetFreeID(){
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+		if(!SAOIFile[i][saoi_status]) return i;
+	}
+	return INVALID_SAOI_FILE;
+}
+
+SAOIProt:: CountSAOIFileLoaded(){
+	new cnt = 0;
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+		if(SAOIFile[i][saoi_status]) cnt++;
+	}
+	return cnt;
+}
+
+SAOIProt:: SAOI_GetMemoryLoaded(){
+	new cnt = 0;
+	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+		if(SAOIFile[i][saoi_status]) cnt += SAOIFile[i][saoi_size];
+	}
+	return cnt;
+}
+
+SAOIProt:: GetSAOIFileSize(SAOI:index){
 	return SAOIFile[index][saoi_size];
 }
 
-stock bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output)){
+SAOIProt:: bool:GetSAOIFileCreationData(SAOI:index,output[],max_dest = sizeof(output)){
 	if(!SAOIFile[index][saoi_status]) return false;
 	format(output,max_dest,"%s",SAOIFile[index][saoi_created]);
 	return true;
 }
 
-stock bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
+SAOIProt:: bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
 	if(!SAOIFile[index][saoi_status]) return false;
 	x = SAOIFile[index][saoi_posX];
 	y = SAOIFile[index][saoi_posY];
@@ -210,7 +354,7 @@ stock bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angl
 	return true;
 }
 
-stock SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior){
+SAOIProt:: SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append), int1, int2, int3, int4;
@@ -240,7 +384,35 @@ stock SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
+SAOIProt:: SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius){
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append), int1, int2, int3, int4;
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	fputchar(outf,SAOI_BUMPER_REMOVEBUILDING,false);
+	
+	SAOI_ExtractValue(modelid,int1,int2,int3,int4);
+	fputchar(outf,int3,false), fputchar(outf,int4,false);
+
+	SAOI_ExtractFloat(x,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(y,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(z,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(radius,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+}
+
+
+SAOIProt:: bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	new tmp_saoi_name[MAX_SAOI_NAME_SIZE];
 	format(tmp_saoi_name,MAX_SAOI_NAME_SIZE,"%s",name);
 	for(new i = strlen(tmp_saoi_name)-1; i >= 0; i--){
@@ -260,38 +432,19 @@ stock bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	return false;
 }
 
-stock CountSAOIFileLoaded(){
-	new cnt = 0;
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
-		if(SAOIFile[i][saoi_status]) cnt++;
-	}
-	return cnt;
-}
-
-stock bool:IsSAOISlotFree(SAOI:index){
-	if(!SAOIFile[index][saoi_status]) return true;
-	return false;
-}
-
-stock SAOI:FindFreeSAOIID(){
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
-		if(!SAOIFile[i][saoi_status]) return i;
-	}
-	return INVALID_SAOI_FILE;
-}
-
-stock bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0){
+SAOIProt:: bool:GetSAOILoadData(SAOI:index,name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,&active_tick=0,&removed_object=0){
 	if(!SAOIFile[index][saoi_status]) return false;
 	object_cnt =		SAOIFile[index][saoi_object_cnt];
 	material_cnt =		SAOIFile[index][saoi_material_cnt];
 	material_text_cnt =	SAOIFile[index][saoi_material_text_cnt];
 	load_time =			SAOIFile[index][saoi_load_time];
 	active_tick =		SAOIFile[index][saoi_active_tick];
+	removed_object =	SAOIFile[index][saoi_removed_cnt];
 	format(name,MAX_SAOI_NAME_SIZE,"%s",SAOIFile[index][saoi_name]);
 	return true;
 }
 
-stock SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
+SAOIProt:: SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 	if(fexist(name)) return SAOI_ERROR_OUTPUT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_readwrite);
@@ -383,7 +536,7 @@ stock SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:SaveDynamicObject(objectid,const name[]){
+SAOIProt:: SAOI:SaveDynamicObject(objectid,const name[]){
 	if(!IsValidDynamicObject(objectid)) return SAOI_ERROR_INVALID_OBJECTID;
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
@@ -609,7 +762,7 @@ stock SAOI:SaveDynamicObject(objectid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:SetSAOIBumperIP(const name[],server_ip[]){
+SAOIProt:: SAOI:SetSAOIBumperIP(const name[],server_ip[]){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append);
@@ -632,7 +785,7 @@ stock SAOI:SetSAOIBumperIP(const name[],server_ip[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:SetSAOIBumperPort(const name[],server_port){
+SAOIProt:: SAOI:SetSAOIBumperPort(const name[],server_port){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append);
@@ -655,7 +808,7 @@ stock SAOI:SetSAOIBumperPort(const name[],server_port){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
+SAOIProt:: SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
 	new File:inpf = fopen(name,io_read);
@@ -725,7 +878,7 @@ stock SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-stock SAOI:SAOIHeaderCopy(const input[],const output[]){
+SAOIProt:: SAOI:SAOIHeaderCopy(const input[],const output[]){
 	if(!fexist(input)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(fexist(output)) return SAOI_ERROR_OUTPUT_EXIST;
 	new File:inpf = fopen(input,io_read);
@@ -804,9 +957,27 @@ stock SAOI:SAOIHeaderCopy(const input[],const output[]){
 	
 }
 
-stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false){
+SAOIProt:: SAOI_OnErrorCleanup(SAOI:index,object_count){
+	if(!SAOIFile[index][saoi_status]) return false;
+	SAOI_DropRemoveBuildings(index);
+	if(object_count > 0){
+		new max_idx = SAOIFile[index][saoi_object_cnt], i = SAOIFile[index][saoi_object_offset], j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
+		while(i <= j && max_idx > 0){
+			if(IsValidDynamicObject(i)){
+					if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+SAOIToInt(index))){
+					max_idx--;
+					DestroyDynamicObject(i);
+				}
+			}
+			i++;
+		}
+	}
+	return true;
+}
+
+SAOIProt:: SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_text_cnt=0,&load_time=0,bool:use_saoi_area=false){
 	object_cnt = 0, material_cnt = 0, material_text_cnt = 0, load_time = 0;
-	new SAOI:index = FindFreeSAOIID();
+	new SAOI:index = SAOI_GetFreeID();
 	if(index == INVALID_SAOI_FILE) return SAOI_ERROR_NOT_ENOUGH_CAPACITY;
 	
 	new NTTime = GetTickCount();
@@ -832,7 +1003,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	}
 	
 	new modelid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, worldid = -1, interiorid = -1, Float:streamdistance = 300.0, Float:drawdistance = 0.0, areaid = -1, priority = 0,
-		arg_count = 0, material_used = 0, material_text_used = 0, objectid, object_flag = 0;
+		arg_count = 0, material_used = 0, material_text_used = 0, objectid, object_flag = 0, removed_cnt = 0;
 	
 	SAOIFile[index][saoi_posX] = 0.0;
 	SAOIFile[index][saoi_posY] = 0.0;
@@ -906,6 +1077,18 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 				arg_count = fgetchar(inpf,0,false), idx++;
 				if(arg_count > MAX_ARG_COUNT){
 					switch(arg_count){
+						case SAOI_BUMPER_REMOVEBUILDING: {
+							//RemoveBuildingForPlayer
+							modelid = SAOI_MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							x = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							y = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							z = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							streamdistance = SAOI_MergeFloatEx(fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+							idx += 18;
+							SAOI_RemoveBuilding(index,modelid,x,y,z,streamdistance);
+							removed_cnt++;
+							continue;
+						}
 						case SAOI_BUMPER_CREATED: {
 							new year,month,day,hour,minute,second;
 							year = SAOI_MergeValueEx(0,0,SAOI_IntMod(fgetchar(inpf,0,false)),SAOI_IntMod(fgetchar(inpf,0,false)));
@@ -958,8 +1141,24 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 							continue;
 						}
 						default: {
+							SAOI_OnErrorCleanup(index,object_cnt);
 							SAOIFile[index][saoi_status] = false;
+							
+							new d_raw[8];
+							for(new i = 0; i < 8; i++) d_raw[i] = fgetchar(inpf,0,false);
+
 							fclose(inpf);
+							
+							//Print Error Backtrace
+							printf(" ");
+							printf("[SAOI DEBUG] Parse Error '%s' Offset 0x%08x Argument: 0x%02x Buffer: %02x %02x %02x %02x %02x %02x %02x %02x",name,idx-1,arg_count,d_raw[0],d_raw[1],d_raw[2],d_raw[3],d_raw[4],d_raw[5],d_raw[6],d_raw[7]);
+							printf("[SAOI DEBUG] Storage: 0x%04x 0x%04x 0x%04x 0x%04x",object_cnt,material_cnt,material_text_cnt,removed_cnt);
+							if(isnull(SAOIFile[index][saoi_created])){
+								printf("[SAOI DEBUG] File Creation Date: (null)");
+							} else {
+								printf("[SAOI DEBUG] File Creation Date: %s",SAOIFile[index][saoi_created]);
+							}
+							printf(" ");
 							return SAOI_ERROR_INVALID_ARG_COUNT;
 						}
 					}
@@ -1121,6 +1320,11 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 			parse_step++;
 		}
 	}
+	for(new i = 0, j = GetPlayerPoolSize(); i <= j; i++){
+		if(IsPlayerConnected(i)){
+			SAOI_UpdateBuildingsForPlayer(i,index);
+		}
+	}
 	
 	SAOIFile[index][saoi_size] = flength(inpf);
 	
@@ -1128,7 +1332,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	
 	load_time = GetTickCount()-NTTime;
 	
-	
+	SAOIFile[index][saoi_removed_cnt] = removed_cnt;
 	SAOIFile[index][saoi_object_cnt] = object_cnt;
 	SAOIFile[index][saoi_material_cnt] = material_cnt;
 	SAOIFile[index][saoi_material_text_cnt] = material_text_cnt;
@@ -1138,7 +1342,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	new buffer[256];
 	format(buffer,sizeof buffer,"File %s has been loaded in %d ms",name,load_time);
 	printf(buffer);
-	format(buffer,sizeof buffer,"Author: %s Version: %s Objects: %d Material: %d Material Text: %d",author,version,object_cnt,material_cnt,material_text_cnt);
+	format(buffer,sizeof buffer,"Author: %s Version: %s Objects: %d Material: %d Material Text: %d Removed Buildings: %d",author,version,object_cnt,material_cnt,material_text_cnt,removed_cnt);
 	printf(buffer);
 	if(!isnull(description)){
 		format(buffer,sizeof buffer,"Description: %s",description);
@@ -1148,7 +1352,7 @@ stock SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&material_
 	return index;
 }
 
-stock bool:UnloadObjectImage(&SAOI:index){
+SAOIProt:: bool:UnloadObjectImage(&SAOI:index){
 	if(!SAOIFile[index][saoi_status]) return false;
 	new max_idx = SAOIFile[index][saoi_object_cnt], i = SAOIFile[index][saoi_object_offset], j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
 	while(i <= j && max_idx > 0){
@@ -1160,8 +1364,10 @@ stock bool:UnloadObjectImage(&SAOI:index){
 		}
 		i++;
 	}
+	SAOI_DropRemoveBuildings(index);
 	SAOIFile[index][saoi_status] = false;
 	SAOIFile[index][saoi_name] = EOS;
+	SAOIFile[index][saoi_removed_cnt] = 0;
 	SAOIFile[index][saoi_object_cnt] = 0;
 	SAOIFile[index][saoi_material_cnt] = 0;
 	SAOIFile[index][saoi_material_text_cnt] = 0;
@@ -1180,13 +1386,54 @@ stock bool:UnloadObjectImage(&SAOI:index){
 	return true;
 }
 
-stock CountObjectsForIndex(SAOI:index){
+SAOIProt:: CountObjectsForIndex(SAOI:index){
 	if(!SAOIFile[index][saoi_status]) return 0;
 	return SAOIFile[index][saoi_object_cnt];
 }
 
-stock GetSAOIActiveTime(SAOI:index){
+SAOIProt:: GetSAOIActiveTime(SAOI:index){
 	return (GetTickCount()-SAOIFile[index][saoi_active_tick]);
 }
+
+//Hook: OnPlayerConnect
+public OnPlayerConnect(playerid){
+	SAOIPlayerFirstSpawn[playerid] = true;
+	#if defined SAOI_OnPlayerConnect
+		SAOI_OnPlayerConnect(playerid);
+	#endif
+	return 1;
+}
+
+#if defined _ALS_OnPlayerConnect
+	#undef OnPlayerConnect
+#else
+	#define _ALS_OnPlayerConnect
+#endif
+#define OnPlayerConnect SAOI_OnPlayerConnect
+#if defined SAOI_OnPlayerConnect
+	forward SAOI_OnPlayerConnect(playerid);
+#endif
+
+//Hook: OnPlayerSpawn
+public OnPlayerSpawn(playerid){
+	if(SAOIPlayerFirstSpawn[playerid]){
+		SAOIPlayerFirstSpawn[playerid] = false;
+		CallRemoteFunction("OnSAOIRemovedBuildingsForPlayer","dd",playerid,SAOI_RemoveBuildingsForPlayer(playerid));
+	}
+	#if defined SAOI_OnPlayerSpawn
+		SAOI_OnPlayerSpawn(playerid);
+	#endif
+	return 1;
+}
+
+#if defined _ALS_OnPlayerSpawn
+	#undef OnPlayerSpawn
+#else
+	#define _ALS_OnPlayerSpawn
+#endif
+#define OnPlayerSpawn SAOI_OnPlayerSpawn
+#if defined SAOI_OnPlayerSpawn
+	forward SAOI_OnPlayerSpawn(playerid);
+#endif
 
 //EOF

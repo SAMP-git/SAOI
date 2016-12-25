@@ -9,13 +9,13 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                            *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                              *
  *                                                                                                  *
- * File Version: 1.3.0                                                                              *
+ * File Version: 1.4.0                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
  * Streamer Version: 2.8.2                                                                          *
  * SScanf Version: 2.8.2                                                                            *
  * MapAndreas Version: 1.2.1                                                                        *
  * ColAndreas Version: 1.4.0                                                                        *
- * SAOI Version: 1.4.4                                                                              *
+ * SAOI Version: 1.5.0                                                                              *
  * 3DTryg Version: 3.0.4                                                                            *
  * StreamerFunction Version: 2.5.5                                                                  *
  * YSF Version: R16                                                                                 *
@@ -34,6 +34,8 @@
  * /delmapiconinfo - removes descriptions of mapicons                                               *
  * /addvehicleinfo - adds descriptions of vehicles                                                  *
  * /delvehicleinfo - removes descriptions of vehicles                                               *
+ * /addrbinfo - adds descriptions of removed buildings                                              *
+ * /delrbinfo - removes descriptions of removed buildings                                           *
  * /objstatus - show total object status                                                            *
  * /saoicapacity - shows the status of use of slots                                                 *
  * /saoiinfo - show saoi file information                                                           *
@@ -111,11 +113,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.4.4
+	#error You need SAOI.inc v1.5.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.4.4
-#elseif (SAOI_LOADER_VERSION < 10404)
-	#error Update you SAOI.inc to v1.4.4
+	#error Update you SAOI.inc to v1.5.0
+#elseif (SAOI_LOADER_VERSION < 10500)
+	#error Update you SAOI.inc to v1.5.0
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -134,6 +136,9 @@ new Text3D:FindObjectLabel[MAX_FIND_OBJECT],
 	Text3D:FindMapIconLabel[MAX_FIND_MAPICON],
 	bool:FindMapIcon = false,
 	FindMapIconCnt,
+	Text3D:FindRemoveBuildingsLabel[MAX_OBJECTS],
+	bool:FindRB = false,
+	FindRBCnt,
 	SAOI:PlayerLastSAOI[MAX_PLAYERS];
 	
 #if defined _YSF_included
@@ -318,6 +323,32 @@ stock RemoveFindDynamicMapIconLabel(){
 	}
 #endif
 
+stock FindRemoveBuildings(Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, modelid, Float:x, Float:y, Float:z, Float:radius, SAOI:index, fname[MAX_PATH];
+	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
+		if(SAOIRemoveBuildings[i][saoi_modelid] != 0){
+			SAOI_GetRemoveBuilding(i,index,modelid,x,y,z,radius);
+			szLIST = "";
+			GetSAOILoadData(index,fname);
+			format(buffer,sizeof buffer,"{89C1FA}SAOI Name: {00AAFF}%s.saoi\n",fname[6]);
+			strcat(szLIST,buffer);
+			format(buffer,sizeof buffer,"{89C1FA}Remove Building: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Radius: {00AAFF}(%f)\n",i,modelid,radius);
+			strcat(szLIST,buffer);
+			format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f)\n",x,y,z);
+			strcat(szLIST,buffer);
+			FindRemoveBuildingsLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+			cnt++;
+		}
+	}
+	FindRBCnt = cnt;
+}
+
+stock RemoveFindRemoveBuildingsLabel(){
+	for(new i = 0; i < MAX_OBJECTS; i++){
+		if(IsValidDynamic3DTextLabel(FindRemoveBuildingsLabel[i])) DestroyDynamic3DTextLabel(FindRemoveBuildingsLabel[i]);
+	}
+}
+
 stock fcreate(const name[]){
 	if(!fexist(name)){
 		new File:cfile = fopen(name,io_readwrite);
@@ -332,22 +363,25 @@ CMD:saoi(playerid){
 	if(!IsPlayerAdmin(playerid)) return 0;
 	
 	new szLIST[3096], buffer[256], fname[MAX_PATH],
-		object_cnt, material_cnt, material_text_cnt, load_time,
-		t_object_cnt = 0, t_material_cnt = 0, t_material_text_cnt = 0, t_load_time = 0;
+		object_cnt, material_cnt, material_text_cnt, load_time, removed_cnt,
+		t_object_cnt = 0, t_material_cnt = 0, t_material_text_cnt = 0, t_load_time = 0, t_removed_cnt = 0;
 	
 	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
-		if(!IsSAOISlotFree(i)){
-			GetSAOILoadData(i,fname,object_cnt,material_cnt,material_text_cnt,load_time);
+		if(!SAOI_IsSlotFree(i)){
+			GetSAOILoadData(i,fname,object_cnt,material_cnt,material_text_cnt,load_time,_,removed_cnt);
 			t_object_cnt += object_cnt;
 			t_material_cnt += material_cnt;
 			t_material_text_cnt += material_text_cnt;
 			t_load_time += load_time;
+			t_removed_cnt += removed_cnt;
 		}
 	}
 	szLIST = "";
-	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(FindFreeSAOIID()));
+	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(SAOI_GetFreeID()));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d {00AAFF}Load Time: {00FF00}%d {00AAFF}ms\n",t_object_cnt,t_material_cnt,t_material_text_cnt,t_load_time);
+	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d {00AAFF}Removed Buildings: {00FF00}%d\n",t_object_cnt,t_material_cnt,t_material_text_cnt,t_removed_cnt);
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Memory Loaded: {00FF00}%d KB {00AAFF}Load Time: {00FF00}%d {00AAFF}ms\n",floatround(SAOI_GetMemoryLoaded()/1024),t_load_time);
 	strcat(szLIST,buffer);
 	
 	if(FindObject){
@@ -380,20 +414,27 @@ CMD:saoi(playerid){
 		strcat(szLIST,buffer);
 	#endif
 	
+	if(FindRB){
+		format(buffer,sizeof buffer,"{00AAFF}Remove Building Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindRBCnt,MAX_OBJECTS);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}Remove Building Info: {FF0000}NO\n");
+	}
+	strcat(szLIST,buffer);
+	
 	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Statistics", szLIST, "Exit", "");
 	return 1;
 }
 
 CMD:addpickupinfo(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindPickup) return SendClientMessage(playerid,0xB01010FF,"The function is active, usage /delpickupinfo");
+	if(FindPickup) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delpickupinfo");
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addpickupinfo <streamdistance (1-300)> <find radius>");
 	new Float:sd, Float:findr;
 	sscanf(params,"ff",sd,findr);
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"The pickup description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"Pickups description was included, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicPickup(playerid,findr,sd);
 	FindPickup = true;
@@ -411,14 +452,14 @@ CMD:delpickupinfo(playerid){
 
 CMD:addmapiconinfo(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindMapIcon) return SendClientMessage(playerid,0xB01010FF,"The function is active, usage /delmapiconinfo");
+	if(FindMapIcon) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delmapiconinfo");
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addmapiconinfo <streamdistance (1-300)> <find radius>");
 	new Float:sd, Float:findr;
 	sscanf(params,"ff",sd,findr);
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"The mapicon description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"MapIcons description was included, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicMapIcon(playerid,findr,sd);
 	FindMapIcon = true;
@@ -436,14 +477,14 @@ CMD:delmapiconinfo(playerid){
 
 CMD:addobjinfo(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindObject) return SendClientMessage(playerid,0xB01010FF,"The function is active, usage /delobjinfo");
+	if(FindObject) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delobjinfo");
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addobjinfo <streamdistance (1-300)> <find radius>");
 	new Float:sd, Float:findr;
 	sscanf(params,"ff",sd,findr);
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"The object description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"Objects description was included, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicObject(playerid,findr,sd);
 	FindObject = true;
@@ -510,13 +551,13 @@ CMD:delmapicon(playerid,params[]){
 #if defined _YSF_included
 	CMD:addvehicleinfo(playerid,params[]){
 		if(!IsPlayerAdmin(playerid)) return 0;
-		if(FindVeh) return SendClientMessage(playerid,0xB01010FF,"The function is active, usage /delvehicleinfo");
+		if(FindVeh) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delvehicleinfo");
 		if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addvehicleinfo <streamdistance (1-300)>");
 		new Float:sd;
 		sscanf(params,"f",sd);
 		if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 		new buffer[256];
-		format(buffer,sizeof buffer,"The vehicle description was included, coverage %.0fm",sd);
+		format(buffer,sizeof buffer,"Vehicles description was included, coverage %.0fm",sd);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
 		FindVehicle(sd);
 		FindVeh = true;
@@ -532,6 +573,30 @@ CMD:delmapicon(playerid,params[]){
 		return 1;
 	}
 #endif
+
+CMD:addrbinfo(playerid,params[]){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	if(FindRB) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delrbinfo");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addrbinfo <streamdistance (1-300)>");
+	new Float:sd;
+	sscanf(params,"f",sd);
+	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
+	new buffer[256];
+	format(buffer,sizeof buffer,"Removed Buildings description was included, coverage %.0fm",sd);
+	SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	FindRemoveBuildings(sd);
+	FindRB = true;
+	return 1;
+}
+
+CMD:delrbinfo(playerid){
+	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!FindRB) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
+	RemoveFindRemoveBuildingsLabel();
+	FindRB = false;
+	SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of Removed Buildings");
+	return 1;
+}
 
 CMD:tptoobj(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
@@ -599,14 +664,14 @@ CMD:objmaterialtext(playerid,params[]){
 CMD:saoicapacity(playerid){
 	if(!IsPlayerAdmin(playerid)) return 0;
 	new buffer[256];
-	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(FindFreeSAOIID()));
+	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(SAOI_GetFreeID()));
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	return 1;
 }
 
 CMD:saoiinfo(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name> (Only the file name, without extension)");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name> (Only file name, without extension)");
 	new buffer[512], path[MAX_PATH], SAOI:index, Float:x, Float:y, Float:z, Float:angle, vw, int;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!IsSAOIFileLoaded(path,index)){
@@ -617,12 +682,12 @@ CMD:saoiinfo(playerid,params[]){
 	PlayerLastSAOI[playerid] = index;
 	
 	new szLIST[1024], author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE],
-		fname[MAX_SAOI_NAME_SIZE], object_cnt, material_cnt, material_text_cnt, load_time, active_tick, created_data[32];
+		fname[MAX_SAOI_NAME_SIZE], object_cnt, material_cnt, material_text_cnt, load_time, active_tick, created_data[32], removed_cnt;
 	
 	szLIST = "";
 	GetSAOIFileHeader(path,author,version,description);
 	if(isnull(description)) description = "---";
-	GetSAOILoadData(index,fname,object_cnt,material_cnt,material_text_cnt,load_time,active_tick);
+	GetSAOILoadData(index,fname,object_cnt,material_cnt,material_text_cnt,load_time,active_tick,removed_cnt);
 	GetSAOIPositionFlag(index,x,y,z,angle,vw,int);
 	
 	format(buffer,sizeof buffer,"{00AAFF}Index: {00FF00}%d {00AAFF}SAOI Name: {00FF00}%s {00AAFF}Path: {00FF00}%s\n",SAOIToInt(index),params,path);
@@ -631,7 +696,7 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Description: {00FF00}%s\n",description);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Material: {00FF00}%d {00AAFF}Material Text: {00FF00}%d\n",object_cnt,material_cnt,material_text_cnt);
+	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d {00AAFF}Removed Buildings: {00FF00}%d\n",object_cnt,material_cnt,material_text_cnt,removed_cnt);
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Active time: {00FF00}%d:%02d:%02d:%02d {00AAFF}Load time: {00FF00}%d {00AAFF}ms\n",SAOI_MSToTimeDay(GetTickCount()-active_tick),load_time);
 	strcat(szLIST,buffer);
@@ -670,6 +735,8 @@ CMD:streaminfo(playerid){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Actors: {00FF00}%d / %d\n",CountActors(),MAX_ACTORS);
 	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d / %d\n",SAOI_CountRemovedBuildings(),MAX_OBJECTS);
+	strcat(szLIST,buffer);
 	strcat(szLIST,"\n");
 	format(buffer,sizeof buffer,"{00AAFF}DynamicObjects: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
 		CountDynamicObjects(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_OBJECT),Streamer_GetVisibleItems(STREAMER_TYPE_OBJECT,playerid)
@@ -706,7 +773,7 @@ CMD:streaminfo(playerid){
 
 CMD:saoiload(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiload <name> (Only the file name, without extension)");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiload <name> (Only file name, without extension)");
 	new buffer[256], path[MAX_PATH];
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(IsSAOIFileLoaded(path)){
@@ -733,7 +800,7 @@ CMD:saoiload(playerid,params[]){
 
 CMD:saoiunload(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunload <name> (Only the file name, without extension)");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunload <name> (Only file name, without extension)");
 	new buffer[256], path[MAX_PATH], SAOI:index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!IsSAOIFileLoaded(path,index)){
@@ -757,7 +824,7 @@ CMD:saoiunload(playerid,params[]){
 
 CMD:saoireload(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoireload <name> (Only the file name, without extension)");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoireload <name> (Only file name, without extension)");
 	
 	new buffer[256], path[MAX_PATH], SAOI:index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
@@ -789,7 +856,7 @@ CMD:saoilist(playerid){
 	new buffer[256], szLIST[4096], fname[MAX_PATH];
 	
 	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
-		if(!IsSAOISlotFree(i)){
+		if(!SAOI_IsSlotFree(i)){
 			GetSAOILoadData(i,fname);
 			format(buffer,sizeof buffer,"{FFFFFF}%d. {00FF00}%s\n",SAOIToInt(i),fname[6]);
 			if(strlen(szLIST)+strlen(buffer) > sizeof(szLIST)) break;
@@ -805,7 +872,7 @@ CMD:saoilist(playerid){
 
 CMD:saoitp(playerid,params[]){
 	if(!IsPlayerAdmin(playerid)) return 0;
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoitp <name> (Only the file name, without extension)");
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoitp <name> (Only file name, without extension)");
 	
 	new buffer[256], path[MAX_PATH], SAOI:index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
@@ -842,6 +909,8 @@ CMD:saoicmd(playerid){
 		strcat(szLIST,"{00FF00}/addvehicleinfo - {00AAFF}adds descriptions of vehicles\n");
 		strcat(szLIST,"{00FF00}/delvehicleinfo - {00AAFF}removes descriptions of vehicles\n");
 	#endif
+	strcat(szLIST,"{00FF00}/addrbinfo - adds descriptions of removed buildings\n");
+	strcat(szLIST,"{00FF00}/delrbinfo - removes descriptions of removed buildings\n");
 	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
 	strcat(szLIST,"{00FF00}/saoicapacity - {00AAFF}shows the status of use of slots\n");
 	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");

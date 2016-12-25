@@ -43,3 +43,6 @@ Temporary Items
 .apdisk
 
 *.amx
+include/crc.pwn
+SAOI Generator (Windows)
+copy.cmd

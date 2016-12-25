@@ -75,7 +75,7 @@ $DATA: {
 			backcolor size:32b
 			textalignment size:8b
 		}
-		
+
 		ARG: 201 {
 			//ip bumper!
 			server_ip size:32b
@@ -96,7 +96,7 @@ $DATA: {
 			int size:32b
 		}
 		
-		ARG 204 {
+		ARG: 204 {
 			//created data bumper!
 			year size:16b
 			month size:8b
@@ -105,7 +105,14 @@ $DATA: {
 			minute size:8b
 			second size:8b
 		}
+		
+		ARG: 205 {
+			//RemoveBuildingForPlayer
+			modelid size:16b
+			Float:fX size:32b
+			Float:fY size:32b
+			Float:fZ size:32b
+			Float:fRadius size:32b
+		}
 	}
-
-	
 }
