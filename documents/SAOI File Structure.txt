@@ -9,7 +9,7 @@ Author:         Abyss Morgan
 
 File: {
 	$HEADER_KEY
-	$AUTOR_DATA
+	$AUTHOR_DATA
 	$DATA
 }
 
@@ -17,21 +17,21 @@ $HEADER_KEY: {
 	static "SAOI 1.1 ADM"
 }
 
-$AUTOR_DATA: {
-	authorsize = strlen(author);
+$AUTHOR_DATA: {
+	authorsize = strlen(author) size:8b
 	author size:authorsize
 	
-	versionsize = strlen(version);
+	versionsize = strlen(version) size:8b
 	version size:versionsize
 	
-	descriptionsize = strlen(description);
+	descriptionsize = strlen(description) size:8b
 	description size:descriptionsize
 	
 	saoi_controller size:256b
 }
 
 $DATA: {
-	arg_number size:8b data: 7 - 14, 201 - 203 {
+	arg_number size:8b data: {
 		ARG: 7 - 14 {
 			modelid size:16b
 			Float:x size:32b
@@ -49,6 +49,7 @@ $DATA: {
 			object_flag {
 				anti_area size:1b
 				no_camera_col size:1b
+				null size:6b
 			} size:8b
 
 			material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
@@ -92,8 +93,8 @@ $DATA: {
 			Float:y size:32b
 			Float:z size:32b
 			Float:a size:32b
-			vw size:32b
-			int size:32b
+			worldid size:32b
+			interiorid size:32b
 		}
 		
 		ARG: 204 {
@@ -109,10 +110,10 @@ $DATA: {
 		ARG: 205 {
 			//RemoveBuildingForPlayer
 			modelid size:16b
-			Float:fX size:32b
-			Float:fY size:32b
-			Float:fZ size:32b
-			Float:fRadius size:32b
+			Float:x size:32b
+			Float:y size:32b
+			Float:z size:32b
+			Float:radius size:32b
 		}
 	}
 }

@@ -332,7 +332,7 @@ stock FindRemoveBuildings(Float:streamdistance = 20.0){
 			GetSAOILoadData(index,fname);
 			format(buffer,sizeof buffer,"{89C1FA}SAOI Name: {00AAFF}%s.saoi\n",fname[6]);
 			strcat(szLIST,buffer);
-			format(buffer,sizeof buffer,"{89C1FA}Remove Building: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Radius: {00AAFF}(%f)\n",i,modelid,radius);
+			format(buffer,sizeof buffer,"{89C1FA}Removed Building: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Radius: {00AAFF}(%f)\n",i,modelid,radius);
 			strcat(szLIST,buffer);
 			format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f)\n",x,y,z);
 			strcat(szLIST,buffer);
@@ -434,7 +434,7 @@ CMD:addpickupinfo(playerid,params[]){
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"Pickups description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"Pickups description has been activated, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicPickup(playerid,findr,sd);
 	FindPickup = true;
@@ -459,7 +459,7 @@ CMD:addmapiconinfo(playerid,params[]){
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"MapIcons description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"MapIcons description has been activated, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicMapIcon(playerid,findr,sd);
 	FindMapIcon = true;
@@ -484,7 +484,7 @@ CMD:addobjinfo(playerid,params[]){
 	if(findr < 1.0) findr = 20.0;
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"Objects description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"Objects description has been activated, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindDynamicObject(playerid,findr,sd);
 	FindObject = true;
@@ -557,7 +557,7 @@ CMD:delmapicon(playerid,params[]){
 		sscanf(params,"f",sd);
 		if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 		new buffer[256];
-		format(buffer,sizeof buffer,"Vehicles description was included, coverage %.0fm",sd);
+		format(buffer,sizeof buffer,"Vehicles description has been activated, coverage %.0fm",sd);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
 		FindVehicle(sd);
 		FindVeh = true;
@@ -582,7 +582,7 @@ CMD:addrbinfo(playerid,params[]){
 	sscanf(params,"f",sd);
 	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
 	new buffer[256];
-	format(buffer,sizeof buffer,"Removed Buildings description was included, coverage %.0fm",sd);
+	format(buffer,sizeof buffer,"Removed Buildings description has been activated, coverage %.0fm",sd);
 	SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	FindRemoveBuildings(sd);
 	FindRB = true;
