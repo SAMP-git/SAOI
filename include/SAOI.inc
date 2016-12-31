@@ -2,7 +2,7 @@
  *                                                                                                                                *
  *                                           )(   San Andreas Object Image Loader   )(                                            *
  *                                                                                                                                *
- * Copyright © 2016 Abyss Morgan. All rights reserved.                                                                            *
+ * Copyright © 2017 Abyss Morgan. All rights reserved.                                                                            *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SAOI/tree/master/include                                                              *
  * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
