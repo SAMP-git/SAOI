@@ -104,7 +104,7 @@
 #define INVALID_SAOI_FILE					(SAOI:0)		//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
 
-#define MAX_SAOI_FILE_SIZE					(68157440)		//64 MB
+#define MAX_SAOI_FILE_SIZE					(0x40FFFFF)		//64 MB
 #define MAX_SAOI_FILE						(SAOI:512)		//more ? why not
 #define MAX_SAOI_NAME_SIZE					(64)
 #define MAX_SAOI_AREA						(256)
@@ -160,8 +160,9 @@
 #define SAOI_BUMPER_REMOVEBUILDING			(205)
 
 #define SAOIToInt(%0)						(_:%0)
-
-#define SAOI_Comp(%0,%1)					((((%0)+128) & 0xFF) != (%1))
+#define SAOI_IntMod(%0)						(0xFF & (%0)+128)
+#define SAOI_Comp(%0,%1)					(SAOI_IntMod(%0) != (%1))
+#define SAOI_Foreach(%0)					for(new SAOI:%0 = SAOI:1; %0 < MAX_SAOI_FILE; %0 = SAOI:(SAOIToInt(%0)+1))
 
 #define SAOIProt::							stock
 
@@ -178,10 +179,8 @@
 #define SAOI_MergeValueEx(%1,%2,%3,%4)		(((%1) << 24) | ((%2) << 16) | ((%3) << 8) | (%4))
 #define SAOI_MergeFloatEx(%1,%2,%3,%4)		(Float:(((%1) << 24) | ((%2) << 16) | ((%3) << 8) | (%4)))
 
-#define SAOI_IntMod(%0)						(0xFF & (%0)+128)
-
 #if !defined isnull
-	#define isnull(%1) ((!(%1[0])) || (((%1[0]) == '\1') && (!(%1[1]))))
+	#define isnull(%1) 						((!(%1[0])) || (((%1[0]) == '\1') && (!(%1[1]))))
 #endif
 
 enum e_remove_building {
@@ -217,7 +216,7 @@ new bool:SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
 	SAOIObjectArea[MAX_SAOI_AREA],
 	SAOIRemoveBuildings[MAX_OBJECTS][e_remove_building],
 	SAOIRemoveUpperbound = -1,
-	SAOIPlayerFirstSpawn[MAX_PLAYERS];
+	bool:SAOIPlayerFirstSpawn[MAX_PLAYERS];
 	
 forward OnSAOIRemovedBuildingsForPlayer(playerid,buildings);
 
@@ -238,7 +237,7 @@ SAOIProt:: SAOI_GetFreeRemoveBuildingID(){
 			return i;
 		}
 	}
-	return MAX_OBJECTS;
+	return -1;
 }
 
 SAOIProt:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius){
@@ -253,9 +252,9 @@ SAOIProt:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float
 }
 
 SAOIProt:: SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius){
-	if(!SAOIFile[index][saoi_status]) return false;
+	if(!SAOIFile[index][saoi_status]) return -1;
 	new remove_id = SAOI_GetFreeRemoveBuildingID();
-	if(remove_id == MAX_OBJECTS) return MAX_OBJECTS;
+	if(remove_id == -1) return -1;
 	SAOIRemoveBuildings[remove_id][saoi_modelid] = modelid;
 	SAOIRemoveBuildings[remove_id][saoi_x] = x;
 	SAOIRemoveBuildings[remove_id][saoi_y] = y;
@@ -311,7 +310,7 @@ SAOIProt:: bool:SAOI_IsSlotFree(SAOI:index){
 }
 
 SAOIProt:: SAOI:SAOI_GetFreeID(){
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(!SAOIFile[i][saoi_status]) return i;
 	}
 	return INVALID_SAOI_FILE;
@@ -319,7 +318,7 @@ SAOIProt:: SAOI:SAOI_GetFreeID(){
 
 SAOIProt:: CountSAOIFileLoaded(){
 	new cnt = 0;
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(SAOIFile[i][saoi_status]) cnt++;
 	}
 	return cnt;
@@ -327,7 +326,7 @@ SAOIProt:: CountSAOIFileLoaded(){
 
 SAOIProt:: SAOI_GetMemoryLoaded(){
 	new cnt = 0;
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(SAOIFile[i][saoi_status]) cnt += SAOIFile[i][saoi_size];
 	}
 	return cnt;
@@ -421,7 +420,7 @@ SAOIProt:: bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 			break;
 		}
 	}
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(SAOIFile[i][saoi_status]){
 			if(!strcmp(tmp_saoi_name,SAOIFile[i][saoi_name],true)){
 				index = i;
@@ -689,9 +688,9 @@ SAOIProt:: SAOI:SaveDynamicObject(objectid,const name[]){
 	SAOI_ExtractValue(material_used,int1,int2,int3,int4);
 	fputchar(outf,int3,false), fputchar(outf,int4,false);
 	
+	new mid, txdname[MAX_TXD_NAME], texturename[MAX_TEXTURE_NAME], materialcolor;
 	for(new i = 0; i < 16; i++){
 		if(SAOI_GetValueBit(material_used,i) == 1){
-			new mid, txdname[MAX_TXD_NAME], texturename[MAX_TEXTURE_NAME], materialcolor;
 			GetDynamicObjectMaterial(objectid,i,mid,txdname,texturename,materialcolor);
 			
 			SAOI_ExtractValue(mid,int1,int2,int3,int4);
@@ -722,9 +721,9 @@ SAOIProt:: SAOI:SaveDynamicObject(objectid,const name[]){
 	SAOI_ExtractValue(material_text_used,int1,int2,int3,int4);
 	fputchar(outf,int3,false), fputchar(outf,int4,false);
 	
+	new text[MAX_TEXT_NAME], materialsize, fontface[MAX_FONT_NAME], fontsize, bold, fontcolor, backcolor, textalignment;
 	for(new i = 0; i < 16; i++){
 		if(SAOI_GetValueBit(material_text_used,i) == 1){
-			new text[MAX_TEXT_NAME], materialsize, fontface[MAX_FONT_NAME], fontsize, bold, fontcolor, backcolor, textalignment;
 			GetDynamicObjectMaterialText(objectid,i,text,materialsize,fontface,fontsize,bold,fontcolor,backcolor,textalignment);
 			
 			new len = strlen(text);
@@ -771,10 +770,10 @@ SAOIProt:: SAOI:SetSAOIBumperIP(const name[],server_ip[]){
 	new serv_ipsum[4], saoi_ipsum[4];
 	sscanf(server_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
 	
-	saoi_ipsum[0] = ((serv_ipsum[3]+128) & 0xFF);
-	saoi_ipsum[1] = ((serv_ipsum[2]+128) & 0xFF);
-	saoi_ipsum[2] = ((serv_ipsum[1]+128) & 0xFF);
-	saoi_ipsum[3] = ((serv_ipsum[0]+128) & 0xFF);
+	saoi_ipsum[0] = SAOI_IntMod(serv_ipsum[3]);
+	saoi_ipsum[1] = SAOI_IntMod(serv_ipsum[2]);
+	saoi_ipsum[2] = SAOI_IntMod(serv_ipsum[1]);
+	saoi_ipsum[3] = SAOI_IntMod(serv_ipsum[0]);
 	
 	fputchar(outf,SAOI_BUMPER_IP,false);
 	for(new i = 0; i < 4; i++){
@@ -794,10 +793,10 @@ SAOIProt:: SAOI:SetSAOIBumperPort(const name[],server_port){
 	new serv_portsum[4], saoi_portsum[4];
 	SAOI_ExtractValue(server_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
 	
-	saoi_portsum[0] = ((serv_portsum[3]+128) & 0xFF);
-	saoi_portsum[1] = ((serv_portsum[2]+128) & 0xFF);
-	saoi_portsum[2] = ((serv_portsum[1]+128) & 0xFF);
-	saoi_portsum[3] = ((serv_portsum[0]+128) & 0xFF);
+	saoi_portsum[0] = SAOI_IntMod(serv_portsum[3]);
+	saoi_portsum[1] = SAOI_IntMod(serv_portsum[2]);
+	saoi_portsum[2] = SAOI_IntMod(serv_portsum[1]);
+	saoi_portsum[3] = SAOI_IntMod(serv_portsum[0]);
 	
 	fputchar(outf,SAOI_BUMPER_PORT,false);
 	for(new i = 0; i < 4; i++){
@@ -1144,15 +1143,21 @@ SAOIProt:: SAOI:LoadObjectImage(const name[],&object_cnt=0,&material_cnt=0,&mate
 							SAOI_OnErrorCleanup(index,object_cnt);
 							SAOIFile[index][saoi_status] = false;
 							
-							new d_raw[8];
-							for(new i = 0; i < 8; i++) d_raw[i] = fgetchar(inpf,0,false);
+							new d_raw[8], offset = idx-1;
+							for(new i = 0; i < 8; i++){
+								if(idx < asize){
+									d_raw[i] = fgetchar(inpf,0,false), idx++;
+								} else {
+									d_raw[i] = 0;
+								}
+							}
 
 							fclose(inpf);
 							
 							//Print Error Backtrace
 							printf(" ");
-							printf("[SAOI DEBUG] Parse Error '%s' Offset 0x%08x Argument: 0x%02x Buffer: %02x %02x %02x %02x %02x %02x %02x %02x",name,idx-1,arg_count,d_raw[0],d_raw[1],d_raw[2],d_raw[3],d_raw[4],d_raw[5],d_raw[6],d_raw[7]);
-							printf("[SAOI DEBUG] Storage: 0x%04x 0x%04x 0x%04x 0x%04x",object_cnt,material_cnt,material_text_cnt,removed_cnt);
+							printf("[SAOI DEBUG] Parse Error '%s' Offset 0x%08x Argument: 0x%02x Buffer: %02x %02x %02x %02x %02x %02x %02x %02x",name,offset,arg_count,d_raw[0],d_raw[1],d_raw[2],d_raw[3],d_raw[4],d_raw[5],d_raw[6],d_raw[7]);
+							printf("[SAOI DEBUG] File Size: 0x%08x Storage: 0x%04x 0x%04x 0x%04x 0x%04x",asize,object_cnt,material_cnt,material_text_cnt,removed_cnt);
 							if(isnull(SAOIFile[index][saoi_created])){
 								printf("[SAOI DEBUG] File Creation Date: (null)");
 							} else {
