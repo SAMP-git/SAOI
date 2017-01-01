@@ -9,6 +9,7 @@
  *                                                                                                                                *
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
+ * Attributes: Overload resistance. Functionality for one script.                                                                 *
  *                                                                                                                                *
  * File Version: 1.5.0                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
