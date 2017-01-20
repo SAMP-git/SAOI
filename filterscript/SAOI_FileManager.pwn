@@ -9,35 +9,25 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                            *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                              *
  *                                                                                                  *
- * File Version: 1.4.0                                                                              *
+ * File Version: 1.5.0                                                                              *
  * SA:MP Version: 0.3.7                                                                             *
  * Streamer Version: 2.8.2                                                                          *
  * SScanf Version: 2.8.2                                                                            *
  * MapAndreas Version: 1.2.1                                                                        *
  * ColAndreas Version: 1.4.0                                                                        *
- * SAOI Version: 1.5.0                                                                              *
- * 3DTryg Version: 3.0.4                                                                            *
- * StreamerFunction Version: 2.5.5                                                                  *
- * YSF Version: R16                                                                                 *
+ * SAOI Version: 1.5.1                                                                              *
+ * 3DTryg Version: 3.2.2                                                                            *
+ * StreamerFunction Version: 2.5.8                                                                  *
+ * YSF Version: R18                                                                                 *
  *                                                                                                  *
  * Notice:                                                                                          *
  * Required directory /scriptfiles/SAOI                                                             *
  *                                                                                                  *
  * Commands:                                                                                        *
  * /saoicmd - show saoi cmd                                                                         *
- * /saoi - shows statistics saoi                                                                    *
- * /addobjinfo - adds descriptions of objects                                                       *
- * /delobjinfo - removes descriptions of objects                                                    *
- * /addpickupinfo - adds descriptions of pickups                                                    *
- * /delpickupinfo - removes descriptions of pickups                                                 *
- * /addmapiconinfo - adds descriptions of mapicons                                                  *
- * /delmapiconinfo - removes descriptions of mapicons                                               *
- * /addvehicleinfo - adds descriptions of vehicles                                                  *
- * /delvehicleinfo - removes descriptions of vehicles                                               *
- * /addrbinfo - adds descriptions of removed buildings                                              *
- * /delrbinfo - removes descriptions of removed buildings                                           *
+ * /saoi - shows statistics saoi                                                                    * 
+ * /saoifinder - element finder                                                                     *
  * /objstatus - show total object status                                                            *
- * /saoicapacity - shows the status of use of slots                                                 *
  * /saoiinfo - show saoi file information                                                           *
  * /saoiload - load saoi file                                                                       *
  * /saoiunload - unload saoi file                                                                   *
@@ -55,6 +45,7 @@
  ****************************************************************************************************/
  
 #define FILTERSCRIPT
+#define LOCK_SAOI_MEMORY	"SAOI_FileManager"
 
 #include <a_samp>
 
@@ -82,42 +73,55 @@
 
 #define SAOI_FILE_LIST				"/SAOI/SaoiFiles.txt"
 
-#define MAX_FIND_OBJECT				(2048)
+#define MAX_FIND_DYNAMIC_OBJECT		(2048)
+#define MAX_FIND_DYNAMIC_PICKUP		(512)
+#define MAX_FIND_DYNAMIC_CP			(512)
+#define MAX_FIND_DYNAMIC_RACECP		(512)
+#define MAX_FIND_DYNAMIC_MAPICON	(512)
+#define MAX_FIND_OBJECT				(512)
 #define MAX_FIND_PICKUP				(512)
-#define MAX_FIND_MAPICON			(512)
+#define MAX_FIND_ACTOR				(1000)
+#define MAX_FIND_VEHICLE			(2000)
+#define MAX_FIND_REMOVEBUILDING		(1000)
 
 #define MAX_PATH					(70)
 
-#define DIALOG_SAOI_INFO			(1000)
-#define DIALOG_SAOI_LIST			(1001)
-#define DIALOG_SAOI_ITEM			(1002)
-#define DIALOG_SAOI_NUL				(1003)
+#define IsAdmin(%0)					IsPlayerAdmin(%0)
+
+#define DIALOG_OFFSET				(1000)
+#define DIALOG_SAOI_NUL				(DIALOG_OFFSET+(0))
+#define DIALOG_SAOI_INFO			(DIALOG_OFFSET+(1))
+#define DIALOG_SAOI_LIST			(DIALOG_OFFSET+(2))
+#define DIALOG_SAOI_ITEM			(DIALOG_OFFSET+(3))
+#define DIALOG_SAOI_FINDER			(DIALOG_OFFSET+(4))
+#define DIALOG_SAOI_FINDER_DISABLE	(DIALOG_OFFSET+(5))
+#define DIALOG_SAOI_FINDER_PARAMS	(DIALOG_OFFSET+(6))
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
-	#error [ADM] You need StreamerFunction.inc v2.5.5
+	#error [ADM] You need StreamerFunction.inc v2.5.8
 #elseif !defined Streamer_Spec_Version
-	#error [ADM] Update you StreamerFunction.inc to v2.5.5
-#elseif (Streamer_Spec_Version < 20505)
-	#error [ADM] Update you StreamerFunction.inc to v2.5.5
+	#error [ADM] Update you StreamerFunction.inc to v2.5.8
+#elseif (Streamer_Spec_Version < 20508)
+	#error [ADM] Update you StreamerFunction.inc to v2.5.8
 #endif
 
 //Check Version 3DTryg.inc
 #if !defined _3D_Tryg
-	#error [ADM] You need 3DTryg.inc v3.0.4
+	#error [ADM] You need 3DTryg.inc v3.2.2
 #elseif !defined Tryg3D_Version
-	#error [ADM] Update you 3DTryg.inc to v3.0.4
-#elseif (Tryg3D_Version < 30004)
-	#error [ADM] Update you 3DTryg.inc to v3.0.4
+	#error [ADM] Update you 3DTryg.inc to v3.2.2
+#elseif (Tryg3D_Version < 30202)
+	#error [ADM] Update you 3DTryg.inc to v3.2.2
 #endif
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.5.0
+	#error You need SAOI.inc v1.5.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.5.0
-#elseif (SAOI_LOADER_VERSION < 10500)
-	#error Update you SAOI.inc to v1.5.0
+	#error Update you SAOI.inc to v1.5.1
+#elseif (SAOI_LOADER_VERSION < 10501)
+	#error Update you SAOI.inc to v1.5.1
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -127,25 +131,53 @@
 #define SAOI_SecToTimeDay(%0)		((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
 #define SAOI_MSToTimeDay(%0)		SAOI_SecToTimeDay((%0)/1000)
 
-new Text3D:FindObjectLabel[MAX_FIND_OBJECT],
-	bool:FindObject = false,
-	FindObjectCnt,
-	Text3D:FindPickupLabel[MAX_FIND_PICKUP],
-	bool:FindPickup = false,
-	FindPickupCnt,
-	Text3D:FindMapIconLabel[MAX_FIND_MAPICON],
-	bool:FindMapIcon = false,
-	FindMapIconCnt,
-	Text3D:FindRemoveBuildingsLabel[MAX_OBJECTS],
-	bool:FindRB = false,
-	FindRBCnt,
-	SAOI:PlayerLastSAOI[MAX_PLAYERS];
-	
+enum find_elements {
+	e_dynamic_object,
+	e_dynamic_pickup,
+	e_dynamic_cp,
+	e_dynamic_racecp,
+	e_dynamic_mapicon,
+	e_object,
+	e_pickup,
+	e_actor,
+	e_vehicle,
+	e_removebuilding
+}
+
+enum find_option {
+	bool:o_active,
+	o_count,
+	o_max
+}
+
+new elements_name[][] = {
+	"DynamicObject",
+	"DynamicPickup",
+	"DynamicCP",
+	"DynamicRaceCP",
+	"DynamicMapIcon",
+	"Object",
+	"Pickup",
+	"Actor",
+	"Vehicle",
+	"RemoveBuilding"
+};
+
+new Text3D:FindDynamicObjectLabel[MAX_FIND_DYNAMIC_OBJECT],
+	Text3D:FindDynamicPickupLabel[MAX_FIND_DYNAMIC_PICKUP],
+	Text3D:FindDynamicCPLabel[MAX_FIND_DYNAMIC_CP],
+	Text3D:FindDynamicRaceCPLabel[MAX_FIND_DYNAMIC_RACECP],
+	Text3D:FindDynamicMapIconLabel[MAX_FIND_DYNAMIC_MAPICON],
+	Text3D:FindActorLabel[MAX_FIND_ACTOR],
+	Text3D:FindRemoveBuildingsLabel[MAX_FIND_REMOVEBUILDING],
+	SAOI_Finder[find_elements][find_option],
+	SAOI:PlayerLastSAOI[MAX_PLAYERS],
+	PlayerLastItem[MAX_PLAYERS];
+
 #if defined _YSF_included
-	new Text3D:FindVehicleLabel[MAX_VEHICLES],
-		FindVehiclePickup[MAX_VEHICLES],
-		bool:FindVeh = false,
-		FindVehCnt;
+	new	Text3D:FindObjectLabel[MAX_FIND_OBJECT],
+		Text3D:FindPickupLabel[MAX_FIND_PICKUP],
+		Text3D:FindVehicleLabel[MAX_FIND_VEHICLE];
 #endif
 
 stock PrintSAOIErrorName(SAOI:index){
@@ -170,27 +202,24 @@ stock PrintSAOIErrorName(SAOI:index){
 		case SAOI_ERROR_INVALID_ARG_COUNT: 		printf("Error number of arguments exceeds the specified arguments");
 		case SAOI_ERROR_INVALID_SERVER_IP:		printf("Error invalid server ip");
 		case SAOI_ERROR_INVALID_SERVER_PORT:	printf("Error invalid server port");
+		case SAOI_ERROR_MEMORY_BLOCKED:			printf("Error memory blocked");
 	}
 }
 
-stock FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, areaid, priority, index, fname[MAX_PATH],
-		moid, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, vw, int, Float:sd, Float:dd;
+//FINDER:DynamicObject
+stock SAOI_FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, index, fname[MAX_PATH],
+		Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, Float:sd, Float:dd;
 	
 	GetPlayerPos(playerid,px,py,pz);
 	ForDynamicObjects(i){
-		if(cnt >= MAX_FIND_OBJECT) break;
+		if(cnt >= MAX_FIND_DYNAMIC_OBJECT) break;
 		if(IsValidDynamicObject(i)){
 			GetDynamicObjectPos(i,x,y,z);
-			if(VectorSize(px-x,py-y,pz-z) <= findradius){
-				vw = GetDynamicObjectVW(i);
-				int = GetDynamicObjectINT(i);
-				moid = GetDynamicObjectModel(i);
+			if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
 				GetDynamicObjectRot(i,rx,ry,rz);
 				GetDynamicObjectSD(i,sd);
 				GetDynamicObjectDD(i,dd);
-				areaid = GetDynamicObjectArea(i);
-				priority = GetDynamicObjectPriority(i);
 				szLIST = "";
 				index = Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID);
 				if(index > SAOI_EXTRA_ID_OFFSET && index < SAOI_EXTRA_ID_OFFSET+SAOIToInt(MAX_SAOI_FILE)){
@@ -199,131 +228,193 @@ stock FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 20.0){
 					format(buffer,sizeof buffer,"{89C1FA}SAOI Name: {00AAFF}%s.saoi\n",fname[6]);
 					strcat(szLIST,buffer);
 				}
-				format(buffer,sizeof buffer,"{89C1FA}Object: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %.0f %d %d)\n",i,moid,vw,int,sd,dd,areaid,priority);
+				format(buffer,sizeof buffer,"{89C1FA}DynamicObject: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %.0f %d %d)\n",i,GetDynamicObjectModel(i),GetDynamicObjectVW(i),GetDynamicObjectINT(i),sd,dd,GetDynamicObjectArea(i),GetDynamicObjectPriority(i));
 				strcat(szLIST,buffer);
 				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f,%.7f,%.7f,%.7f)",x,y,z,rx,ry,rz);
 				strcat(szLIST,buffer);
-				FindObjectLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				FindDynamicObjectLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
 				cnt++;
 			}
 		}
-		FindObjectCnt = cnt;
+		SAOI_Finder[e_dynamic_object][o_count] = cnt;
 	}
 }
 
-stock RemoveFindDynamicObjectLabel(){
-	for(new i = 0; i < MAX_FIND_OBJECT; i++){
-		if(IsValidDynamic3DTextLabel(FindObjectLabel[i])) DestroyDynamic3DTextLabel(FindObjectLabel[i]);
+stock SAOI_RemoveFindDynamicObject(){
+	for(new i = 0; i < MAX_FIND_DYNAMIC_OBJECT; i++){
+		if(IsValidDynamic3DTextLabel(FindDynamicObjectLabel[i])) DestroyDynamic3DTextLabel(FindDynamicObjectLabel[i]);
 	}
 }
 
-stock FindDynamicPickup(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, areaid, priority,
-		moid, Float:x, Float:y, Float:z, vw, int, Float:sd, ptype;
+//FINDER:DynamicPickup
+stock SAOI_FindDynamicPickup(playerid,Float:findradius,Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz,
+		Float:x, Float:y, Float:z, Float:sd;
 	
 	GetPlayerPos(playerid,px,py,pz);
 	ForDynamicPickups(i){
-		if(cnt >= MAX_FIND_PICKUP) break;
+		if(cnt >= MAX_FIND_DYNAMIC_PICKUP) break;
 		if(IsValidDynamicPickup(i)){
 			GetDynamicPickupPos(i,x,y,z);
-			if(VectorSize(px-x,py-y,pz-z) <= findradius){
-				vw = GetDynamicPickupVW(i);
-				int = GetDynamicPickupINT(i);
-				moid = GetDynamicPickupModel(i);
+			if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
 				GetDynamicPickupSD(i,sd);
-				areaid = GetDynamicPickupArea(i);
-				priority = GetDynamicPickupPriority(i);
-				ptype = GetDynamicPickupType(i);
 				szLIST = "";
-				format(buffer,sizeof buffer,"{89C1FA}Pickup: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,moid,vw,int,sd,areaid,priority);
+				format(buffer,sizeof buffer,"{89C1FA}DynamicPickup: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,GetDynamicPickupModel(i),GetDynamicPickupVW(i),GetDynamicPickupINT(i),sd,GetDynamicPickupArea(i),GetDynamicPickupPriority(i));
 				strcat(szLIST,buffer);
-				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f) {89C1FA}Type: {00AAFF}(%d)",x,y,z,ptype);
+				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f) {89C1FA}Type: {00AAFF}(%d)",x,y,z,GetDynamicPickupType(i));
 				strcat(szLIST,buffer);
-				FindPickupLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				FindDynamicPickupLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
 				cnt++;
 			}
 		}
-		FindPickupCnt = cnt;
+		SAOI_Finder[e_dynamic_pickup][o_count] = cnt;
 	}
 }
 
-stock RemoveFindDynamicPickupLabel(){
-	for(new i = 0; i < MAX_FIND_PICKUP; i++){
-		if(IsValidDynamic3DTextLabel(FindPickupLabel[i])) DestroyDynamic3DTextLabel(FindPickupLabel[i]);
+stock SAOI_RemoveFindDynamicPickup(){
+	for(new i = 0; i < MAX_FIND_DYNAMIC_PICKUP; i++){
+		if(IsValidDynamic3DTextLabel(FindDynamicPickupLabel[i])) DestroyDynamic3DTextLabel(FindDynamicPickupLabel[i]);
 	}
 }
 
-stock FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, areaid, priority, Float:mz,
-		Float:x, Float:y, Float:z, vw, int, Float:sd, ptype, pcolor, pstyle;
+//FINDER:DynamicMapIcon
+stock SAOI_FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, Float:mz,
+		Float:x, Float:y, Float:z, Float:sd;
 	
 	GetPlayerPos(playerid,px,py,pz);
 	ForDynamicMapIcons(i){
-		if(cnt >= MAX_FIND_MAPICON) break;
+		if(cnt >= MAX_FIND_DYNAMIC_MAPICON) break;
 		if(IsValidDynamicMapIcon(i)){
 			GetDynamicMapIconPos(i,x,y,z);
-			if(VectorSize(px-x,py-y,pz-z) <= findradius){
-				vw = GetDynamicMapIconVW(i);
-				int = GetDynamicMapIconINT(i);
+			if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
 				GetDynamicMapIconSD(i,sd);
-				areaid = GetDynamicMapIconArea(i);
-				priority = GetDynamicMapIconPriority(i);
-				ptype = GetDynamicMapIconType(i);
-				pcolor = GetDynamicMapIconColor(i);
-				pstyle = GetDynamicMapIconStyle(i);
 				Tryg3DMapAndreasFindZ(x,y,mz);
 				szLIST = "";
-				format(buffer,sizeof buffer,"{89C1FA}MapIcon: {00AAFF}(%d) {89C1FA}Type: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,ptype,vw,int,sd,areaid,priority);
+				format(buffer,sizeof buffer,"{89C1FA}DynamicMapIcon: {00AAFF}(%d) {89C1FA}Type: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,GetDynamicMapIconType(i),GetDynamicMapIconVW(i),GetDynamicMapIconINT(i),sd,GetDynamicMapIconArea(i),GetDynamicMapIconPriority(i));
 				strcat(szLIST,buffer);
 				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f)\n",x,y,z);
 				strcat(szLIST,buffer);
-				format(buffer,sizeof buffer,"{89C1FA}Color: {00AAFF}(0x%08x) {89C1FA}Style: {00AAFF}(%d)",pcolor,pstyle);
+				format(buffer,sizeof buffer,"{89C1FA}Color: {00AAFF}(0x%08x) {89C1FA}Style: {00AAFF}(%d)",GetDynamicMapIconColor(i),GetDynamicMapIconStyle(i));
 				strcat(szLIST,buffer);
-				FindMapIconLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,mz+1.0,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				FindDynamicMapIconLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,mz+1.0,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
 				cnt++;
 			}
 		}
-		FindMapIconCnt = cnt;
+		SAOI_Finder[e_dynamic_mapicon][o_count] = cnt;
 	}
 }
 
-stock RemoveFindDynamicMapIconLabel(){
-	for(new i = 0; i < MAX_FIND_MAPICON; i++){
-		if(IsValidDynamic3DTextLabel(FindMapIconLabel[i])) DestroyDynamic3DTextLabel(FindMapIconLabel[i]);
+stock SAOI_RemoveFindDynamicMapIcon(){
+	for(new i = 0; i < MAX_FIND_DYNAMIC_MAPICON; i++){
+		if(IsValidDynamic3DTextLabel(FindDynamicMapIconLabel[i])) DestroyDynamic3DTextLabel(FindDynamicMapIconLabel[i]);
 	}
 }
 
 #if defined _YSF_included
-	stock FindVehicle(Float:streamdistance = 20.0){
-		new buffer[256], szLIST[768], cnt = 0, Float:x, Float:y, Float:z, Float:angle, color1, color2;
+	//FINDER:Vehicle
+	stock SAOI_FindVehicle(Float:streamdistance = 20.0){
+		new buffer[256], szLIST[768], cnt = 0, Float:x, Float:y, Float:z, Float:angle, color1, color2, modelid,
+			v_status[16], Float:tx, Float:ty, Float:tz;
 		
-		for(new i = 0, j = GetVehiclePoolSize(); i <= j; i++){
+		for(new i = 1, j = GetVehiclePoolSize(); i <= j; i++){
 			if(IsValidVehicle(i)){
 				GetVehicleSpawnInfo(i,x,y,z,angle,color1,color2);
+				GetVehiclePos(i,tx,ty,tz);
 				szLIST = "";
-				format(buffer,sizeof buffer,"{89C1FA}Vehicle: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d)\n",i,GetVehicleModel(i),GetVehicleVirtualWorld(i),GetVehicleInterior(i));
+				modelid = GetVehicleModel(i);
+				if(IsVehicleOccupied(i)){
+					v_status = "Occupied";
+				} else if(IsVehicleDead(i)){
+					v_status = "Dead";
+				} else if(GetDistanceBetweenPoints3D(x,y,z,tx,ty,tz) <= 2.0){
+					v_status = "On Spawn";
+				} else {
+					v_status = "Spawned";
+				}
+				format(buffer,sizeof buffer,"{89C1FA}Vehicle: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d)\n",i,modelid,GetVehicleVirtualWorld(i),GetVehicleInterior(i));
 				strcat(szLIST,buffer);
-				format(buffer,sizeof buffer,"{89C1FA}Spawn: {00AAFF}(%.7f,%.7f,%.7f,%.7f)\n",x,y,z,angle);
+				format(buffer,sizeof buffer,"{89C1FA}Spawn: {00AAFF}(%.7f,%.7f,%.7f,%.7f) {89C1FA}Last Status: {00AAFF}%s\n",x,y,z,angle,v_status);
 				strcat(szLIST,buffer);
-				format(buffer,sizeof buffer,"{89C1FA}Color: {00AAFF}(%d %d)",color1,color2);
+				format(buffer,sizeof buffer,"{89C1FA}Color: {00AAFF}(%d %d) {89C1FA}Model Count: {00AAFF}(%d)",color1,color2,GetVehicleModelCount(modelid));
 				strcat(szLIST,buffer);
 				FindVehicleLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
-				FindVehiclePickup[cnt] = CreateDynamicPickup(1316,1,x,y,z,-1,-1,-1,streamdistance);
 				cnt++;
 			}
 		}
-		FindVehCnt = cnt;
+		SAOI_Finder[e_vehicle][o_count] = cnt;
 	}
 
-	stock RemoveFindVehicleLabel(){
-		for(new i = 0; i < MAX_VEHICLES; i++){
+	stock SAOI_RemoveFindVehicle(){
+		for(new i = 0; i < MAX_FIND_VEHICLE; i++){
 			if(IsValidDynamic3DTextLabel(FindVehicleLabel[i])) DestroyDynamic3DTextLabel(FindVehicleLabel[i]);
-			if(IsValidDynamicPickup(FindVehiclePickup[i])) DestroyDynamicPickup(FindVehiclePickup[i]);
+		}
+	}
+	
+	//FINDER:Object
+	stock SAOI_FindObject(playerid,Float:findradius,Float:streamdistance = 20.0){
+		new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz,
+			Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz;
+		
+		GetPlayerPos(playerid,px,py,pz);
+		for(new i = 0; i <= MAX_OBJECTS; i++){
+			if(cnt >= MAX_FIND_OBJECT) break;
+			if(IsValidObject(i)){
+				GetObjectPos(i,x,y,z);
+				if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
+					GetObjectRot(i,rx,ry,rz);
+					szLIST = "";
+					format(buffer,sizeof buffer,"{89C1FA}Object: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%.0f)\n",i,GetObjectModel(i),GetObjectDrawDistance(i));
+					strcat(szLIST,buffer);
+					format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f,%.7f,%.7f,%.7f)",x,y,z,rx,ry,rz);
+					strcat(szLIST,buffer);
+					FindObjectLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+					cnt++;
+				}
+			}
+			SAOI_Finder[e_object][o_count] = cnt;
+		}
+	}
+	
+	stock SAOI_RemoveFindObject(){
+		for(new i = 0; i < MAX_FIND_OBJECT; i++){
+			if(IsValidDynamic3DTextLabel(FindObjectLabel[i])) DestroyDynamic3DTextLabel(FindObjectLabel[i]);
+		}
+	}
+	
+	//FINDER:Pickup
+	stock SAOI_FindPickup(playerid,Float:findradius,Float:streamdistance = 20.0){
+		new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz,
+			Float:x, Float:y, Float:z;
+		
+		GetPlayerPos(playerid,px,py,pz);
+		for(new i = 0; i <= MAX_PICKUPS; i++){
+			if(cnt >= MAX_FIND_PICKUP) break;
+			if(IsValidPickup(i)){
+				GetPickupPos(i,x,y,z);
+				if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
+					szLIST = "";
+					format(buffer,sizeof buffer,"{89C1FA}Pickup: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d)\n",i,GetPickupModel(i),GetPickupVirtualWorld(i));
+					strcat(szLIST,buffer);
+					format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f) {89C1FA}Type: {00AAFF}(%d)",x,y,z,GetPickupType(i));
+					strcat(szLIST,buffer);
+					FindPickupLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+					cnt++;
+				}
+			}
+			SAOI_Finder[e_pickup][o_count] = cnt;
+		}
+	}
+
+	stock SAOI_RemoveFindPickup(){
+		for(new i = 0; i < MAX_FIND_PICKUP; i++){
+			if(IsValidDynamic3DTextLabel(FindPickupLabel[i])) DestroyDynamic3DTextLabel(FindPickupLabel[i]);
 		}
 	}
 #endif
 
-stock FindRemoveBuildings(Float:streamdistance = 20.0){
+//FINDER:RemoveBuilding
+stock SAOI_FindRemoveBuilding(Float:streamdistance = 20.0){
 	new buffer[256], szLIST[768], cnt = 0, modelid, Float:x, Float:y, Float:z, Float:radius, SAOI:index, fname[MAX_PATH];
 	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
 		if(SAOIRemoveBuildings[i][saoi_modelid] != 0){
@@ -340,15 +431,134 @@ stock FindRemoveBuildings(Float:streamdistance = 20.0){
 			cnt++;
 		}
 	}
-	FindRBCnt = cnt;
+	SAOI_Finder[e_removebuilding][o_count] = cnt;
 }
 
-stock RemoveFindRemoveBuildingsLabel(){
-	for(new i = 0; i < MAX_OBJECTS; i++){
+stock SAOI_RemoveFindRemoveBuilding(){
+	for(new i = 0; i < MAX_FIND_REMOVEBUILDING; i++){
 		if(IsValidDynamic3DTextLabel(FindRemoveBuildingsLabel[i])) DestroyDynamic3DTextLabel(FindRemoveBuildingsLabel[i]);
 	}
 }
 
+//FINDER:Actor
+stock SAOI_FindActor(Float:streamdistance = 20.0){
+	new buffer[256], szLIST[1000], cnt = 0,
+		Float:x, Float:y, Float:z, Float:angle, Float:health;
+	
+	for(new i = 0, j = GetActorPoolSize(); i <= j; i++){
+		if(cnt >= MAX_FIND_ACTOR) break;
+		if(IsValidActor(i)){
+			GetActorPos(i,x,y,z);
+			GetActorFacingAngle(i,angle);
+			GetActorHealth(i,health);
+			szLIST = "";
+			#if defined _YSF_included
+				format(buffer,sizeof buffer,"{89C1FA}Actor: {00AAFF}(%d) {89C1FA}Model: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d)\n",i,GetActorSkin(i),GetActorVirtualWorld(i));
+			#else
+				format(buffer,sizeof buffer,"{89C1FA}Actor: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d)\n",i,GetActorVirtualWorld(i));
+			#endif
+			strcat(szLIST,buffer);
+			format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f,%.7f)\n",x,y,z,angle);
+			strcat(szLIST,buffer);
+			format(buffer,sizeof buffer,"{89C1FA}Invulnerable: {00AAFF}%s {89C1FA}Health: {00AAFF}%.0f",IsActorInvulnerable(i)?("YES"):("NO"),health);
+			strcat(szLIST,buffer);
+			
+			#if defined _YSF_included
+				new animlib[64], animname[64], Float:fDelta, loop, lockx, locky, freeze, time;
+				GetActorAnimation(i,animlib,sizeof(animlib),animname,sizeof(animname),fDelta,loop,lockx,locky,freeze,time);
+				if(!isnull(animlib) && !isnull(animname)){
+					strcat(szLIST,"\n");
+					format(buffer,sizeof buffer,"{89C1FA}Anim Library: {00AAFF}%s {89C1FA}Anim Name: {00AAFF}%s\n",animlib,animname);
+					strcat(szLIST,buffer);
+					format(buffer,sizeof buffer,"{89C1FA}Delta: {00AAFF}(%.7f) {89C1FA}Loop: {00AAFF}(%d) {89C1FA}Lock: {00AAFF}(%d,%d)\n",fDelta,loop,lockx,locky);
+					strcat(szLIST,buffer);
+					format(buffer,sizeof buffer,"{89C1FA}Freeze: {00AAFF}(%d) {89C1FA}Time: {00AAFF}(%d)",freeze,time);
+					strcat(szLIST,buffer);
+				}
+			#endif
+
+			
+			FindActorLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+			cnt++;
+		}
+		SAOI_Finder[e_actor][o_count] = cnt;
+	}
+}
+
+stock SAOI_RemoveFindActor(){
+	for(new i = 0; i < MAX_FIND_ACTOR; i++){
+		if(IsValidDynamic3DTextLabel(FindActorLabel[i])) DestroyDynamic3DTextLabel(FindActorLabel[i]);
+	}
+}
+
+//FINDER:DynamicCP
+stock SAOI_FindDynamicCP(playerid,Float:findradius,Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz,
+		Float:x, Float:y, Float:z, Float:sd, Float:size;
+	
+	GetPlayerPos(playerid,px,py,pz);
+	ForDynamicCPs(i){
+		if(cnt >= MAX_FIND_DYNAMIC_CP) break;
+		if(IsValidDynamicCP(i)){
+			GetDynamicCPPos(i,x,y,z);
+			if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
+				GetDynamicCPSD(i,sd);
+				GetDynamicCPSize(i,size);
+				szLIST = "";
+				format(buffer,sizeof buffer,"{89C1FA}DynamicCP: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,GetDynamicCPVW(i),GetDynamicCPINT(i),sd,GetDynamicCPArea(i),GetDynamicCPPriority(i));
+				strcat(szLIST,buffer);
+				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f) {89C1FA}Size: {00AAFF}(%.2f)",x,y,z,size);
+				strcat(szLIST,buffer);
+				FindDynamicCPLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				cnt++;
+			}
+		}
+		SAOI_Finder[e_dynamic_cp][o_count] = cnt;
+	}
+}
+
+stock SAOI_RemoveFindDynamicCP(){
+	for(new i = 0; i < MAX_FIND_DYNAMIC_CP; i++){
+		if(IsValidDynamic3DTextLabel(FindDynamicCPLabel[i])) DestroyDynamic3DTextLabel(FindDynamicCPLabel[i]);
+	}
+}
+
+//FINDER:DynamicRaceCP
+stock SAOI_FindDynamicRaceCP(playerid,Float:findradius,Float:streamdistance = 20.0){
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz,
+		Float:x, Float:y, Float:z, Float:nextx, Float:nexty, Float:nextz, Float:sd, Float:size;
+	
+	GetPlayerPos(playerid,px,py,pz);
+	ForDynamicRaceCPs(i){
+		if(cnt >= MAX_FIND_DYNAMIC_RACECP) break;
+		if(IsValidDynamicRaceCP(i)){
+			GetDynamicRaceCPPos(i,x,y,z);
+			if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
+				GetDynamicRaceCPSD(i,sd);
+				GetDynamicRaceCPNext(i,nextx,nexty,nextz);
+				GetDynamicRaceCPSize(i,size);
+				szLIST = "";
+				format(buffer,sizeof buffer,"{89C1FA}DynamicRaceCP: {00AAFF}(%d) {89C1FA}Stream: {00AAFF}(%d %d %.0f %d %d)\n",i,GetDynamicRaceCPVW(i),GetDynamicRaceCPINT(i),sd,GetDynamicRaceCPArea(i),GetDynamicRaceCPPriority(i));
+				strcat(szLIST,buffer);
+				format(buffer,sizeof buffer,"{89C1FA}Pos: {00AAFF}(%.7f,%.7f,%.7f) {89C1FA}Next: {00AAFF}(%.7f,%.7f,%.7f)\n",x,y,z,nextx,nexty,nextz);
+				strcat(szLIST,buffer);
+				format(buffer,sizeof buffer,"{89C1FA}Type: {00AAFF}(%d) {89C1FA}Size: {00AAFF}(%.2f)",GetDynamicRaceCPType(i),size);
+				strcat(szLIST,buffer);
+				FindDynamicRaceCPLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
+				cnt++;
+			}
+		}
+		SAOI_Finder[e_dynamic_racecp][o_count] = cnt;
+	}
+}
+
+stock SAOI_RemoveFindDynamicRaceCP(){
+	for(new i = 0; i < MAX_FIND_DYNAMIC_RACECP; i++){
+		if(IsValidDynamic3DTextLabel(FindDynamicRaceCPLabel[i])) DestroyDynamic3DTextLabel(FindDynamicRaceCPLabel[i]);
+	}
+}
+
+//Main
 stock fcreate(const name[]){
 	if(!fexist(name)){
 		new File:cfile = fopen(name,io_readwrite);
@@ -359,14 +569,15 @@ stock fcreate(const name[]){
 	return 0;
 }
 
+//Commands
 CMD:saoi(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	
 	new szLIST[3096], buffer[256], fname[MAX_PATH],
 		object_cnt, material_cnt, material_text_cnt, load_time, removed_cnt,
 		t_object_cnt = 0, t_material_cnt = 0, t_material_text_cnt = 0, t_load_time = 0, t_removed_cnt = 0;
 	
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(!SAOI_IsSlotFree(i)){
 			GetSAOILoadData(i,fname,object_cnt,material_cnt,material_text_cnt,load_time,_,removed_cnt);
 			t_object_cnt += object_cnt;
@@ -376,132 +587,22 @@ CMD:saoi(playerid){
 			t_removed_cnt += removed_cnt;
 		}
 	}
+	
 	szLIST = "";
-	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(SAOI_GetFreeID()));
+	
+	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE)-1,SAOIToInt(SAOI_GetFreeID()));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d {00AAFF}Removed Buildings: {00FF00}%d\n",t_object_cnt,t_material_cnt,t_material_text_cnt,t_removed_cnt);
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Memory Loaded: {00FF00}%d KB {00AAFF}Load Time: {00FF00}%d {00AAFF}ms\n",floatround(SAOI_GetMemoryLoaded()/1024),t_load_time);
 	strcat(szLIST,buffer);
-	
-	if(FindObject){
-		format(buffer,sizeof buffer,"{00AAFF}Object Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindObjectCnt,MAX_FIND_OBJECT);
-	} else {
-		format(buffer,sizeof buffer,"{00AAFF}Object Info: {FF0000}NO\n");
-	}
-	strcat(szLIST,buffer);
-	
-	if(FindPickup){
-		format(buffer,sizeof buffer,"{00AAFF}Pickup Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindPickupCnt,MAX_FIND_PICKUP);
-	} else {
-		format(buffer,sizeof buffer,"{00AAFF}Pickup Info: {FF0000}NO\n");
-	}
-	strcat(szLIST,buffer);
-	
-	if(FindMapIcon){
-		format(buffer,sizeof buffer,"{00AAFF}MapIcon Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindMapIconCnt,MAX_FIND_MAPICON);
-	} else {
-		format(buffer,sizeof buffer,"{00AAFF}MapIcon Info: {FF0000}NO\n");
-	}
-	strcat(szLIST,buffer);
-	
-	#if defined _YSF_included
-		if(FindVeh){
-			format(buffer,sizeof buffer,"{00AAFF}Vehicle Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindVehCnt,MAX_VEHICLES);
-		} else {
-			format(buffer,sizeof buffer,"{00AAFF}Vehicle Info: {FF0000}NO\n");
-		}
-		strcat(szLIST,buffer);
-	#endif
-	
-	if(FindRB){
-		format(buffer,sizeof buffer,"{00AAFF}Remove Building Info: {00FF00}YES {00AAFF}Description: {00FF00}%d / %d\n",FindRBCnt,MAX_OBJECTS);
-	} else {
-		format(buffer,sizeof buffer,"{00AAFF}Remove Building Info: {FF0000}NO\n");
-	}
-	strcat(szLIST,buffer);
-	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Statistics", szLIST, "Exit", "");
-	return 1;
-}
 
-CMD:addpickupinfo(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindPickup) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delpickupinfo");
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addpickupinfo <streamdistance (1-300)> <find radius>");
-	new Float:sd, Float:findr;
-	sscanf(params,"ff",sd,findr);
-	if(findr < 1.0) findr = 20.0;
-	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
-	new buffer[256];
-	format(buffer,sizeof buffer,"Pickups description has been activated, coverage %.0fm",sd);
-	SendClientMessage(playerid,0xFFFFFFFF,buffer);
-	FindDynamicPickup(playerid,findr,sd);
-	FindPickup = true;
-	return 1;
-}
-
-CMD:delpickupinfo(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(!FindPickup) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
-	RemoveFindDynamicPickupLabel();
-	FindPickup = false;
-	SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of pickups");
-	return 1;
-}
-
-CMD:addmapiconinfo(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindMapIcon) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delmapiconinfo");
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addmapiconinfo <streamdistance (1-300)> <find radius>");
-	new Float:sd, Float:findr;
-	sscanf(params,"ff",sd,findr);
-	if(findr < 1.0) findr = 20.0;
-	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
-	new buffer[256];
-	format(buffer,sizeof buffer,"MapIcons description has been activated, coverage %.0fm",sd);
-	SendClientMessage(playerid,0xFFFFFFFF,buffer);
-	FindDynamicMapIcon(playerid,findr,sd);
-	FindMapIcon = true;
-	return 1;
-}
-
-CMD:delmapiconinfo(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(!FindMapIcon) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
-	RemoveFindDynamicMapIconLabel();
-	FindMapIcon = false;
-	SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of mapicons");
-	return 1;
-}
-
-CMD:addobjinfo(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindObject) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delobjinfo");
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addobjinfo <streamdistance (1-300)> <find radius>");
-	new Float:sd, Float:findr;
-	sscanf(params,"ff",sd,findr);
-	if(findr < 1.0) findr = 20.0;
-	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
-	new buffer[256];
-	format(buffer,sizeof buffer,"Objects description has been activated, coverage %.0fm",sd);
-	SendClientMessage(playerid,0xFFFFFFFF,buffer);
-	FindDynamicObject(playerid,findr,sd);
-	FindObject = true;
-	return 1;
-}
-
-CMD:delobjinfo(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(!FindObject) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
-	RemoveFindDynamicObjectLabel();
-	FindObject = false;
-	SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of objects");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Statistics", szLIST, "{00FF00}Exit", "");
 	return 1;
 }
 
 CMD:objstatus(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	new pVW, pINT, cnt = 0, vis, buffer[200], oVW, oINT, tmp = 0;
 	pVW = GetPlayerVirtualWorld(playerid);
 	pINT = GetPlayerInterior(playerid);
@@ -522,7 +623,7 @@ CMD:objstatus(playerid){
 }
 
 CMD:delobject(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /delobject <objectid>");
 	new objectid = strval(params);
 	if(!IsValidDynamicObject(objectid)) return SendClientMessage(playerid,0xB01010FF,"This object not exists");
@@ -531,7 +632,7 @@ CMD:delobject(playerid,params[]){
 }
 
 CMD:delpickup(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /delpickup <pickupid>");
 	new pickupid = strval(params);
 	if(!IsValidDynamicPickup(pickupid)) return SendClientMessage(playerid,0xB01010FF,"This pickup not exists");
@@ -540,7 +641,7 @@ CMD:delpickup(playerid,params[]){
 }
 
 CMD:delmapicon(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /mapicon <iconid>");
 	new iconid = strval(params);
 	if(!IsValidDynamicMapIcon(iconid)) return SendClientMessage(playerid,0xB01010FF,"This mapicon not exists");
@@ -548,58 +649,8 @@ CMD:delmapicon(playerid,params[]){
 	return 1;
 }
 
-#if defined _YSF_included
-	CMD:addvehicleinfo(playerid,params[]){
-		if(!IsPlayerAdmin(playerid)) return 0;
-		if(FindVeh) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delvehicleinfo");
-		if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addvehicleinfo <streamdistance (1-300)>");
-		new Float:sd;
-		sscanf(params,"f",sd);
-		if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
-		new buffer[256];
-		format(buffer,sizeof buffer,"Vehicles description has been activated, coverage %.0fm",sd);
-		SendClientMessage(playerid,0xFFFFFFFF,buffer);
-		FindVehicle(sd);
-		FindVeh = true;
-		return 1;
-	}
-
-	CMD:delvehicleinfo(playerid){
-		if(!IsPlayerAdmin(playerid)) return 0;
-		if(!FindVeh) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
-		RemoveFindVehicleLabel();
-		FindVeh = false;
-		SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of vehicles");
-		return 1;
-	}
-#endif
-
-CMD:addrbinfo(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(FindRB) return SendClientMessage(playerid,0xB01010FF,"Function is active, usage /delrbinfo");
-	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /addrbinfo <streamdistance (1-300)>");
-	new Float:sd;
-	sscanf(params,"f",sd);
-	if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
-	new buffer[256];
-	format(buffer,sizeof buffer,"Removed Buildings description has been activated, coverage %.0fm",sd);
-	SendClientMessage(playerid,0xFFFFFFFF,buffer);
-	FindRemoveBuildings(sd);
-	FindRB = true;
-	return 1;
-}
-
-CMD:delrbinfo(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	if(!FindRB) return SendClientMessage(playerid,0xB01010FF,"Function deactivated");
-	RemoveFindRemoveBuildingsLabel();
-	FindRB = false;
-	SendClientMessage(playerid,0xFFFFFFFF,"Removed all signatures of Removed Buildings");
-	return 1;
-}
-
 CMD:tptoobj(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /tptoobj <objectid>");
 	new objectid = strval(params);
 	if(!IsValidDynamicObject(objectid)) return SendClientMessage(playerid,0xB01010FF,"This object not exists");
@@ -614,7 +665,7 @@ CMD:tptoobj(playerid,params[]){
 }
 
 CMD:objmaterial(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /objmaterial <objectid>");
 	new objectid = strval(params);
 	if(!IsValidDynamicObject(objectid)) return SendClientMessage(playerid,0xB01010FF,"This object not exists");
@@ -631,12 +682,12 @@ CMD:objmaterial(playerid,params[]){
 		}
 	}
 	if(cnt == 0) strcat(szLIST,"This object not use materials.");
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Object Material", szLIST, "Exit", "");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Object Material", szLIST, "{00FF00}Exit", "");
 	return 1;
 }
 
 CMD:objmaterialtext(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /objmaterialtext <objectid>");
 	new objectid = strval(params);
 	if(!IsValidDynamicObject(objectid)) return SendClientMessage(playerid,0xB01010FF,"This object not exists");
@@ -657,20 +708,12 @@ CMD:objmaterialtext(playerid,params[]){
 		}
 	}
 	if(cnt == 0) strcat(szLIST,"This object not use material text.");
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Object Material Text", szLIST, "Exit", "");
-	return 1;
-}
-
-CMD:saoicapacity(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
-	new buffer[256];
-	format(buffer,sizeof buffer,"{00AAFF}SAOI File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d",CountSAOIFileLoaded(),SAOIToInt(MAX_SAOI_FILE),SAOIToInt(SAOI_GetFreeID()));
-	SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Object Material Text", szLIST, "{00FF00}Exit", "");
 	return 1;
 }
 
 CMD:saoiinfo(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name> (Only file name, without extension)");
 	new buffer[512], path[MAX_PATH], SAOI:index, Float:x, Float:y, Float:z, Float:angle, vw, int;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
@@ -718,26 +761,49 @@ CMD:saoiinfo(playerid,params[]){
 	}
 	strcat(szLIST,buffer);
 	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_INFO,DIALOG_STYLE_MSGBOX,"SAOI File Information", szLIST, "Exit", "Return");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_INFO,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI File Information",szLIST,"{00FF00}Exit","{FF0000}Return");
 	return 1;
 }
 
 CMD:streaminfo(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	new buffer[256], szLIST[3096];
-	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d / %d\n",CountObjects(),MAX_OBJECTS);
-	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Vehicles: {00FF00}%d / %d\n",CountVehicles(),MAX_VEHICLES);
-	strcat(szLIST,buffer);
+	
+	
+	//Server Elements
+	strcat(szLIST,"{00FFFF}Server Elements:\n");
 	format(buffer,sizeof buffer,"{00AAFF}Players: {00FF00}%d / %d\n",CountPlayers(true,false),GetMaxPlayers()-CountPlayers(false,true));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}NPC: {00FF00}%d / %d\n",CountPlayers(false,true),GetServerVarAsInt("maxnpc"));
 	strcat(szLIST,buffer);
+	
+	
+	//Static Elements
+	strcat(szLIST,"\n{00FFFF}Static Elements:\n");
+	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d / %d\n",CountObjects(),MAX_OBJECTS);
+	strcat(szLIST,buffer);
+	
+	#if defined _YSF_included
+		new cnt = 0;
+		for(new i = 0, j = MAX_PICKUPS; i < j; i++){
+			if(IsValidPickup(i)) cnt++;
+		}
+		format(buffer,sizeof buffer,"{00AAFF}Pickups: {00FF00}%d / %d\n",cnt,MAX_PICKUPS);
+		strcat(szLIST,buffer);
+	#endif
+	
 	format(buffer,sizeof buffer,"{00AAFF}Actors: {00FF00}%d / %d\n",CountActors(),MAX_ACTORS);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d / %d\n",SAOI_CountRemovedBuildings(),MAX_OBJECTS);
+	format(buffer,sizeof buffer,"{00AAFF}Vehicles: {00FF00}%d / %d\n",CountVehicles(),MAX_VEHICLES);
 	strcat(szLIST,buffer);
-	strcat(szLIST,"\n");
+	#if defined _YSF_included
+		format(buffer,sizeof buffer,"{00AAFF}Vehicle Models: {00FF00}%d / %d\n",GetVehicleModelsUsed(),212);
+		strcat(szLIST,buffer);
+	#endif
+	
+	
+	//Dynamic Elements
+	strcat(szLIST,"\n{00FFFF}Dynamic Elements:\n");
 	format(buffer,sizeof buffer,"{00AAFF}DynamicObjects: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
 		CountDynamicObjects(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_OBJECT),Streamer_GetVisibleItems(STREAMER_TYPE_OBJECT,playerid)
 	);
@@ -767,12 +833,18 @@ CMD:streaminfo(playerid){
 	);
 	strcat(szLIST,buffer);
 	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"Stream info",szLIST,"Wyjdz","");
+	
+	//SAOI Elements
+	strcat(szLIST,"\n{00FFFF}SAOI Elements:\n");
+	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d / %d\n",SAOI_CountRemovedBuildings(),MAX_OBJECTS);
+	strcat(szLIST,buffer);
+	
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Stream info",szLIST,"{FF0000}Exit","");
 	return 1;
 }
 
 CMD:saoiload(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiload <name> (Only file name, without extension)");
 	new buffer[256], path[MAX_PATH];
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
@@ -799,7 +871,7 @@ CMD:saoiload(playerid,params[]){
 }
 
 CMD:saoiunload(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunload <name> (Only file name, without extension)");
 	new buffer[256], path[MAX_PATH], SAOI:index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
@@ -823,7 +895,7 @@ CMD:saoiunload(playerid,params[]){
 }
 
 CMD:saoireload(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoireload <name> (Only file name, without extension)");
 	
 	new buffer[256], path[MAX_PATH], SAOI:index;
@@ -851,11 +923,26 @@ CMD:saoireload(playerid,params[]){
 	return 1;
 }
 
+CMD:saoifinder(playerid){
+	if(!IsAdmin(playerid)) return 0;
+	new buffer[256], szLIST[400];
+	for(new i = 0, j = sizeof(elements_name); i < j; i++){
+		if(SAOI_Finder[find_elements:i][o_active]){
+			format(buffer,sizeof buffer,"{00FF00}[YES]\t{00AAFF}%s {00FFFF}(%d / %d)\n",elements_name[i],SAOI_Finder[find_elements:i][o_count],SAOI_Finder[find_elements:i][o_max]);
+		} else {
+			format(buffer,sizeof buffer,"{FF0000}[NO]\t{00AAFF}%s\n",elements_name[i]);
+		}
+		strcat(szLIST,buffer);
+	}
+	ShowPlayerDialog(playerid,DIALOG_SAOI_FINDER,DIALOG_STYLE_LIST,"{00FFFF}SAOI Element Finder",szLIST,"{00FF00}Select","{FF0000}Exit");
+	return 1;
+}
+
 CMD:saoilist(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	new buffer[256], szLIST[4096], fname[MAX_PATH];
 	
-	for(new SAOI:i = SAOI:1; i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+	SAOI_Foreach(i){
 		if(!SAOI_IsSlotFree(i)){
 			GetSAOILoadData(i,fname);
 			format(buffer,sizeof buffer,"{FFFFFF}%d. {00FF00}%s\n",SAOIToInt(i),fname[6]);
@@ -866,12 +953,12 @@ CMD:saoilist(playerid){
 	if(isnull(szLIST)){
 		szLIST = "Lack loaded files";
 	}
-	ShowPlayerDialog(playerid,DIALOG_SAOI_LIST,DIALOG_STYLE_LIST,"SAOI File List", szLIST, "Select", "Exit");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_LIST,DIALOG_STYLE_LIST,"{00FFFF}SAOI File List",szLIST,"{00FF00}Select","{FF0000}Exit");
 	return 1;
 }
 
 CMD:saoitp(playerid,params[]){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoitp <name> (Only file name, without extension)");
 	
 	new buffer[256], path[MAX_PATH], SAOI:index;
@@ -896,23 +983,11 @@ CMD:saoitp(playerid,params[]){
 }
 
 CMD:saoicmd(playerid){
-	if(!IsPlayerAdmin(playerid)) return 0;
+	if(!IsAdmin(playerid)) return 0;
 	new szLIST[2048];
 	strcat(szLIST,"{00FF00}/saoi - {00AAFF}shows statistics saoi\n");
-	strcat(szLIST,"{00FF00}/addobjinfo - {00AAFF}adds descriptions of objects\n");
-	strcat(szLIST,"{00FF00}/delobjinfo - {00AAFF}removes descriptions of objects\n");
-	strcat(szLIST,"{00FF00}/addpickupinfo - {00AAFF}adds descriptions of pickups\n");
-	strcat(szLIST,"{00FF00}/delpickupinfo - {00AAFF}removes descriptions of pickups\n");
-	strcat(szLIST,"{00FF00}/addmapiconinfo - {00AAFF}adds descriptions of mapicons\n");
-	strcat(szLIST,"{00FF00}/delmapiconinfo - {00AAFF}removes descriptions of mapicons\n");
-	#if defined _YSF_included
-		strcat(szLIST,"{00FF00}/addvehicleinfo - {00AAFF}adds descriptions of vehicles\n");
-		strcat(szLIST,"{00FF00}/delvehicleinfo - {00AAFF}removes descriptions of vehicles\n");
-	#endif
-	strcat(szLIST,"{00FF00}/addrbinfo - adds descriptions of removed buildings\n");
-	strcat(szLIST,"{00FF00}/delrbinfo - removes descriptions of removed buildings\n");
+	strcat(szLIST,"{00FF00}/saoifinder - {00AAFF}element finder\n");
 	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
-	strcat(szLIST,"{00FF00}/saoicapacity - {00AAFF}shows the status of use of slots\n");
 	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");
 	strcat(szLIST,"{00FF00}/saoiload - {00AAFF}load saoi file\n");
 	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
@@ -926,18 +1001,21 @@ CMD:saoicmd(playerid){
 	strcat(szLIST,"{00FF00}/delmapicon - {00AAFF}destroy dynamic mapicon\n");
 	strcat(szLIST,"{00FF00}/objmaterial - {00AAFF}get object materials\n");
 	strcat(szLIST,"{00FF00}/objmaterialtext - {00AAFF}get object material text\n");
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"SAOI Command", szLIST, "Exit", "");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Commands",szLIST,"{00FF00}Exit","");
 	return 1;
 }
 
+//Dialogs
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 	switch(dialogid){
 		case DIALOG_SAOI_LIST: {
+			if(!IsAdmin(playerid)) return 0;
 			if(!response) return 0;
 			PlayerLastSAOI[playerid] = SAOI:(listitem+1);
-			ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","Select","Return");
+			ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"{00FFFF}SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","{00FF00}Select","{FF0000}Return");
 		}
 		case DIALOG_SAOI_ITEM: {
+			if(!IsAdmin(playerid)) return 0;
 			if(!response) return cmd_saoilist(playerid);
 			new fname[MAX_PATH],nname[MAX_SAOI_NAME_SIZE];
 			GetSAOILoadData(PlayerLastSAOI[playerid],fname);
@@ -950,7 +1028,121 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			}
 		}
 		case DIALOG_SAOI_INFO: {
-			if(!response) return ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","Select","Return");
+			if(!IsAdmin(playerid)) return 0;
+			if(!response) return ShowPlayerDialog(playerid,DIALOG_SAOI_ITEM,DIALOG_STYLE_LIST,"{00FFFF}SAOI File Option","File Information\nReload File\nUnload File\nTeleport To Flag","{00FF00}Select","{FF0000}Return");
+		}
+		case DIALOG_SAOI_FINDER: {
+			if(!IsAdmin(playerid)) return 0;
+			if(!response) return 0;
+			PlayerLastItem[playerid] = listitem;
+			if(SAOI_Finder[find_elements:listitem][o_active]){
+				ShowPlayerDialog(playerid,DIALOG_SAOI_FINDER_DISABLE,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Finder Option","You are sure for disable this option.","{00FF00}YES","{FF0000}NO");
+			} else {
+				ShowPlayerDialog(playerid,DIALOG_SAOI_FINDER_PARAMS,DIALOG_STYLE_INPUT,"{00FFFF}SAOI Finder Option","Choose stream distance and find distance. (separate space)","{00FF00}Find","{FF0000}Return");
+			}
+		}
+		case DIALOG_SAOI_FINDER_DISABLE: {
+			if(!IsAdmin(playerid)) return 0;
+			if(!response) return cmd_saoifinder(playerid);
+			new elementid = PlayerLastItem[playerid];
+			if(SAOI_Finder[find_elements:elementid][o_active]){
+				switch(find_elements:elementid){
+					case e_dynamic_object: {
+						SAOI_RemoveFindDynamicObject();
+					}
+					case e_dynamic_pickup: {
+						SAOI_RemoveFindDynamicPickup();
+					}
+					case e_dynamic_cp: {
+						SAOI_RemoveFindDynamicCP();
+					}
+					case e_dynamic_racecp: {
+						SAOI_RemoveFindDynamicRaceCP();
+					}
+					case e_dynamic_mapicon: {
+						SAOI_RemoveFindDynamicMapIcon();
+					}
+					case e_actor: {
+						SAOI_RemoveFindActor();
+					}
+					#if defined _YSF_included
+						case e_object: {
+							SAOI_RemoveFindObject();
+						}
+						case e_pickup: {
+							SAOI_RemoveFindPickup();
+						}
+						case e_vehicle: {
+							SAOI_RemoveFindVehicle();
+						}
+					#endif
+					case e_removebuilding: {
+						SAOI_RemoveFindRemoveBuilding();
+					}
+					default: {
+						return SendClientMessage(playerid,0xB01010FF,"This component need YSF Plugin.");
+					}
+				}
+				
+				new buffer[256];
+				format(buffer,sizeof(buffer),"Removed all signatures of %s",elements_name[elementid]);
+				SendClientMessage(playerid,0xFFFFFFFF,buffer);
+				SAOI_Finder[find_elements:elementid][o_active] = false;
+				return cmd_saoifinder(playerid);
+			}
+		}
+		case DIALOG_SAOI_FINDER_PARAMS: {
+			if(!IsAdmin(playerid)) return 0;
+			if(!response) return cmd_saoifinder(playerid);
+			new elementid = PlayerLastItem[playerid], Float:sd, Float:findr;
+			if(sscanf(inputtext,"ff",sd,findr)) return SendClientMessage(playerid,0xB01010FF,"You must enter values <streamdistance (1-300)> <find radius>");
+			if(sd < 1.0 || sd > 300.0) return SendClientMessage(playerid,0xB01010FF,"Stream distance must be within range 1-300");
+			if(findr < 1.0) findr = 20.0;
+			
+			if(!SAOI_Finder[find_elements:elementid][o_active]){
+				switch(find_elements:elementid){
+					case e_dynamic_object: {
+						SAOI_FindDynamicObject(playerid,findr,sd);
+					}
+					case e_dynamic_pickup: {
+						SAOI_FindDynamicPickup(playerid,findr,sd);
+					}
+					case e_dynamic_cp: {
+						SAOI_FindDynamicCP(playerid,findr,sd);
+					}
+					case e_dynamic_racecp: {
+						SAOI_FindDynamicRaceCP(playerid,findr,sd);
+					}
+					case e_dynamic_mapicon: {
+						SAOI_FindDynamicMapIcon(playerid,findr,sd);
+					}
+					case e_actor: {
+						SAOI_FindActor(sd);
+					}
+					#if defined _YSF_included
+						case e_object: {
+							SAOI_FindObject(playerid,findr,sd);
+						}
+						case e_pickup: {
+							SAOI_FindPickup(playerid,findr,sd);
+						}
+						case e_vehicle: {
+							SAOI_FindVehicle(sd);
+						}
+					#endif
+					case e_removebuilding: {
+						SAOI_FindRemoveBuilding(sd);
+					}
+					default: {
+						return SendClientMessage(playerid,0xB01010FF,"This component need YSF Plugin.");
+					}
+				}
+				new buffer[256];
+				format(buffer,sizeof(buffer),"%s description has been activated, coverage %.0fm",elements_name[elementid],sd);
+				SendClientMessage(playerid,0xFFFFFFFF,buffer);
+				SAOI_Finder[find_elements:elementid][o_active] = true;
+				return cmd_saoifinder(playerid);
+			}
 		}
 	}
 	return 0;
@@ -958,6 +1150,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 
 public OnFilterScriptInit(){
 	printf(" ");
+	
+	SAOI_Finder[e_dynamic_object][o_max] =	MAX_FIND_DYNAMIC_OBJECT;
+	SAOI_Finder[e_dynamic_pickup][o_max] =	MAX_FIND_DYNAMIC_PICKUP;
+	SAOI_Finder[e_dynamic_cp][o_max] =		MAX_FIND_DYNAMIC_CP;
+	SAOI_Finder[e_dynamic_racecp][o_max] =	MAX_FIND_DYNAMIC_RACECP;
+	SAOI_Finder[e_dynamic_mapicon][o_max] =	MAX_FIND_DYNAMIC_MAPICON;
+	SAOI_Finder[e_object][o_max] =			MAX_FIND_OBJECT;
+	SAOI_Finder[e_pickup][o_max] =			MAX_FIND_PICKUP;
+	SAOI_Finder[e_actor][o_max] =			MAX_FIND_ACTOR;
+	SAOI_Finder[e_vehicle][o_max] =			MAX_FIND_VEHICLE;
+	SAOI_Finder[e_removebuilding][o_max] =	MAX_FIND_REMOVEBUILDING;
+
 	new start_time = GetTickCount();
 	if(!fexist(SAOI_FILE_LIST)){
 		printf("Create file: %s",SAOI_FILE_LIST);

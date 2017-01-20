@@ -66,18 +66,8 @@ myobject.saoi
 ## SAOI_FileManager Commands:
 - /saoi - shows statistics saoi 
 - /saoicmd - show saoi cmd
-- /addobjinfo - adds descriptions of objects
-- /delobjinfo - removes descriptions of objects
-- /addpickupinfo - adds descriptions of pickups
-- /delpickupinfo - removes descriptions of pickups
-- /addmapiconinfo - adds descriptions of mapicons
-- /delmapiconinfo - removes descriptions of mapicons
-- /addvehicleinfo - adds descriptions of vehicles
-- /delvehicleinfo - removes descriptions of vehicles
-- /addrbinfo - adds descriptions of removed buildings
-- /delrbinfo - removes descriptions of removed buildings
+- /saoifinder - element finder
 - /objstatus - show total object status
-- /saoicapacity - shows the status of use of slots
 - /saoiinfo - show saoi file information
 - /saoiload - load saoi file
 - /saoiunload - unload saoi file

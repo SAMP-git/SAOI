@@ -32,11 +32,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.5.0
+	#error You need SAOI.inc v1.5.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.5.0
-#elseif (SAOI_LOADER_VERSION < 10500)
-	#error Update you SAOI.inc to v1.5.0
+	#error Update you SAOI.inc to v1.5.1
+#elseif (SAOI_LOADER_VERSION < 10501)
+	#error Update you SAOI.inc to v1.5.1
 #endif
 
 //Hook: CreateDynamicObject
