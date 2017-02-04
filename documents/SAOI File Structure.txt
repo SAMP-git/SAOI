@@ -33,87 +33,316 @@ $AUTHOR_DATA: {
 $DATA: {
 	arg_number size:8b data: {
 		ARG: 7 - 14 {
-			modelid size:16b
-			Float:x size:32b
-			Float:y size:32b
-			Float:z size:32b
-			Float:rx size:32b
-			Float:ry size:32b
-			Float:rz size:32b
-			worldid size:32b
-			interiorid size:32b
-			Float:streamdistance size:32b
-			Float:drawdistance size:32b
-			areaid size:32b
-			priority size:8b
-			object_flag {
-				anti_area size:1b
-				no_camera_col size:1b
-				null size:6b
-			} size:8b
-
-			material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
-
+			function: {
+				CreateDynamicObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,worldid,interiorid,playerid,Float:streamdistance,Float:drawdistance,areaid,priority);
+			}
+			arguments: {
+				modelid size:16b
+				Float:x size:32b
+				Float:y size:32b
+				Float:z size:32b
+				Float:rx size:32b
+				Float:ry size:32b
+				Float:rz size:32b
+				worldid size:32b
+				interiorid size:32b
+				Float:streamdistance size:32b
+				Float:drawdistance size:32b
+				areaid is virtual_areaid size:32b
+				priority size:8b
+				element_flag {
+					anti_area size:1b
+					no_camera_col size:1b
+					null size:6b
+				} size:8b
+			}
+			
+			values: {
+				material_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
+			}
+			
 			[for everyone material_used]
-			modelid size:16b
-			txdsize = strlen(txdname) size:8b
-			txdname size:txdsize
-			texturenamesize = strlen(texturename) size:8b
-			texturename size:texturenamesize
-			materialcolor size:32b
+			function: {
+				SetDynamicObjectMaterial(objectid,materialindex,modelid,const txdname[],const texturename[],materialcolor);
+			}
+			arguments: {
+				modelid size:16b
+				txdsize = strlen(txdname) size:8b
+				txdname size:txdsize
+				texturenamesize = strlen(texturename) size:8b
+				texturename size:texturenamesize
+				materialcolor size:32b
+			}
 
-			material_text_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
+			values: {
+				material_text_used size:16b data: binary idx 0 - 15 values: 0x0000 - 0xFFFF
+			}
 
 			[for everyone material_text_used]
-			textsize = strlen(text) size:16b
-			text size:textsize
-			materialsize size:8b
-			fontfacesize = strlen(fontface) size:8b
-			fontface size:fontfacesize
-			fontsize size:8b
-			bold size:8b
-			fontcolor size:32b
-			backcolor size:32b
-			textalignment size:8b
+			function: {
+				SetDynamicObjectMaterialText(objectid,materialindex,const text[],materialsize,const fontface[],fontsize,bold,fontcolor,backcolor,textalignment);
+			}
+			arguments: {
+				textsize = strlen(text) size:16b
+				text size:textsize
+				materialsize size:8b
+				fontfacesize = strlen(fontface) size:8b
+				fontface size:fontfacesize
+				fontsize size:8b
+				bold size:8b
+				fontcolor size:32b
+				backcolor size:32b
+				textalignment size:8b
+			}
+		}
+		
+		ARG: 101 {
+			function: {
+				CreateDynamicPickup(modelid,type,Float:x,Float:y,Float:z,worldid,interiorid,playerid,Float:streamdistance,areaid,priority);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 5 - 11 {
+						modelid size:16b
+						type size:8b
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						worldid size:32b
+						interiorid size:32b
+						Float:streamdistance size:32b
+						areaid is virtual_areaid size:32b
+						priority size:8b
+						element_flag {
+							anti_area size:1b
+							null size:7b
+						} size:8b
+					}
+				}
+			}
+		}
+
+		ARG: 104 {
+			function: {
+				CreateDynamicMapIcon(Float:x,Float:y,Float:z,type,color,worldid,interiorid,playerid,Float:streamdistance,style,areaid,priority);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 5 - 12 {
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						type size:8b
+						color size:32b
+						worldid size:32b
+						interiorid size:32b
+						Float:streamdistance size:32b
+						style size:8b
+						areaid is virtual_areaid size:32b
+						priority size:8b
+						element_flag {
+							anti_area size:1b
+							null size:7b
+						} size:8b
+					}
+				}
+			}
+		}
+		
+		ARG: 109 {
+			function: {
+				CreateVehicle(vehicletype,Float:x,Float:y,Float:z,Float:rotation,color1,color2,respawn_delay,addsiren);
+			}
+			arguments: {
+				vehicletype size:16b
+				Float:x size:32b
+				Float:y size:32b
+				Float:z size:32b
+				Float:rotation size:32b
+				color1 size:16b
+				color2 size:16b
+				respawn_delay size:32b
+				addsiren size:8b
+				worldid size:32b
+				interiorid size:32b
+			}
+		}
+		
+		ARG: 110 {
+			function: {
+				CreateDynamicCircle(Float:x,Float:y,Float:size,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 4 - 6 {
+						virtual_areaid size:32b
+						Float:x size:32b
+						Float:y size:32b
+						Float:size size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
+		}
+		
+		ARG: 111 {
+			function: {
+				CreateDynamicCylinder(Float:x,Float:y,Float:minz,Float:maxz,Float:size,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 6 - 8 {
+						virtual_areaid size:32b
+						Float:x size:32b
+						Float:y size:32b
+						Float:minz size:32b
+						Float:maxz size:32b
+						Float:size size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
+		}
+		
+		ARG: 112 {
+			function: {
+				CreateDynamicSphere(Float:x,Float:y,Float:z,Float:size,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 5 - 7 {
+						virtual_areaid size:32b
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						Float:size size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
+		}
+		
+		ARG: 113 {
+			function: {
+				CreateDynamicRectangle(Float:minx,Float:miny,Float:maxx,Float:maxy,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 5 - 7 {
+						virtual_areaid size:32b
+						Float:minx size:32b
+						Float:miny size:32b
+						Float:maxx size:32b
+						Float:maxy size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
+		}
+		
+		ARG: 114 {
+			function: {
+				CreateDynamicCube(Float:minx,Float:miny,Float:minz,Float:maxx,Float:maxy,Float:maxz,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 7 - 9 {
+						virtual_areaid size:32b
+						Float:minx size:32b
+						Float:miny size:32b
+						Float:minz size:32b
+						Float:maxx size:32b
+						Float:maxy size:32b
+						Float:maxz size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
+		}
+
+		ARG: 115 {
+			function: {
+				CreateDynamicPolygon(Float:points[],Float:minz,Float:maxz,maxpoints,worldid,interiorid,playerid);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 3 - 7 {
+						virtual_areaid size:32b
+						maxpoints = count(points) size:16b
+						Float:points size:maxpoints*32b
+						Float:minz size:32b
+						Float:maxz size:32b
+						worldid size:32b
+						interiorid size:32b
+					}
+				}
+			}
 		}
 
 		ARG: 201 {
-			//ip bumper!
-			server_ip size:32b
+			function: {
+				SetSAOIBumperIP(const name[],server_ip[]);
+			}
+			arguments: {
+				server_ip size:32b
+			}
 		}
 		
 		ARG: 202 {
-			//port bumper!
-			server_port size:32b
+			function: {
+				SetSAOIBumperPort(const name[],server_port);
+			}
+			arguments: {
+				server_port size:32b
+			}
 		}
 		
 		ARG: 203 {
-			//position bumper!
-			Float:x size:32b
-			Float:y size:32b
-			Float:z size:32b
-			Float:a size:32b
-			worldid size:32b
-			interiorid size:32b
+			function: {
+				SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);
+			}
+			arguments: {
+				Float:x size:32b
+				Float:y size:32b
+				Float:z size:32b
+				Float:a size:32b
+				worldid size:32b
+				interiorid size:32b
+			}
 		}
 		
 		ARG: 204 {
-			//created data bumper!
-			year size:16b
-			month size:8b
-			day size:8b
-			hour size:8b
-			minute size:8b
-			second size:8b
+			function: {
+				internal: {
+					CreateSAOIFile(const name[],author[],version[],description[]);
+				}
+			}
+			arguments: {
+				year size:16b
+				month size:8b
+				day size:8b
+				hour size:8b
+				minute size:8b
+				second size:8b
+			}
 		}
 		
 		ARG: 205 {
-			//RemoveBuildingForPlayer
-			modelid size:16b
-			Float:x size:32b
-			Float:y size:32b
-			Float:z size:32b
-			Float:radius size:32b
+			function: {
+				RemoveBuildingForPlayer(playerid,modelid,Float:fX,Float:fY,Float:fZ,Float:fRadius);
+			}
+			arguments: {
+				modelid size:16b
+				Float:x size:32b
+				Float:y size:32b
+				Float:z size:32b
+				Float:radius size:32b
+			}
 		}
 	}
 }

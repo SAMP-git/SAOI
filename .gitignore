@@ -45,4 +45,4 @@ Temporary Items
 *.amx
 include/crc.pwn
 SAOI Generator (Windows)
-copy.cmd
+saoi_copy.cmd
