@@ -1301,6 +1301,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			if(!IsAdmin(playerid)) return 0;
 			if(!response) return 0;
 			PlayerLastSAOI[playerid] = SAOI:(listitem+1);
+			PlayerLastItem[playerid] = listitem;
 			
 			new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE], buffer[128];
 			format(fname,sizeof(fname),"%s",SAOI_GetFileName(PlayerLastSAOI[playerid]));
