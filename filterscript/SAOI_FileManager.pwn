@@ -9,13 +9,13 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                                                            *
  *                                                                                                                                *
- * File Version: 1.6.0                                                                                                            *
+ * File Version: 1.6.1                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  * MapAndreas Version: 1.2.1                                                                                                      *
  * ColAndreas Version: 1.4.0                                                                                                      *
- * SAOI Version: 1.6.0                                                                                                            *
+ * SAOI Version: 1.6.1                                                                                                            *
  * 3DTryg Version: 3.2.2                                                                                                          *
  * StreamerFunction Version: 2.5.8                                                                                                *
  * YSF Version: R18                                                                                                               *
@@ -125,11 +125,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.6.0
+	#error You need SAOI.inc v1.6.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.6.0
-#elseif (SAOI_LOADER_VERSION < 10600)
-	#error Update you SAOI.inc to v1.6.0
+	#error Update you SAOI.inc to v1.6.1
+#elseif (SAOI_LOADER_VERSION < 10601)
+	#error Update you SAOI.inc to v1.6.1
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)

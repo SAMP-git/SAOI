@@ -11,7 +11,7 @@
  * Modules: None                                                                                                                  *
  * Attributes: Overload resistance. Functionality for one script.                                                                 *
  *                                                                                                                                *
- * File Version: 1.6.0                                                                                                            *
+ * File Version: 1.6.1                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -107,11 +107,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.6.0
+	#error You need SAOI.inc v1.6.1
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.6.0
-#elseif (SAOI_LOADER_VERSION < 10600)
-	#error Update you SAOI.inc to v1.6.0
+	#error Update you SAOI.inc to v1.6.1
+#elseif (SAOI_LOADER_VERSION < 10601)
+	#error Update you SAOI.inc to v1.6.1
 #endif
 */
 
@@ -134,7 +134,7 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10600)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10601)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -1858,7 +1858,7 @@ SAOIProt:: SAOI_CleanupElements(SAOI:index){
 		new max_idx = SAOIFile[index][SAOIV:cnt_vehicle], i = SAOIFile[index][SAOIV:offset_vehicle], j = GetVehiclePoolSize();
 		while(i <= j && max_idx > 0){
 			prot_i = i;
-			if(IsValidDynamicArea(i)){
+			if(IsValidVehicle(i)){
 				if(SAOI_Vehicles[i] == index){
 					max_idx--;
 					DestroyVehicle(prot_i);
@@ -2638,6 +2638,19 @@ SAOIProt:: SAOI_Exit(){
 		DeleteSVar("ADM:SAOI:FM");
 		printf("[ADM] Info: SAOI has been detached from %s",LOCK_SAOI_MEMORY);
 	#endif
+	
+	//Vehicles
+	new prot_i = 0;
+	for(new i = 0, j = GetVehiclePoolSize(); i <= j; i++){
+		prot_i = i;
+		if(IsValidVehicle(i)){
+			if(SAOI_Vehicles[i] != INVALID_SAOI_FILE){
+				DestroyVehicle(prot_i);
+				CallRemoteFunction("SAOI_OnVehicleDestroyed","d",i);
+				SAOI_Vehicles[i] = INVALID_SAOI_FILE;
+			}
+		}
+	}
 }
 
 //Hook: OnPlayerConnect
