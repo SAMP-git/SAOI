@@ -9,7 +9,7 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                                                            *
  *                                                                                                                                *
- * File Version: 1.6.1                                                                                                            *
+ * File Version: 1.6.2                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -25,6 +25,7 @@
  *                                                                                                                                *
  * Commands:                                                                                                                      *
  * /saoicmd - show saoi cmd                                                                                                       *
+ * /saoicfg - edit saoi config                                                                                                    *
  * /saoi - shows statistics saoi                                                                                                  *
  * /saoifinder - element finder                                                                                                   *
  * /saoidestroy - destroy element                                                                                                 *
@@ -33,7 +34,9 @@
  * /saoiload - load saoi file                                                                                                     *
  * /saoiboot - load saoi file (Add to SAOIFiles.txt)                                                                              *
  * /saoiunload - unload saoi file                                                                                                 *
+ * /saoiunboot - unload saoi file (Remove from SAOIFiles.txt)                                                                     *
  * /saoireload - reload saoi file                                                                                                 *
+ * /saoireboot - reload all saoi files                                                                                            *
  * /saoilist - show loaded saoi files                                                                                             *
  * /streaminfo - show stream info                                                                                                 *
  * /saoitp - teleport to saoi flag                                                                                                *
@@ -77,6 +80,7 @@
 
 #define SAOI_FILE_LIST				"/SAOI/SaoiFiles.txt"
 #define SAOI_FILE_TMP				"/SAOI/SaoiFiles.tmp"
+#define SAOI_FILE_CFG				"/SAOI/SAOI.cfg"
 
 #define MAX_FIND_DYNAMIC_OBJECT		(2048)
 #define MAX_FIND_DYNAMIC_PICKUP		(512)
@@ -104,6 +108,7 @@
 #define DIALOG_SAOI_FINDER_PARAMS	(DIALOG_OFFSET+(6))
 #define DIALOG_SAOI_DESTROY			(DIALOG_OFFSET+(7))
 #define DIALOG_SAOI_DESTROY_PARAMS	(DIALOG_OFFSET+(8))
+#define DIALOG_SAOI_CFG				(DIALOG_OFFSET+(9))
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
@@ -167,6 +172,12 @@ enum find_option {
 	o_max
 }
 
+enum saoi_config {
+	bool:save_log,
+	bool:global_msg,
+	bool:auto_freeze
+}
+
 new elements_name[][] = {
 	"DynamicObject",
 	"DynamicPickup",
@@ -190,7 +201,10 @@ new Text3D:FindDynamicObjectLabel[MAX_FIND_DYNAMIC_OBJECT],
 	Text3D:FindRemoveBuildingsLabel[MAX_FIND_REMOVEBUILDING],
 	SAOI_Finder[find_elements][find_option],
 	SAOI:PlayerLastSAOI[MAX_PLAYERS],
-	PlayerLastItem[MAX_PLAYERS];
+	PlayerLastItem[MAX_PLAYERS],
+	PlayerListOffset[MAX_PLAYERS],
+	SAOI_Config[saoi_config],
+	SAOI_ErrorLevel = 0;
 
 #if defined _YSF_included
 	new	Text3D:FindObjectLabel[MAX_FIND_OBJECT],
@@ -789,13 +803,30 @@ stock SAOI_RemoveFindDynamicRaceCP(){
 	}
 }
 
+stock SAOI_GetStatus(errorlevel){
+	new buffer[24];
+	switch(errorlevel){
+		case 0: buffer = "{00FF00}Good";
+		case 1..10: buffer = "{FFFF00}Not bad";
+		case 11..100: buffer = "{FF6600}Bad";
+		default: buffer = "{FF0000}Very bad";
+	}
+	return buffer;
+}
+
 //Commands
 CMD:saoi(playerid){
-	if(!IsAdmin(playerid)) return 0;
+	new szLIST[3096], buffer[256];
+	if(!IsAdmin(playerid)){
+		format(buffer,sizeof buffer,"{00AAFF}San Andreas Object Image Loader by {FF0000}Abyss Morgan\n\n");
+		strcat(szLIST,buffer);
+		format(buffer,sizeof buffer,"{00AAFF}SAOI Version: {00FF00}%d.%d.%d {00AAFF}Status: %s\n",(SAOI_LOADER_VERSION / 10000),((SAOI_LOADER_VERSION % 10000) / 100),((SAOI_LOADER_VERSION % 10000) % 100),SAOI_GetStatus(SAOI_ErrorLevel));
+		strcat(szLIST,buffer);
+		ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Statistics", szLIST, "{00FF00}Exit", "");
+		return 1;
+	}
 	
-	new szLIST[3096],
-		buffer[256],
-		cnt_object = 0,
+	new cnt_object = 0,
 		cnt_pickup = 0,
 		cnt_mapicon = 0,
 		cnt_area = 0,
@@ -821,7 +852,9 @@ CMD:saoi(playerid){
 	
 	szLIST = "";
 	
-	format(buffer,sizeof buffer,"{00AAFF}SAOI Version: {00FF00}%d.%d.%d {00AAFF}File Header: {00FF00}%s\n",(SAOI_LOADER_VERSION / 10000),((SAOI_LOADER_VERSION % 10000) / 100),((SAOI_LOADER_VERSION % 10000) % 100),SAOI_HEADER_KEY);
+	format(buffer,sizeof buffer,"{00AAFF}San Andreas Object Image Loader by {FF0000}Abyss Morgan\n\n");
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}SAOI Version: {00FF00}%d.%d.%d {00AAFF}File Header: {00FF00}%s {00AAFF}Status: %s\n",(SAOI_LOADER_VERSION / 10000),((SAOI_LOADER_VERSION % 10000) / 100),((SAOI_LOADER_VERSION % 10000) % 100),SAOI_HEADER_KEY,SAOI_GetStatus(SAOI_ErrorLevel));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",SAOI_CountFileLoaded(),SAOIToInt(MAX_SAOI_FILE)-1,SAOIToInt(SAOI_GetFreeID()));
 	strcat(szLIST,buffer);
@@ -943,7 +976,7 @@ CMD:saoiinfo(playerid,params[]){
 	}
 	
 	PlayerLastSAOI[playerid] = index;
-	
+	PlayerLastItem[playerid] = SAOIToInt(index-1);
 	new szLIST[1024], author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE], created_data[32];
 	
 	szLIST = "";
@@ -1087,10 +1120,12 @@ CMD:saoiload(playerid,params[]){
 	}
 	if(!fexist(path)) return SendClientMessage(playerid,0xB01010FF,"File not exist");
 	
-	format(buffer,sizeof buffer,"[IMPORTANT] Load Objects: %s",params);
-	SendClientMessageToAll(0xFF0000FF,buffer);
+	if(SAOI_Config[global_msg]){
+		format(buffer,sizeof buffer,"[IMPORTANT] Load Objects: %s",params);
+		SendClientMessageToAll(0xFF0000FF,buffer);
+	}
 	
-	new SAOI:edi = LoadObjectImage(path);
+	new SAOI:edi = LoadObjectImage(path,SAOI_Config[save_log]);
 	if(SAOIToInt(edi) > 0){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}loaded",params);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
@@ -1114,10 +1149,12 @@ CMD:saoiboot(playerid,params[]){
 	}
 	if(!fexist(path)) return SendClientMessage(playerid,0xB01010FF,"File not exist");
 	
-	format(buffer,sizeof buffer,"[IMPORTANT] Load Objects: %s",params);
-	SendClientMessageToAll(0xFF0000FF,buffer);
+	if(SAOI_Config[global_msg]){
+		format(buffer,sizeof buffer,"[IMPORTANT] Load Objects: %s",params);
+		SendClientMessageToAll(0xFF0000FF,buffer);
+	}
 	
-	new SAOI:edi = LoadObjectImage(path);
+	new SAOI:edi = LoadObjectImage(path,SAOI_Config[save_log]);
 	if(SAOIToInt(edi) > 0){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}loaded",params);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
@@ -1132,6 +1169,7 @@ CMD:saoiboot(playerid,params[]){
 	}
 	return 1;
 }
+
 CMD:saoiunload(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunload <name> (Only file name, without extension)");
@@ -1142,8 +1180,40 @@ CMD:saoiunload(playerid,params[]){
 		return SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	}
 	
-	format(buffer,sizeof buffer,"[IMPORTANT] Unload Objects: %s",params);
-	SendClientMessageToAll(0xFF0000FF,buffer);
+	if(SAOI_Config[global_msg]){
+		format(buffer,sizeof buffer,"[IMPORTANT] Unload Objects: %s",params);
+		SendClientMessageToAll(0xFF0000FF,buffer);
+	}
+	
+	if(UnloadObjectImage(index)){
+		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}unloaded",params);
+		SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not unloaded",params);
+		SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	}
+	
+	return 1;
+}
+
+CMD:saoiunboot(playerid,params[]){
+	if(!IsAdmin(playerid)) return 0;
+	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunboot <name> (Only file name, without extension)");
+	new buffer[256], path[MAX_PATH], SAOI:index;
+	format(path,sizeof(path),"/SAOI/%s.saoi",params);
+	if(!IsSAOIFileLoaded(path,index)){
+		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
+		return SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	}
+	
+	if(SAOI_Config[global_msg]){
+		format(buffer,sizeof buffer,"[IMPORTANT] Unload Objects: %s",params);
+		SendClientMessageToAll(0xFF0000FF,buffer);
+	}
+	
+	if(SAOI_FileInBoot(params)){
+		SAOI_SetFileInBoot(params,false);
+	}
 	
 	if(UnloadObjectImage(index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}unloaded",params);
@@ -1165,24 +1235,28 @@ CMD:saoireload(playerid,params[]){
 	
 	if(!fexist(path)) return SendClientMessage(playerid,0xB01010FF,"File not exist");
 	
-	format(buffer,sizeof buffer,"[IMPORTANT] Reload Objects: %s",params);
-	SendClientMessageToAll(0xFF0000FF,buffer);
+	if(SAOI_Config[global_msg]){
+		format(buffer,sizeof buffer,"[IMPORTANT] Reload Objects: %s",params);
+		SendClientMessageToAll(0xFF0000FF,buffer);
+	}
 	
 	new Float:x, Float:y, Float:z, bool:freezed = false;
 	if(IsSAOIFileLoaded(path,index)){
 		if(SAOIFile[index][SAOIV:offset_object] != INVALID_STREAMER_ID){
 			freezed = true;
 			GetDynamicObjectPos(SAOIFile[index][SAOIV:offset_object],x,y,z);
-			Tryg3DForeach(i){
-				if(IsPlayerInRangeOfPoint(i,300.0,x,y,z)){
-					GameTextForPlayer(i,"~g~Objects Reload",1000,4);
-					TogglePlayerControllable(i,false);
+			if(SAOI_Config[auto_freeze]){
+				Tryg3DForeach(i){
+					if(IsPlayerInRangeOfPoint(i,300.0,x,y,z)){
+						GameTextForPlayer(i,"~g~Freeze: Objects Reload",2500,4);
+						TogglePlayerControllable(i,false);
+					}
 				}
 			}
 		}
 		UnloadObjectImage(index);
 	}
-	new SAOI:edi = LoadObjectImage(path);
+	new SAOI:edi = LoadObjectImage(path,SAOI_Config[save_log]);
 	if(SAOIToInt(edi) > 0){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}reloaded",params);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
@@ -1192,10 +1266,12 @@ CMD:saoireload(playerid,params[]){
 		printf("Cannot load file: %s",path);
 		PrintSAOIErrorName(edi);
 	}
-	if(freezed){
-		Tryg3DForeach(i){
-			if(IsPlayerInRangeOfPoint(i,300.0,x,y,z)){
-				TogglePlayerControllable(i,true);
+	if(SAOI_Config[auto_freeze]){
+		if(freezed){
+			Tryg3DForeach(i){
+				if(IsPlayerInRangeOfPoint(i,300.0,x,y,z)){
+					TogglePlayerControllable(i,true);
+				}
 			}
 		}
 	}
@@ -1204,7 +1280,7 @@ CMD:saoireload(playerid,params[]){
 
 CMD:saoifinder(playerid){
 	if(!IsAdmin(playerid)) return 0;
-	new buffer[256], szLIST[400];
+	new buffer[256], szLIST[800];
 	for(new i = 0, j = sizeof(elements_name); i < j; i++){
 		if(SAOI_Finder[find_elements:i][o_active]){
 			format(buffer,sizeof buffer,"{00FF00}[YES]\t{00AAFF}%s {00FFFF}(%d / %d)\n",elements_name[i],SAOI_Finder[find_elements:i][o_count],SAOI_Finder[find_elements:i][o_max]);
@@ -1228,11 +1304,16 @@ CMD:saoidestroy(playerid){
 	return 1;
 }
 
-CMD:saoilist(playerid){
+CMD:saoilist(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
+	new offset;
+	if(sscanf(params,"d",offset)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoilist <listid 1-5>");
+	if(offset < 1 || offset*100 >= _:MAX_SAOI_FILE) return SendClientMessage(playerid,0xB01010FF,"List not exist");
+	offset--;
+	PlayerListOffset[playerid] = offset;
 	new buffer[256], szLIST[4096], fname[MAX_PATH];
-	
-	SAOI_Foreach(i){
+	for(new SAOI:i = SAOI:(1+(offset*100)); i < MAX_SAOI_FILE; i = SAOI:(SAOIToInt(i)+1)){
+		if(SAOIToInt(i)-(offset*100) > 100) break;
 		if(SAOI_IsLoaded(i)){
 			format(fname,sizeof(fname),"%s",SAOI_GetFileName(i));
 			format(buffer,sizeof buffer,"{FFFFFF}%d. {00FF00}%s\n",SAOIToInt(i),fname[6]);
@@ -1272,18 +1353,62 @@ CMD:saoitp(playerid,params[]){
 	return 1;
 }
 
+CMD:saoireboot(playerid){
+	if(!IsAdmin(playerid)) return 0;
+	if(SAOI_Config[global_msg]){
+		SendClientMessageToAll(0xFF0000FF,"[IMPORTANT] Reloading objects and vehicles...");
+	}
+	if(SAOI_Config[auto_freeze]){
+		Tryg3DForeach(i){
+			GameTextForPlayer(i,"~g~Freeze: Objects Reload",2500,4);
+			TogglePlayerControllable(i,false);
+		}
+	}
+	SAOI_Foreach(i){
+		if(SAOI_IsLoaded(i)){
+			UnloadObjectImage(i);
+		}
+	}
+	SAOI_LoadManager();
+	UpdateAllDynamicObjects();
+	if(SAOI_Config[auto_freeze]){
+		Tryg3DForeach(i){
+			TogglePlayerControllable(i,true);
+		}
+	}
+	return 1;
+}
+
+CMD:saoicfg(playerid){
+	if(!IsAdmin(playerid)) return 0;
+	new szLIST[2048], buffer[256];
+	
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Save Log\n",SAOI_Config[save_log]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Global Message\n",SAOI_Config[global_msg]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Freeze System\n",SAOI_Config[auto_freeze]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	
+	ShowPlayerDialog(playerid,DIALOG_SAOI_CFG,DIALOG_STYLE_LIST,"{00FFFF}SAOI Config",szLIST,"{00FF00}Select","{FF0000}Exit");
+	return 1;
+}
+
 CMD:saoicmd(playerid){
 	if(!IsAdmin(playerid)) return 0;
 	new szLIST[2048];
 	strcat(szLIST,"{00FF00}/saoi - {00AAFF}shows statistics saoi\n");
+	strcat(szLIST,"{00FF00}/saoicfg - {00AAFF}edit saoi config\n");
 	strcat(szLIST,"{00FF00}/saoifinder - {00AAFF}element finder\n");
 	strcat(szLIST,"{00FF00}/saoidestroy - {00AAFF}destroy element\n");
 	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
 	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");
 	strcat(szLIST,"{00FF00}/saoiload - {00AAFF}load saoi file\n");
-	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
-	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoiboot - {00AAFF}load saoi file (Add to SAOIFiles.txt)\n");
+	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
+	strcat(szLIST,"{00FF00}/saoiunboot - {00AAFF}unload saoi file (Remove from SAOIFiles.txt)\n");
+	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
+	strcat(szLIST,"{00FF00}/saoireboot - {00AAFF}reload all saoi files\n");
 	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
 	strcat(szLIST,"{00FF00}/saoitp - {00AAFF}teleport to saoi flag\n");
 	strcat(szLIST,"{00FF00}/streaminfo - {00AAFF}show stream info\n");
@@ -1300,7 +1425,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 		case DIALOG_SAOI_LIST: {
 			if(!IsAdmin(playerid)) return 0;
 			if(!response) return 0;
-			PlayerLastSAOI[playerid] = SAOI:(listitem+1);
+			new tmp_find, tmp_name[64];
+			sscanf(inputtext,"p<.>d s[64]",tmp_find,tmp_name);
+			
+			PlayerLastSAOI[playerid] = SAOI:(tmp_find);
 			PlayerLastItem[playerid] = listitem;
 			
 			new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE], buffer[128];
@@ -1318,7 +1446,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 		
 		case DIALOG_SAOI_ITEM: {
 			if(!IsAdmin(playerid)) return 0;
-			if(!response) return cmd_saoilist(playerid);
+			if(!response){
+				new tmp_params[24];
+				format(tmp_params,sizeof(tmp_params),"%d",PlayerListOffset[playerid]+1);
+				return cmd_saoilist(playerid,tmp_params);
+			}
 			new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE];
 			format(fname,sizeof(fname),"%s",SAOI_GetFileName(PlayerLastSAOI[playerid]));
 			sscanf(fname,"'/SAOI/'s[64]",nname);
@@ -1333,14 +1465,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 					} else {
 						SAOI_SetFileInBoot(nname,true);
 					}
-					return OnDialogResponse(playerid,DIALOG_SAOI_LIST,1,PlayerLastItem[playerid],"");
+					new tmp_params[64];
+					format(tmp_params,sizeof(tmp_params),"%d. Unknown",_:PlayerLastSAOI[playerid]);
+					return OnDialogResponse(playerid,DIALOG_SAOI_LIST,1,PlayerLastItem[playerid],tmp_params);
 				}
 			}
 		}
 		
 		case DIALOG_SAOI_INFO: {
 			if(!IsAdmin(playerid)) return 0;
-			if(!response) return OnDialogResponse(playerid,DIALOG_SAOI_LIST,1,PlayerLastItem[playerid],"");
+			if(!response){
+				new tmp_params[64];
+				format(tmp_params,sizeof(tmp_params),"%d. Unknown",_:PlayerLastSAOI[playerid]);
+				return OnDialogResponse(playerid,DIALOG_SAOI_LIST,1,PlayerLastItem[playerid],tmp_params);
+			}
 		}
 		
 		case DIALOG_SAOI_FINDER: {
@@ -1565,12 +1703,53 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			}
 			return cmd_saoidestroy(playerid);
 		}
+		
+		case DIALOG_SAOI_CFG: {
+			if(!IsAdmin(playerid)) return 0;
+			if(!response) return 0;
+			switch(listitem){
+				case 0: SAOI_Config[save_log] =		(SAOI_Config[save_log]?false:true);
+				case 1: SAOI_Config[global_msg] =	(SAOI_Config[global_msg]?false:true);
+				case 2: SAOI_Config[auto_freeze] = 	(SAOI_Config[auto_freeze]?false:true);
+			}
+			
+			if(fexist(SAOI_FILE_CFG)) fremove(SAOI_FILE_CFG);
+			SAOI_fcreate(SAOI_FILE_CFG);
+			
+			new File:outf = fopen(SAOI_FILE_CFG,io_append), buffer[256];
+			format(buffer,sizeof(buffer),"%d:%d:%d",SAOI_Config[global_msg],SAOI_Config[save_log],SAOI_Config[auto_freeze]);
+			fwrite(outf,buffer);
+			fclose(outf);
+			
+			return cmd_saoicfg(playerid);
+		}
 	}
 	return 0;
 }
 
-public OnFilterScriptInit(){
+stock SAOI_LoadManager(){
 	printf(" ");
+	printf("Load SAOI File Manager");
+	printf(" ");
+	
+	if(!fexist(SAOI_FILE_CFG)){
+		printf("Create file: %s",SAOI_FILE_CFG);
+		new buffer[256];
+		SAOI_fcreate(SAOI_FILE_CFG);
+		new File:outf = fopen(SAOI_FILE_CFG,io_append);
+		SAOI_Config[global_msg] = true;
+		SAOI_Config[save_log] = true;
+		SAOI_Config[auto_freeze] = true;
+		format(buffer,sizeof(buffer),"%d:%d:%d",SAOI_Config[global_msg],SAOI_Config[save_log],SAOI_Config[auto_freeze]);
+		fwrite(outf,buffer);
+		fclose(outf);
+	} else {
+		new buffer[256];
+		new File:inpf = fopen(SAOI_FILE_CFG,io_read);
+		fread(inpf,buffer);
+		sscanf(buffer,"p<:>D(1)D(1)D(1)",SAOI_Config[global_msg],SAOI_Config[save_log],SAOI_Config[auto_freeze]);
+		fclose(inpf);
+	}
 	
 	SAOI_Finder[e_dynamic_object][o_max] =	MAX_FIND_DYNAMIC_OBJECT;
 	SAOI_Finder[e_dynamic_pickup][o_max] =	MAX_FIND_DYNAMIC_PICKUP;
@@ -1602,11 +1781,12 @@ public OnFilterScriptInit(){
 	
 	new fname[MAX_SAOI_NAME_SIZE], path[MAX_PATH], SAOI:edi;
 	while(fread(obj_list,line)){
+		if(strlen(line) < 5) continue; //empty line
 		sscanf(line,"s[64]",fname);
 		format(path,sizeof(path),"/SAOI/%s",fname);
 		if(path[strlen(path)-1] == '\n') path[strlen(path)-1] = EOS;
 		if(path[strlen(path)-1] == '\r') path[strlen(path)-1] = EOS;
-		edi = LoadObjectImage(path);
+		edi = LoadObjectImage(path,SAOI_Config[save_log]);
 		if(SAOIToInt(edi) > 0){
 			lcnt_t++;
 		} else {
@@ -1620,10 +1800,24 @@ public OnFilterScriptInit(){
 	new stop_time = GetTickCount();
 	if((lcnt_t+lcnt_f) > 0){
 		printf("Total loaded files %d/%d in %d ms",lcnt_t,(lcnt_t+lcnt_f),stop_time-start_time);
+		printf("Total loaded items %d",SAOI_CountAllElements());
 		if(lcnt_f > 0){
 			printf("Failed to load %d files",lcnt_f);
 		}
 	}
+	SAOI_ErrorLevel += lcnt_f;
+	return 1;
+}
+
+public OnFilterScriptExit(){
+	printf(" ");
+	printf("Unload SAOI File Manager");
+	printf(" ");
+	return 1;
+}
+
+public OnFilterScriptInit(){
+	SAOI_LoadManager();
 	return 1;
 }
 
