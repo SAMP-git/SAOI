@@ -204,7 +204,7 @@
 #define SAOI_Comp(%0,%1)					(SAOI_IntMod(%0) != (%1))
 #define SAOI_Foreach(%0)					for(new SAOI:%0 = SAOI:1; %0 < MAX_SAOI_FILE; %0 = SAOI:(SAOIToInt(%0)+1))
 
-#define SAOIProt::							stock
+#define SAOI_Function::						stock
 
 #define SAOIV:								S11V
 
@@ -297,12 +297,12 @@ forward SAOI_OnVehicleCreated(vehicleid);
 #define SAOI_CountMaterialText(%0)			(SAOIFile[(%0)][SAOIV:cnt_materialtext])
 #define SAOI_CountRemoveBuilding(%0)		(SAOIFile[(%0)][SAOIV:cnt_removebuilding])
 
-SAOIProt:: SAOIV:Construct(){
+SAOI_Function:: SAOIV:Construct(){
 	new SAOIV:data[e_saoi];
 	return SAOIV:data;
 }
 
-SAOIProt:: SAOI_CountAllElementsByIndex(SAOI:index){
+SAOI_Function:: SAOI_CountAllElementsByIndex(SAOI:index){
 	new items = 0;
 	items += SAOI_CountDynamicObject(index);
 	items += SAOI_CountDynamicPickup(index);
@@ -315,7 +315,7 @@ SAOIProt:: SAOI_CountAllElementsByIndex(SAOI:index){
 	return items;
 }
 
-SAOIProt:: SAOI_CountAllElements(){
+SAOI_Function:: SAOI_CountAllElements(){
 	new items = 0;
 	SAOI_Foreach(i){
 		if(SAOI_IsLoaded(i)){
@@ -325,7 +325,7 @@ SAOIProt:: SAOI_CountAllElements(){
 	return items;
 }
 
-SAOIProt:: SAOI_CountRemovedBuildings(){
+SAOI_Function:: SAOI_CountRemovedBuildings(){
 	if(!CRC_SAOIAccess) return 0;
 	new cnt = 0;
 	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
@@ -336,7 +336,7 @@ SAOIProt:: SAOI_CountRemovedBuildings(){
 	return cnt;
 }
 
-SAOIProt:: SAOI_GetFreeRemoveBuildingID(){
+SAOI_Function:: SAOI_GetFreeRemoveBuildingID(){
 	if(!CRC_SAOIAccess) return INVALID_REMOVE_BUILDING_ID;
 	for(new i = 0; i < MAX_OBJECTS; i++){
 		if(SAOIRemoveBuildings[i][SAOIV:modelid] == 0){
@@ -347,7 +347,7 @@ SAOIProt:: SAOI_GetFreeRemoveBuildingID(){
 	return INVALID_REMOVE_BUILDING_ID;
 }
 
-SAOIProt:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius){
+SAOI_Function:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius){
 	if(!CRC_SAOIAccess) return 0;
 	if(SAOIRemoveBuildings[remove_id][SAOIV:modelid] == 0) return 0;
 	modelid = SAOIRemoveBuildings[remove_id][SAOIV:modelid];
@@ -359,7 +359,7 @@ SAOIProt:: SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float
 	return 1;
 }
 
-SAOIProt:: SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius){
+SAOI_Function:: SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius){
 	if(!CRC_SAOIAccess) return INVALID_REMOVE_BUILDING_ID;
 	if(!SAOI_IsLoaded(index)) return INVALID_REMOVE_BUILDING_ID;
 	new remove_id = SAOI_GetFreeRemoveBuildingID();
@@ -373,7 +373,7 @@ SAOIProt:: SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:
 	return remove_id;
 }
 
-SAOIProt:: SAOI_DropRemoveBuildings(SAOI:index){
+SAOI_Function:: SAOI_DropRemoveBuildings(SAOI:index){
 	if(!CRC_SAOIAccess) return 0;
 	if(!SAOI_IsLoaded(index)) return 0;
 	new cnt = 0;
@@ -392,7 +392,7 @@ SAOIProt:: SAOI_DropRemoveBuildings(SAOI:index){
 	return cnt;
 }
 
-SAOIProt:: SAOI_RemoveBuildingsForPlayer(playerid){
+SAOI_Function:: SAOI_RemoveBuildingsForPlayer(playerid){
 	if(!CRC_SAOIAccess) return 0;
 	new cnt = 0;
 	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
@@ -404,7 +404,7 @@ SAOIProt:: SAOI_RemoveBuildingsForPlayer(playerid){
 	return cnt;
 }
 
-SAOIProt:: SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index){
+SAOI_Function:: SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index){
 	if(!CRC_SAOIAccess) return 0;
 	if(!SAOI_IsLoaded(index)) return 0;
 	new cnt = 0;
@@ -417,7 +417,7 @@ SAOIProt:: SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index){
 	return cnt;
 }
 
-SAOIProt:: SAOI:SAOI_GetFreeID(){
+SAOI_Function:: SAOI:SAOI_GetFreeID(){
 	if(!CRC_SAOIAccess) return INVALID_SAOI_FILE;
 	SAOI_Foreach(i){
 		if(!SAOI_IsLoaded(i)) return i;
@@ -425,7 +425,7 @@ SAOIProt:: SAOI:SAOI_GetFreeID(){
 	return INVALID_SAOI_FILE;
 }
 
-SAOIProt:: SAOI_CountFileLoaded(){
+SAOI_Function:: SAOI_CountFileLoaded(){
 	if(!CRC_SAOIAccess) return 0;
 	new cnt = 0;
 	SAOI_Foreach(i){
@@ -434,7 +434,7 @@ SAOIProt:: SAOI_CountFileLoaded(){
 	return cnt;
 }
 
-SAOIProt:: SAOI_GetMemoryLoaded(){
+SAOI_Function:: SAOI_GetMemoryLoaded(){
 	if(!CRC_SAOIAccess) return 0;
 	new cnt = 0;
 	SAOI_Foreach(i){
@@ -443,14 +443,14 @@ SAOIProt:: SAOI_GetMemoryLoaded(){
 	return cnt;
 }
 
-SAOIProt:: bool:SAOI_GetFileCreationDate(SAOI:index,output[],max_dest = sizeof(output)){
+SAOI_Function:: bool:SAOI_GetFileCreationDate(SAOI:index,output[],max_dest = sizeof(output)){
 	if(!CRC_SAOIAccess) return false;
 	if(!SAOI_IsLoaded(index)) return false;
 	format(output,max_dest,"%s",SAOIFile[index][SAOIV:created]);
 	return true;
 }
 
-SAOIProt:: bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
+SAOI_Function:: bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior){
 	if(!CRC_SAOIAccess) return false;
 	if(!SAOI_IsLoaded(index)) return false;
 	x = SAOIFile[index][SAOIV:X];
@@ -462,7 +462,7 @@ SAOIProt:: bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float
 	return true;
 }
 
-SAOIProt:: SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior){
+SAOI_Function:: SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append), int1, int2, int3, int4;
@@ -492,7 +492,7 @@ SAOIProt:: SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:a
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius){
+SAOI_Function:: SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append), int1, int2, int3, int4;
@@ -519,7 +519,7 @@ SAOIProt:: SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
+SAOI_Function:: bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	if(!CRC_SAOIAccess) return false;
 	new tmp_saoi_name[MAX_SAOI_NAME_SIZE];
 	format(tmp_saoi_name,MAX_SAOI_NAME_SIZE,"%s",name);
@@ -540,7 +540,7 @@ SAOIProt:: bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE){
 	return false;
 }
 
-SAOIProt:: SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
+SAOI_Function:: SAOI:CreateSAOIFile(const name[],author[],version[],description[] = ""){
 	if(fexist(name)) return SAOI_ERROR_OUTPUT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_readwrite);
@@ -632,7 +632,7 @@ SAOIProt:: SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SaveDynamicObject(objectid,const name[]){
+SAOI_Function:: SAOI:SaveDynamicObject(objectid,const name[]){
 	if(!IsValidDynamicObject(objectid)) return SAOI_ERROR_INVALID_OBJECTID;
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
@@ -857,7 +857,7 @@ SAOIProt:: SAOI:SaveDynamicObject(objectid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SaveDynamicPickup(pickupid,const name[]){
+SAOI_Function:: SAOI:SaveDynamicPickup(pickupid,const name[]){
 	if(!IsValidDynamicPickup(pickupid)) return SAOI_ERROR_INVALID_OBJECTID;
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
@@ -987,7 +987,7 @@ SAOIProt:: SAOI:SaveDynamicPickup(pickupid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SaveDynamicMapIcon(iconid,const name[]){
+SAOI_Function:: SAOI:SaveDynamicMapIcon(iconid,const name[]){
 	if(!IsValidDynamicMapIcon(iconid)) return SAOI_ERROR_INVALID_OBJECTID;
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
@@ -1128,7 +1128,7 @@ SAOIProt:: SAOI:SaveDynamicMapIcon(iconid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SaveDynamicArea(areaid,const name[]){
+SAOI_Function:: SAOI:SaveDynamicArea(areaid,const name[]){
 	if(!IsValidDynamicArea(areaid)) return SAOI_ERROR_INVALID_OBJECTID;
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
@@ -1542,7 +1542,7 @@ SAOIProt:: SAOI:SaveDynamicArea(areaid,const name[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SAOI_SaveVehicle(const name[],vehicletype,Float:x,Float:y,Float:z,Float:rotation,color1,color2,respawn_delay,addsiren=0,worldid=0,interiorid=0){
+SAOI_Function:: SAOI:SAOI_SaveVehicle(const name[],vehicletype,Float:x,Float:y,Float:z,Float:rotation,color1,color2,respawn_delay,addsiren=0,worldid=0,interiorid=0){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append);
@@ -1595,7 +1595,7 @@ SAOIProt:: SAOI:SAOI_SaveVehicle(const name[],vehicletype,Float:x,Float:y,Float:
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SetSAOIBumperIP(const name[],server_ip[]){
+SAOI_Function:: SAOI:SetSAOIBumperIP(const name[],server_ip[]){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append);
@@ -1618,7 +1618,7 @@ SAOIProt:: SAOI:SetSAOIBumperIP(const name[],server_ip[]){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SetSAOIBumperPort(const name[],server_port){
+SAOI_Function:: SAOI:SetSAOIBumperPort(const name[],server_port){
 	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
 	new File:outf = fopen(name,io_append);
@@ -1641,7 +1641,7 @@ SAOIProt:: SAOI:SetSAOIBumperPort(const name[],server_port){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
+SAOI_Function:: SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]){
 	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
 	new File:inpf = fopen(name,io_read);
@@ -1711,7 +1711,7 @@ SAOIProt:: SAOI:GetSAOIFileHeader(const name[],author[],version[],description[])
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOIProt:: SAOI:SAOIHeaderCopy(const input[],const output[]){
+SAOI_Function:: SAOI:SAOIHeaderCopy(const input[],const output[]){
 	if(!fexist(input)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(fexist(output)) return SAOI_ERROR_OUTPUT_EXIST;
 	new File:inpf = fopen(input,io_read);
@@ -1790,7 +1790,7 @@ SAOIProt:: SAOI:SAOIHeaderCopy(const input[],const output[]){
 	
 }
 
-SAOIProt:: SAOI_CleanupElements(SAOI:index){
+SAOI_Function:: SAOI_CleanupElements(SAOI:index){
 	if(!SAOI_IsLoaded(index)) return false;
 	
 	//Remove Buildings
@@ -1873,7 +1873,7 @@ SAOIProt:: SAOI_CleanupElements(SAOI:index){
 	return true;
 }
 
-SAOIProt:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
+SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 	if(!CRC_SAOIAccess) return SAOI_ERROR_MEMORY_BLOCKED;
 	new SAOI:index = SAOI_GetFreeID();
 	if(index == INVALID_SAOI_FILE) return SAOI_ERROR_NOT_ENOUGH_CAPACITY;
@@ -2586,7 +2586,7 @@ SAOIProt:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 	return index;
 }
 
-SAOIProt:: bool:UnloadObjectImage(&SAOI:index){
+SAOI_Function:: bool:UnloadObjectImage(&SAOI:index){
 	if(!CRC_SAOIAccess) return false;
 	if(!SAOI_IsLoaded(index)) return false;
 	SAOI_CleanupElements(index);
@@ -2628,11 +2628,11 @@ public SAOI_RemoteCheck(){
 	return 1;
 }
 
-SAOIProt:: SAOI_Init(){
+SAOI_Function:: SAOI_Init(){
 	CallRemoteFunction("SAOI_RemoteCheck","");
 }
 
-SAOIProt:: SAOI_Exit(){
+SAOI_Function:: SAOI_Exit(){
 	#if defined LOCK_SAOI_MEMORY
 		SetSVarInt("ADM:SAOI:LOCK",0);
 		DeleteSVar("ADM:SAOI:FM");
