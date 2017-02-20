@@ -19,7 +19,7 @@
 
 forward SAOI_Dump(saoi_file_name[]);
 
-CMD:saoidump(playerid,params[]){
+YCMD:saoidump(playerid,params[]){
 	new file_name[MAX_SAOI_NAME_SIZE];
 	if(sscanf(params,"s[60]",file_name)) return SendClientMessage(playerid,0xFFFFFFFF,"Usage: /saoidump <file name>");
 	
@@ -41,6 +41,9 @@ CMD:saoidump(playerid,params[]){
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	}
 	
+	//todo set position flag if exist (save in db)
+	//SetSAOIPositionFlag(file_name,Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);
+	
 	//Dump this session
 	SAOI_Dump(file_name);
 	SendClientMessage(playerid,0xFFFFFFFF,"Done.");
@@ -50,15 +53,6 @@ CMD:saoidump(playerid,params[]){
 public SAOI_Dump(saoi_file_name[]){
 	printf("[SAOI DUMP] Conversion Start");
 	new saoi_count;
-	
-	saoi_count = 0;
-	for(new i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_AREA); i <= j; i++){
-		if(IsValidDynamicArea(i)){
-			SaveDynamicArea(i,saoi_file_name);
-			saoi_count++;
-		}
-	}
-	printf("[SAOI DUMP] Areas converted: %d",saoi_count);
 
 	saoi_count = 0;
 	for(new i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT); i <= j; i++){
@@ -70,32 +64,20 @@ public SAOI_Dump(saoi_file_name[]){
 	printf("[SAOI DUMP] Objects converted: %d",saoi_count);
 	
 	saoi_count = 0;
-	for(new i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_PICKUP); i <= j; i++){
-		if(IsValidDynamicPickup(i)){
-			SaveDynamicPickup(i,saoi_file_name);
-			saoi_count++;
-		}
-	}
-	printf("[SAOI DUMP] Pickups converted: %d",saoi_count);
-	
-	saoi_count = 0;
-	for(new i = 1, j = Streamer_GetUpperBound(STREAMER_TYPE_MAP_ICON); i <= j; i++){
-		if(IsValidDynamicMapIcon(i)){
-			SaveDynamicMapIcon(i,saoi_file_name);
-			saoi_count++;
-		}
-	}
-	printf("[SAOI DUMP] MapIcons converted: %d",saoi_count);
-	
-	//todo edit this
-	saoi_count = 0;
-	for(new i = 1, j = GetVehiclePoolSize(); i <= j; i++){
-		if(IsValidVehicle(i)){
-			SAOI_SaveVehicle(saoi_file_name,Vehicles[i][Model],Vehicles[i][X],Vehicles[i][Y],Vehicles[i][Z],Vehicles[i][A],Vehicles[i][Color1],Vehicles[i][Color2],Vehicles[i][Respawn],Vehicles[i][Siren],Vehicles[i][VW],Vehicles[i][INT]);
-			saoi_count++;
-		}
+	foreach(new i : Cars){
+		SAOI_SaveVehicle(saoi_file_name,CarData[i][CarModel],CarData[i][CarSpawnX],CarData[i][CarSpawnY],CarData[i][CarSpawnZ],CarData[i][CarSpawnFA],CarData[i][CarColor1],CarData[i][CarColor2],-1,0,0,0);
+		saoi_count++;
 	}
 	printf("[SAOI DUMP] Vehicles converted: %d",saoi_count);
+	
+	saoi_count = 0;
+	for(new i = 0; i < MAX_REMOVE_BUILDING; i++){
+		if(RemoveData[i][rModel] != 0){
+			SAOI:SaveRemoveBuilding(saoi_file_name,RemoveData[i][rModel],RemoveData[i][rX],RemoveData[i][rY],RemoveData[i][rZ],RemoveData[i][rRange]);
+			saoi_count++;
+		}
+	}
+	printf("[SAOI DUMP] RemovedBuildings converted: %d",saoi_count);
 	
 	printf("[SAOI DUMP] Conversion End");
 	return 1;
