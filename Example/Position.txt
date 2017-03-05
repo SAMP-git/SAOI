@@ -1,5 +1,0 @@
-XYZ: 0.0 0.0 3.0
-INT: 0
-VW:  0
-
-Notice: Look up :P

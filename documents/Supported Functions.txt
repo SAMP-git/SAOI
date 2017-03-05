@@ -13,6 +13,9 @@ CreateDynamicCube
 CreateDynamicPolygon
 Streamer_ToggleItemAntiAreas
 
+- ColAndreas.inc
+CA_CreateDynamicObject_DC
+
 - a_players.inc
 RemoveBuildingForPlayer
 

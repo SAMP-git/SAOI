@@ -35,6 +35,7 @@ $DATA: {
 		ARG: 7 - 14 {
 			function: {
 				CreateDynamicObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,worldid,interiorid,playerid,Float:streamdistance,Float:drawdistance,areaid,priority);
+				CA_CreateObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,bool:add = false);
 			}
 			arguments: {
 				modelid size:16b
@@ -53,7 +54,8 @@ $DATA: {
 				element_flag {
 					anti_area size:1b
 					no_camera_col size:1b
-					null size:6b
+					ca_object size:1b
+					null size:5b
 				} size:8b
 			}
 			
@@ -93,6 +95,35 @@ $DATA: {
 				fontcolor size:32b
 				backcolor size:32b
 				textalignment size:8b
+			}
+		}
+		
+		ARG: 100 {
+			function: {
+				CreateDynamic3DTextLabel(const text[],color,Float:x,Float:y,Float:z,Float:drawdistance,attachedplayer,attachedvehicle,testlos,worldid,interiorid,playerid,Float:streamdistance,areaid,priority);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 7 - 14: {
+						textsize = strlen(text) size:16b
+						text size:textsize
+						color size:32b
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						Float:drawdistance size:32b
+						testlos size:8b
+						worldid size:32b
+						interiorid size:32b
+						Float:streamdistance size:32b
+						areaid is virtual_areaid size:32b
+						priority size:8b
+						element_flag {
+							anti_area size:1b
+							null size:7b
+						} size:8b
+					}
+				}
 			}
 		}
 		

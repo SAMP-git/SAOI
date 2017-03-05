@@ -18,6 +18,7 @@
 - SetDynamicObjectNoCameraCol
 - CreateDynamicPickup
 - CreateDynamicMapIcon
+- CreateDynamic3DTextLabel
 - CreateDynamicCircle
 - CreateDynamicCylinder
 - CreateDynamicSphere
@@ -25,6 +26,7 @@
 - CreateDynamicCube
 - CreateDynamicPolygon
 - Streamer_ToggleItemAntiAreas
+- CA_CreateDynamicObject_DC
 - RemoveBuildingForPlayer
 - CreateVehicle
 - LinkVehicleToInterior
@@ -120,6 +122,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI:SaveDynamicObject(objectid,const name[]);
 - SAOI:SaveDynamicPickup(pickupid,const name[]);
 - SAOI:SaveDynamicMapIcon(iconid,const name[]);
+- SAOI:SaveDynamic3DTextLabel(Text3D:textid,const name[]);
 - SAOI:SaveDynamicArea(areaid,const name[]);
 - SAOI:SetSAOIBumperIP(const name[],server_ip[]);
 - SAOI:SetSAOIBumperPort(const name[],server_port);
@@ -136,6 +139,8 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_CountMaterial(SAOI:index);
 - SAOI_CountMaterialText(SAOI:index);
 - SAOI_CountRemoveBuilding(SAOI:index);
+- SAOI_CountDynamic3DTextLabel(SAOI:index);
+- SAOI_CountColAndreasObject(SAOI:index);
 - SAOI_GetFileName(SAOI:index);
 - SAOI_GetLoadTime(SAOI:index);
 - SAOI_GetActiveTime(SAOI:index);
@@ -157,7 +162,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index);
 - SAOI_CountRemovedBuildings();
 - SAOI_GetMemoryLoaded();
-
+- SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name));
 
 ## SAOI Callbacks:
 - SAOI_OnRemovedBuildings(playerid,buildings);

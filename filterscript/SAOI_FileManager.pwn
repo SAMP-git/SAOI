@@ -9,7 +9,7 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                                                            *
  *                                                                                                                                *
- * File Version: 1.6.2                                                                                                            *
+ * File Version: 1.7.0                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -50,7 +50,6 @@
 #define LOCK_SAOI_MEMORY				"SAOI_FileManager"
 #define DISABLE_STREAMER_SPEC_FIXES		//Fix UnloadObjectImage
 #define DISABLE_3D_TRYG_ATM
-#define DISABLE_3D_TRYG_YSF
 #define DISABLE_3D_TRYG_STREAMER
 #define DISABLE_3D_TRYG_FCNPC
 
@@ -63,6 +62,7 @@
 #include <sscanf2>
 #include <streamer>
 #tryinclude <YSF>
+#tryinclude <SAOI_Developer>
 
 #tryinclude <izcmd>
 #if !defined CMD
@@ -121,20 +121,20 @@
 
 //Check Version 3DTryg.inc
 #if !defined _3D_Tryg
-	#error [ADM] You need 3DTryg.inc v3.2.2
+	#error [ADM] You need 3DTryg.inc v4.0.3
 #elseif !defined Tryg3D_Version
-	#error [ADM] Update you 3DTryg.inc to v3.2.2
-#elseif (Tryg3D_Version < 30202)
-	#error [ADM] Update you 3DTryg.inc to v3.2.2
+	#error [ADM] Update you 3DTryg.inc to v4.0.3
+#elseif (Tryg3D_Version < 40003)
+	#error [ADM] Update you 3DTryg.inc to v4.0.3
 #endif
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.6.1
+	#error You need SAOI.inc v1.7.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.6.1
-#elseif (SAOI_LOADER_VERSION < 10601)
-	#error Update you SAOI.inc to v1.6.1
+	#error Update you SAOI.inc to v1.7.0
+#elseif (SAOI_LOADER_VERSION < 10700)
+	#error Update you SAOI.inc to v1.7.0
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -213,32 +213,6 @@ new Text3D:FindDynamicObjectLabel[MAX_FIND_DYNAMIC_OBJECT],
 		Text3D:FindGangZoneLabel[MAX_FIND_GANGZONE][5],
 		FindGangZoneIcon[MAX_FIND_GANGZONE][5];
 #endif
-
-stock PrintSAOIErrorName(SAOI:index){
-	switch(index){
-		case SAOI_ERROR_UNEXEC: 				printf("Error function unexecutable");
-		case SAOI_ERROR_SUCCESS:				printf("Success");
-		case SAOI_ERROR_INPUT_NOT_EXIST: 		printf("Error input file not exist");
-		case SAOI_ERROR_OUTPUT_NOT_EXIST: 		printf("Error output file not exist");
-		case SAOI_ERROR_INPUT_EXIST: 			printf("Error input file exist");
-		case SAOI_ERROR_OUTPUT_EXIST:		 	printf("Error output file exist");
-		case SAOI_ERROR_INPUT_NOT_OPEN: 		printf("Error open input file");
-		case SAOI_ERROR_OUTPUT_NOT_OPEN: 		printf("Error open output file");
-		case SAOI_ERROR_FILE_SIZE: 				printf("Error invalid file size");
-		case SAOI_ERROR_INVALID_OBJECTID:	 	printf("Error invalid objectid");
-		case SAOI_ERROR_AUTHOR_SIZE: 			printf("Error invalid author size");
-		case SAOI_ERROR_VERSION_SIZE: 			printf("Error invalid version size");
-		case SAOI_ERROR_DESCRIPTION_SIZE:	 	printf("Error invalid description size");
-		case SAOI_ERROR_INVALID_HEADER: 		printf("Error invalid header");
-		case SAOI_ERROR_INPUT_EXTENSION: 		printf("Error invalid input extension");
-		case SAOI_ERROR_OUTPUT_EXTENSION: 		printf("Error invalid output extension");
-		case SAOI_ERROR_NOT_ENOUGH_CAPACITY: 	printf("Error not enough capacity, to load new file");
-		case SAOI_ERROR_INVALID_ARG_COUNT: 		printf("Error number of arguments exceeds the specified arguments");
-		case SAOI_ERROR_INVALID_SERVER_IP:		printf("Error invalid server ip");
-		case SAOI_ERROR_INVALID_SERVER_PORT:	printf("Error invalid server port");
-		case SAOI_ERROR_MEMORY_BLOCKED:			printf("Error memory blocked");
-	}
-}
 
 //Main
 stock SAOI_fcreate(const name[]){
@@ -822,12 +796,16 @@ CMD:saoi(playerid){
 		strcat(szLIST,buffer);
 		format(buffer,sizeof buffer,"{00AAFF}SAOI Version: {00FF00}%d.%d.%d {00AAFF}Status: %s\n",(SAOI_LOADER_VERSION / 10000),((SAOI_LOADER_VERSION % 10000) / 100),((SAOI_LOADER_VERSION % 10000) % 100),SAOI_GetStatus(SAOI_ErrorLevel));
 		strcat(szLIST,buffer);
+		#if defined SAOI_DEVELOPER_VERSION
+			strcat(szLIST,SAOI_DEVELOPER_VERSION);
+		#endif
 		ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Statistics", szLIST, "{00FF00}Exit", "");
 		return 1;
 	}
 	
 	new cnt_object = 0,
 		cnt_pickup = 0,
+		cnt_3dtext = 0,
 		cnt_mapicon = 0,
 		cnt_area = 0,
 		cnt_vehicle = 0,
@@ -835,11 +813,16 @@ CMD:saoi(playerid){
 		cnt_material_text = 0,
 		cnt_removebuilding = 0,
 		load_time = 0;
+		
+	#if defined SAOI_ColAndreas
+		new cnt_caobject = 0;
+	#endif
 	
 	SAOI_Foreach(i){
 		if(SAOI_IsLoaded(i)){
 			cnt_object += SAOI_CountDynamicObject(i);
 			cnt_pickup += SAOI_CountDynamicPickup(i);
+			cnt_3dtext += SAOI_CountDynamic3DTextLabel(i);
 			cnt_mapicon += SAOI_CountDynamicMapIcon(i);
 			cnt_area += SAOI_CountDynamicArea(i);
 			cnt_vehicle += SAOI_CountVehicle(i);
@@ -847,6 +830,9 @@ CMD:saoi(playerid){
 			cnt_material_text += SAOI_CountMaterialText(i);
 			cnt_removebuilding += SAOI_CountRemoveBuilding(i);
 			load_time += SAOI_GetLoadTime(i);
+			#if defined SAOI_ColAndreas
+				cnt_caobject += SAOI_CountColAndreasObject(i);
+			#endif
 		}
 	}
 	
@@ -858,6 +844,9 @@ CMD:saoi(playerid){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}File loaded: {00FF00}%d / %d {00AAFF}Next free ID: {00FF00}%d\n",SAOI_CountFileLoaded(),SAOIToInt(MAX_SAOI_FILE)-1,SAOIToInt(SAOI_GetFreeID()));
 	strcat(szLIST,buffer);
+	#if defined SAOI_DEVELOPER_VERSION
+		strcat(szLIST,SAOI_DEVELOPER_VERSION);
+	#endif
 	
 	strcat(szLIST,"\n");
 	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d\n",cnt_object,cnt_material,cnt_material_text);
@@ -866,13 +855,18 @@ CMD:saoi(playerid){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}MapIcons: {00FF00}%d\n",cnt_mapicon);
 	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}3DText: {00FF00}%d\n",cnt_3dtext);
+	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Areas: {00FF00}%d\n",cnt_area);
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Vehicles: {00FF00}%d\n",cnt_vehicle);
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d\n",cnt_removebuilding);
 	strcat(szLIST,buffer);
-	
+	#if defined SAOI_ColAndreas
+		format(buffer,sizeof buffer,"{00AAFF}ColAndreas Objects: {00FF00}%d\n",cnt_caobject);
+		strcat(szLIST,buffer);
+	#endif
 	strcat(szLIST,"\n");
 	format(buffer,sizeof buffer,"{00AAFF}Memory Loaded: {00FF00}%d KB {00AAFF}Load Time: {00FF00}%d {00AAFF}ms\n",floatround(SAOI_GetMemoryLoaded()/1024),load_time);
 	strcat(szLIST,buffer);
@@ -994,9 +988,15 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,"\n");
 	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d {00AAFF}Materials: {00FF00}%d {00AAFF}Material Text: {00FF00}%d\n",SAOI_CountDynamicObject(index),SAOI_CountMaterial(index),SAOI_CountMaterialText(index));
 	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Materials: {00FF00}%d\n",SAOI_CountMaterial(index));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}Material Text: {00FF00}%d\n",SAOI_CountMaterialText(index));
+	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Pickups: {00FF00}%d\n",SAOI_CountDynamicPickup(index));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}MapIcons: {00FF00}%d\n",SAOI_CountDynamicMapIcon(index));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof buffer,"{00AAFF}3DText: {00FF00}%d\n",SAOI_CountDynamic3DTextLabel(index));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Areas: {00FF00}%d\n",SAOI_CountDynamicArea(index));
 	strcat(szLIST,buffer);
@@ -1004,6 +1004,10 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d\n",SAOI_CountRemoveBuilding(index));
 	strcat(szLIST,buffer);
+	#if defined SAOI_ColAndreas
+		format(buffer,sizeof buffer,"{00AAFF}ColAndreas Objects: {00FF00}%d\n",SAOI_CountColAndreasObject(index));
+		strcat(szLIST,buffer);
+	#endif
 	
 	strcat(szLIST,"\n");
 	format(buffer,sizeof buffer,"{00AAFF}Active time: {00FF00}%d:%02d:%02d:%02d {00AAFF}Load time: {00FF00}%d {00AAFF}ms\n",SAOI_MSToTimeDay(SAOI_GetActiveTime(index)),SAOI_GetLoadTime(index));
@@ -1033,20 +1037,24 @@ CMD:saoiinfo(playerid,params[]){
 
 CMD:streaminfo(playerid){
 	if(!IsAdmin(playerid)) return 0;
-	new buffer[256], szLIST[3096];
-	
+	new buffer[256], szLIST[3096],
+		cnt_npc = CountPlayers(false,true),
+		cnt_players = CountPlayers(true,false),
+		max_npc = GetServerVarAsInt("maxnpc"),
+		max_players = GetMaxPlayers();
 	
 	//Server Elements
-	strcat(szLIST,"{00FFFF}Server Elements:\n");
-	format(buffer,sizeof buffer,"{00AAFF}Players: {00FF00}%d / %d\n",CountPlayers(true,false),GetMaxPlayers()-CountPlayers(false,true));
+	strcat(szLIST,"{00AAFF}Name\t{00AAFF}Amount\t{00AAFF}Limit\t{00AAFF}Visible\n");
+	format(buffer,sizeof buffer,"Characters\t%d\t%d\t%d\n",cnt_players+cnt_npc,max_players,CountVisiblePlayers(playerid,true,true));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}NPC: {00FF00}%d / %d\n",CountPlayers(false,true),GetServerVarAsInt("maxnpc"));
+	format(buffer,sizeof buffer,"Players\t%d\t%d\t%d\n",cnt_players,max_players-cnt_npc,CountVisiblePlayers(playerid,true,false));
 	strcat(szLIST,buffer);
-	
+	format(buffer,sizeof buffer,"NPC\t%d\t%d\t%d\n",cnt_npc,max_npc,CountVisiblePlayers(playerid,false,true));
+	strcat(szLIST,buffer);
 	
 	//Static Elements
-	strcat(szLIST,"\n{00FFFF}Static Elements:\n");
-	format(buffer,sizeof buffer,"{00AAFF}Objects: {00FF00}%d / %d\n",CountObjects(),MAX_OBJECTS);
+	strcat(szLIST,"\t\t\t\n");
+	format(buffer,sizeof buffer,"Objects\t%d\t%d\t---\n",CountObjects(),MAX_OBJECTS);
 	strcat(szLIST,buffer);
 	
 	#if defined _YSF_included
@@ -1054,58 +1062,53 @@ CMD:streaminfo(playerid){
 		for(new i = 0, j = MAX_PICKUPS; i < j; i++){
 			if(IsValidPickup(i)) cnt++;
 		}
-		format(buffer,sizeof buffer,"{00AAFF}Pickups: {00FF00}%d / %d\n",cnt,MAX_PICKUPS);
+		new pcnt = Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP,1);
+		format(buffer,sizeof buffer,"Pickups\t%d\t%d\t---\n",cnt-pcnt,MAX_PICKUPS-pcnt);
 		strcat(szLIST,buffer);
 	#endif
 	
-	format(buffer,sizeof buffer,"{00AAFF}Actors: {00FF00}%d / %d\n",CountActors(),MAX_ACTORS);
+	format(buffer,sizeof buffer,"Actors\t%d\t%d\t%d\n",CountActors(),MAX_ACTORS,CountVisibleActors(playerid));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Vehicles: {00FF00}%d / %d\n",CountVehicles(),MAX_VEHICLES);
+	format(buffer,sizeof buffer,"Vehicles\t%d\t%d\t%d\n",CountVehicles(),MAX_VEHICLES,CountVisibleVehicles(playerid));
 	strcat(szLIST,buffer);
 	#if defined _YSF_included
-		format(buffer,sizeof buffer,"{00AAFF}Vehicle Models: {00FF00}%d / %d\n",GetVehicleModelsUsed(),212);
+		format(buffer,sizeof buffer,"Vehicle Models\t%d\t%d\t---\n",GetVehicleModelsUsed(),212);
+		strcat(szLIST,buffer);
+		strcat(szLIST,"\t\t\t\n");
+		format(buffer,sizeof buffer,"GangZone\t%d\t%d\t%d\n",CountGangZone(),MAX_GANG_ZONES,CountVisibleGangZone(playerid));
+		strcat(szLIST,buffer);
+		format(buffer,sizeof buffer,"PlayerGangZone\t%d\t%d\t%d\n",CountPlayerGangZone(playerid),MAX_GANG_ZONES,CountVisiblePlayerGangZone(playerid));
+		strcat(szLIST,buffer);
+		format(buffer,sizeof buffer,"TextDraw\t%d\t%d\t%d\n",CountTextDraw(),MAX_TEXT_DRAWS,CountVisibleTextDraw(playerid));
+		strcat(szLIST,buffer);
+		format(buffer,sizeof buffer,"PlayerTextDraw\t%d\t%d\t%d\n",CountPlayerTextDraw(playerid),MAX_PLAYER_TEXT_DRAWS,CountVisiblePlayerTextDraw(playerid));
 		strcat(szLIST,buffer);
 	#endif
 	
-	
 	//Dynamic Elements
-	strcat(szLIST,"\n{00FFFF}Dynamic Elements:\n");
-	format(buffer,sizeof buffer,"{00AAFF}DynamicObjects: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
-		CountDynamicObjects(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_OBJECT),Streamer_GetVisibleItems(STREAMER_TYPE_OBJECT,playerid)
-	);
+	strcat(szLIST,"\t\t\t\n");
+	format(buffer,sizeof buffer,"DynamicObjects\t%d\t---\t%d\n",CountDynamicObjects(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_OBJECT,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}DynamicPickup: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
-		CountDynamicPickups(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP),Streamer_GetVisibleItems(STREAMER_TYPE_PICKUP,playerid)
-	);
+	format(buffer,sizeof buffer,"DynamicPickup\t%d\t---\t%d\n",CountDynamicPickups(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}DynamicCP: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
-		CountDynamicCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_CP)
-	);
+	format(buffer,sizeof buffer,"DynamicCP\t%d\t---\t%d\n",CountDynamicCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_CP,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}DynamicRaceCP: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
-		CountDynamicRaceCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_RACE_CP)
-	);
+	format(buffer,sizeof buffer,"DynamicRaceCP\t%d\t---\t%d\n",CountDynamicRaceCPs(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_RACE_CP,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}DynamicMapIcon: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
-		CountDynamicMapIcons(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_MAP_ICON),Streamer_GetVisibleItems(STREAMER_TYPE_MAP_ICON,playerid)
-	);
+	format(buffer,sizeof buffer,"DynamicMapIcon\t%d\t---\t%d\n",CountDynamicMapIcons(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_MAP_ICON,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Dynamic3DText: {00FF00}%d {00AAFF}Visible: {00FF00}%d / %d\n",
-		CountDynamic3DTextLabels(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_3D_TEXT_LABEL),Streamer_GetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL,playerid)
-	);
+	format(buffer,sizeof buffer,"Dynamic3DText\t%d\t---\t%d\n",CountDynamic3DTextLabels(),Streamer_CountVisibleItems(playerid,STREAMER_TYPE_3D_TEXT_LABEL,0));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}DynamicArea: {00FF00}%d {00AAFF}Visible: {00FF00}%d / -\n",
-		CountDynamicAreas(),GetPlayerNumberDynamicAreas(playerid)
-	);
+	format(buffer,sizeof buffer,"DynamicArea\t%d\t---\t%d\n",CountDynamicAreas(),GetPlayerNumberDynamicAreas(playerid));
 	strcat(szLIST,buffer);
 	
 	
 	//SAOI Elements
-	strcat(szLIST,"\n{00FFFF}SAOI Elements:\n");
-	format(buffer,sizeof buffer,"{00AAFF}Removed Buildings: {00FF00}%d / %d\n",SAOI_CountRemovedBuildings(),MAX_OBJECTS);
+	strcat(szLIST,"\t\t\t\n");
+	format(buffer,sizeof buffer,"Removed Buildings\t%d\t%d\t---\n",SAOI_CountRemovedBuildings(),MAX_OBJECTS);
 	strcat(szLIST,buffer);
 	
-	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_MSGBOX,"{00FFFF}SAOI Stream info",szLIST,"{00FF00}Exit","");
+	ShowPlayerDialog(playerid,DIALOG_SAOI_NUL,DIALOG_STYLE_TABLIST_HEADERS,"{00FFFF}SAOI Stream info",szLIST,"{00FF00}Exit","");
 	return 1;
 }
 
@@ -1132,8 +1135,9 @@ CMD:saoiload(playerid,params[]){
 	} else {
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not loaded",path);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
-		printf("Cannot load file: %s",path);
-		PrintSAOIErrorName(edi);
+		new error_name[MAX_SAOI_ERROR_NAME];
+		SAOI_GetErrorName(edi,error_name);
+		printf("[SAOI DEBUG] %s: %s",path,error_name);
 	}
 	return 1;
 }
@@ -1164,8 +1168,9 @@ CMD:saoiboot(playerid,params[]){
 	} else {
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not loaded",path);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
-		printf("Cannot load file: %s",path);
-		PrintSAOIErrorName(edi);
+		new error_name[MAX_SAOI_ERROR_NAME];
+		SAOI_GetErrorName(edi,error_name);
+		printf("[SAOI DEBUG] %s: %s",path,error_name);
 	}
 	return 1;
 }
@@ -1263,8 +1268,9 @@ CMD:saoireload(playerid,params[]){
 	} else {
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not loaded",path);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
-		printf("Cannot load file: %s",path);
-		PrintSAOIErrorName(edi);
+		new error_name[MAX_SAOI_ERROR_NAME];
+		SAOI_GetErrorName(edi,error_name);
+		printf("[SAOI DEBUG] %s: %s",path,error_name);
 	}
 	if(SAOI_Config[auto_freeze]){
 		if(freezed){
@@ -1779,7 +1785,7 @@ stock SAOI_LoadManager(){
 		return 0;
 	}
 	
-	new fname[MAX_SAOI_NAME_SIZE], path[MAX_PATH], SAOI:edi;
+	new fname[MAX_SAOI_NAME_SIZE], path[MAX_PATH], SAOI:edi, error_name[MAX_SAOI_ERROR_NAME];
 	while(fread(obj_list,line)){
 		if(strlen(line) < 5) continue; //empty line
 		sscanf(line,"s[64]",fname);
@@ -1790,8 +1796,8 @@ stock SAOI_LoadManager(){
 		if(SAOIToInt(edi) > 0){
 			lcnt_t++;
 		} else {
-			printf("Cannot load file: %s",path);
-			PrintSAOIErrorName(edi);
+			SAOI_GetErrorName(edi,error_name);
+			printf("[SAOI DEBUG] %s: %s",path,error_name);
 			lcnt_f++;
 		}
 	}
@@ -1813,6 +1819,11 @@ public OnFilterScriptExit(){
 	printf(" ");
 	printf("Unload SAOI File Manager");
 	printf(" ");
+	SAOI_Foreach(i){
+		if(SAOI_IsLoaded(i)){
+			UnloadObjectImage(i);
+		}
+	}
 	return 1;
 }
 
