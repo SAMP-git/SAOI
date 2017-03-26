@@ -1082,10 +1082,6 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Material Texts: {00FF00}%d\n",SAOI_CountMaterialText(index));
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Materials: {00FF00}%d\n",SAOI_CountMaterial(index));
-	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}Material Text: {00FF00}%d\n",SAOI_CountMaterialText(index));
-	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Pickups: {00FF00}%d\n",SAOI_CountDynamicPickup(index));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}MapIcons: {00FF00}%d\n",SAOI_CountDynamicMapIcon(index));
