@@ -11,7 +11,7 @@
  * Modules: None                                                                                                                  *
  * Attributes: Overload resistance. Functionality for one script.                                                                 *
  *                                                                                                                                *
- * File Version: 1.7.0                                                                                                            *
+ * File Version: 1.8.0                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -19,7 +19,7 @@
  * Functions:                                                                                                                     *
  * SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");                                                       *
  * SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]);                                                         *
- * SAOI:LoadObjectImage(const name[],bool:save_logs=true);                                                                        *
+ * SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_boot=false);                                                   *
  * bool:UnloadObjectImage(SAOI:index);                                                                                            *
  * bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);                                                             *
  * SAOI:SAOIHeaderCopy(const input[],const output[]);                                                                             *
@@ -28,6 +28,7 @@
  * SAOI:SaveDynamicPickup(pickupid,const name[]);                                                                                 *
  * SAOI:SaveDynamicMapIcon(iconid,const name[]);                                                                                  *
  * SAOI:SaveDynamicArea(areaid,const name[]);                                                                                     *
+ * SAOI:SaveDynamicActor(actorid,const name[]);                                                                                   *
  * SAOI:SetSAOIBumperIP(const name[],server_ip[]);                                                                                *
  * SAOI:SetSAOIBumperPort(const name[],server_port);                                                                              *
  * bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);                          *
@@ -41,6 +42,7 @@
  * SAOI_CountDynamicPickup(SAOI:index);                                                                                           *
  * SAOI_CountDynamicMapIcon(SAOI:index);                                                                                          *
  * SAOI_CountDynamicArea(SAOI:index);                                                                                             *
+ * SAOI_CountDynamicActor(SAOI:index);                                                                                            *
  * SAOI_CountVehicle(SAOI:index);                                                                                                 *
  * SAOI_CountMaterial(SAOI:index);                                                                                                *
  * SAOI_CountMaterialText(SAOI:index);                                                                                            *
@@ -53,11 +55,13 @@
  * SAOI_CountFileLoaded();                                                                                                        *
  * SAOI_CountAllElementsByIndex(SAOI:index);                                                                                      *
  * SAOI_CountAllElements();                                                                                                       *
+ * SAOI:SAOI_SetEOF(const name[]);                                                                                                *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOIToInt(SAOI:variable);                                                                                                      *
  * SAOI:SAOI_GetFreeID();                                                                                                         *
  * SAOI_IsLoaded(SAOI:index);                                                                                                     *
+ * SAOI_IsStatic(SAOI:index);                                                                                                     *
  * SAOI_GetFreeRemoveBuildingID();                                                                                                *
  * SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius);                                                  *
  * SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius);                               *
@@ -93,14 +97,16 @@
  * - CreateDynamicPickup                                                                                                          *
  * - CreateDynamicMapIcon                                                                                                         *
  * - CreateDynamic3DTextLabel                                                                                                     *
+ * - CreateDynamicActor                                                                                                           *
  * - CreateDynamicCircle                                                                                                          *
  * - CreateDynamicCylinder                                                                                                        *
  * - CreateDynamicSphere                                                                                                          *
  * - CreateDynamicRectangle                                                                                                       *
  * - CreateDynamicCube                                                                                                            *
  * - CreateDynamicPolygon                                                                                                         *
- * - Streamer_ToggleItemAntiAreas                                                                                                 *
+ * - Streamer_ToggleItemInvAreas                                                                                                  *
  * - CA_CreateDynamicObject_DC                                                                                                    *
+ * - CA_CreateDynamicObject_SC                                                                                                    *
  * - RemoveBuildingForPlayer                                                                                                      *
  * - CreateVehicle                                                                                                                *
  * - LinkVehicleToInterior                                                                                                        *
@@ -113,11 +119,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v1.7.0
+	#error You need SAOI.inc v1.8.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v1.7.0
-#elseif (SAOI_LOADER_VERSION < 10700)
-	#error Update you SAOI.inc to v1.7.0
+	#error Update you SAOI.inc to v1.8.0
+#elseif (SAOI_LOADER_VERSION < 10800)
+	#error Update you SAOI.inc to v1.8.0
 #endif
 */
 
@@ -140,7 +146,7 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(10700)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(10800)			//a.b[c] 10000*a+100*b+c
 
 #define SAOI::								SAOI:
 
@@ -185,13 +191,16 @@
 #define SAOI_ERROR_INVALID_SERVER_IP		(SAOI:-18)		//bumper: invalid server ip
 #define SAOI_ERROR_INVALID_SERVER_PORT		(SAOI:-19)		//bumper: invalid server port
 #define SAOI_ERROR_MEMORY_BLOCKED			(SAOI:-20)		//memory blocked
+#define SAOI_ERROR_IS_LOADED				(SAOI:-21)		//file is already loaded
 
 #define ELEMENT_FLAG_ANTI_AREA				(0)
 #define ELEMENT_FLAG_NO_CAMERA_COL			(1)
 #define ELEMENT_FLAG_COLANDREAS				(2)
+#define ELEMENT_FLAG_COLSTATIC				(3)
 
 #define INVALID_REMOVE_BUILDING_ID			(-1)
 
+#define SAOI_BUMPER_ACTOR					(99)
 #define SAOI_BUMPER_3D_TEXT_LABEL			(100)
 #define SAOI_BUMPER_PICKUP					(101)
 #define SAOI_BUMPER_MAPICON					(104)
@@ -208,6 +217,7 @@
 #define SAOI_BUMPER_POS						(203)
 #define SAOI_BUMPER_CREATED					(204)
 #define SAOI_BUMPER_REMOVEBUILDING			(205)
+#define SAOI_BUMPER_EOF						(255)
 
 #define SAOIToInt(%0)						(_:%0)
 #define SAOI_IntMod(%0)						(0xFF & (%0)+128)
@@ -255,12 +265,14 @@ enum e_remove_building {
 enum e_saoi {
 	bool:SAOIV:status,
 	SAOIV:name[MAX_SAOI_NAME_SIZE],
+	bool:SAOIV:is_static,
 	
 	SAOIV:cnt_object,
 	SAOIV:cnt_pickup,
 	SAOIV:cnt_3dtext,
 	SAOIV:cnt_mapicon,
 	SAOIV:cnt_area,
+	SAOIV:cnt_actor,
 	SAOIV:cnt_vehicle,
 	
 	SAOIV:cnt_material,
@@ -272,6 +284,7 @@ enum e_saoi {
 	SAOIV:offset_3dtext,
 	SAOIV:offset_mapicon,
 	SAOIV:offset_area,
+	SAOIV:offset_actor,
 	SAOIV:offset_vehicle,
 	
 	#if defined SAOI_ColAndreas
@@ -304,6 +317,7 @@ forward SAOI_OnRemovedBuildings(playerid,buildings);
 forward SAOI_OnVehicleDestroyed(vehicleid);
 forward SAOI_OnVehicleCreated(vehicleid);
 
+#define SAOI_IsStatic(%0) 					(SAOIFile[(%0)][SAOIV:is_static])
 #define SAOI_IsLoaded(%0) 					(SAOIFile[(%0)][SAOIV:status])
 #define SAOI_GetFileSize(%0)				(SAOIFile[(%0)][SAOIV:file_size])
 #define SAOI_GetActiveTime(%0)				(GetTickCount()-SAOIFile[(%0)][SAOIV:active_tick])
@@ -312,6 +326,7 @@ forward SAOI_OnVehicleCreated(vehicleid);
 #define SAOI_CountDynamicObject(%0)			(SAOIFile[(%0)][SAOIV:cnt_object])
 #define SAOI_CountDynamicPickup(%0)			(SAOIFile[(%0)][SAOIV:cnt_pickup])
 #define SAOI_CountDynamic3DTextLabel(%0)	(SAOIFile[(%0)][SAOIV:cnt_3dtext])
+#define SAOI_CountDynamicActor(%0)			(SAOIFile[(%0)][SAOIV:cnt_actor])
 #define SAOI_CountDynamicMapIcon(%0)		(SAOIFile[(%0)][SAOIV:cnt_mapicon])
 #define SAOI_CountDynamicArea(%0)			(SAOIFile[(%0)][SAOIV:cnt_area])
 #define SAOI_CountVehicle(%0)				(SAOIFile[(%0)][SAOIV:cnt_vehicle])
@@ -320,7 +335,7 @@ forward SAOI_OnVehicleCreated(vehicleid);
 #define SAOI_CountRemoveBuilding(%0)		(SAOIFile[(%0)][SAOIV:cnt_removebuilding])
 
 #if defined SAOI_ColAndreas
-	#define SAOI_CountColAndreasObject(%0)		(SAOIFile[(%0)][SAOIV:cnt_caobject])
+	#define SAOI_CountColAndreasObject(%0)	(SAOIFile[(%0)][SAOIV:cnt_caobject])
 #endif
 
 stock SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name)){
@@ -346,6 +361,7 @@ stock SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name)){
 		case SAOI_ERROR_INVALID_SERVER_IP:		format(error_name,maxdest,"Error invalid server ip");
 		case SAOI_ERROR_INVALID_SERVER_PORT:	format(error_name,maxdest,"Error invalid server port");
 		case SAOI_ERROR_MEMORY_BLOCKED:			format(error_name,maxdest,"Error memory blocked");
+		case SAOI_ERROR_IS_LOADED:				format(error_name,maxdest,"Error file is already loaded");
 	}
 }
 
@@ -364,6 +380,7 @@ SAOI_Function:: SAOI_CountAllElementsByIndex(SAOI:index){
 	items += SAOI_CountDynamic3DTextLabel(index);
 	items += SAOI_CountDynamicMapIcon(index);
 	items += SAOI_CountDynamicArea(index);
+	items += SAOI_CountDynamicActor(index);
 	items += SAOI_CountVehicle(index);
 	items += SAOI_CountMaterial(index);
 	items += SAOI_CountMaterialText(index);
@@ -500,6 +517,16 @@ SAOI_Function:: SAOI_GetMemoryLoaded(){
 		if(SAOI_IsLoaded(i)) cnt += SAOIFile[i][SAOIV:file_size];
 	}
 	return cnt;
+}
+
+SAOI_Function:: SAOI:SAOI_SetEOF(const name[]){
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append);
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	fputchar(outf,SAOI_BUMPER_EOF,false);
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
 }
 
 SAOI_Function:: bool:SAOI_GetFileCreationDate(SAOI:index,output[],max_dest = sizeof(output)){
@@ -714,7 +741,7 @@ SAOI_Function:: SAOI:SaveDynamicObject(objectid,const name[]){
 	areaid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_AREA_ID);
 	priority = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_OBJECT,objectid)){
+	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_OBJECT,objectid)){
 		SAOI_SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	if(GetDynamicObjectNoCameraCol(objectid)){
@@ -944,7 +971,7 @@ SAOI_Function:: SAOI:SaveDynamicPickup(pickupid,const name[]){
 	areaid = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_AREA_ID);
 	priority = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_PICKUP,pickupid)){
+	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_PICKUP,pickupid)){
 		SAOI_SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1077,7 +1104,7 @@ SAOI_Function:: SAOI:SaveDynamic3DTextLabel(Text3D:textid,const name[]){
 	areaid = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_AREA_ID);
 	priority = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_3D_TEXT_LABEL,textid)){
+	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,textid)){
 		SAOI_SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1225,7 +1252,7 @@ SAOI_Function:: SAOI:SaveDynamicMapIcon(iconid,const name[]){
 	areaid = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_AREA_ID);
 	priority = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemAntiAreas(STREAMER_TYPE_MAP_ICON,iconid)){
+	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,iconid)){
 		SAOI_SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1332,6 +1359,158 @@ SAOI_Function:: SAOI:SaveDynamicMapIcon(iconid,const name[]){
 		fputchar(outf,int4,false);
 	}
 	if(arg_count >= 12){
+		SAOI_ExtractValue(element_flag,int1,int2,int3,int4);
+		fputchar(outf,int4,false);
+	}
+	
+	fclose(outf);
+	return SAOI_ERROR_SUCCESS;
+}
+
+SAOI_Function:: SAOI:SaveDynamicActor(actorid,const name[]){
+	if(!IsValidDynamicActor(actorid)) return SAOI_ERROR_INVALID_OBJECTID;
+	if(!fexist(name)) return SAOI_ERROR_OUTPUT_NOT_EXIST;
+	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_OUTPUT_EXTENSION;
+	new File:outf = fopen(name,io_append);
+	if(!outf) return SAOI_ERROR_OUTPUT_NOT_OPEN;
+	
+	new Float:x, Float:y, Float:z, Float:z_angle, modelid, worldid, interiorid, Float:streamdistance, areaid, priority,
+		arg_count = 13, element_flag, invulnerable = 0, Float:health;
+	
+	//Get Actor Info
+	GetDynamicActorPos(actorid,x,y,z);
+	GetDynamicActorFacingAngle(actorid,z_angle);
+	
+	modelid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_MODEL_ID);
+	worldid = GetDynamicActorVirtualWorld(actorid);
+	interiorid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_INTERIOR_ID);
+	
+	if(IsDynamicActorInvulnerable(actorid)) invulnerable = 1;
+	
+	Streamer_GetFloatData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	GetDynamicActorHealth(actorid,health);
+	
+	areaid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_AREA_ID);
+	priority = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_PRIORITY);
+	
+	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_ACTOR,actorid)){
+		SAOI_SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
+	}
+	
+	//Count Arg
+	for(new i = arg_count; i > 5; i--){
+		switch(i){
+			case 13: {
+				if(element_flag == 0){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 12: {
+				if(priority == 0){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 11: {
+				if(areaid == -1){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 10: {
+				if(streamdistance == STREAMER_OBJECT_SD){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 9: {
+				if(interiorid == -1){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 8: {
+				if(worldid == -1){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 7: {
+				if(health == 100.0){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+			case 6: {
+				if(invulnerable == 1){
+					arg_count--;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+	
+	//RAW Generator
+	new int1, int2, int3, int4;
+	
+	//Save Arg Count
+	fputchar(outf,SAOI_BUMPER_ACTOR,false);
+	fputchar(outf,arg_count,false);
+	
+	//Save Actor Info
+	SAOI_ExtractValue(modelid,int1,int2,int3,int4);
+	fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(x,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(y,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(z,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	SAOI_ExtractFloat(z_angle,int1,int2,int3,int4);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	
+	if(arg_count >= 6){
+		SAOI_ExtractValue(invulnerable,int1,int2,int3,int4);
+		fputchar(outf,int4,false);
+	}
+	if(arg_count >= 7){
+		SAOI_ExtractFloat(health,int1,int2,int3,int4);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	}
+	if(arg_count >= 8){
+		SAOI_ExtractValue(worldid,int1,int2,int3,int4);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	}
+	if(arg_count >= 9){
+		SAOI_ExtractValue(interiorid,int1,int2,int3,int4);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	}
+	if(arg_count >= 10){
+		SAOI_ExtractFloat(streamdistance,int1,int2,int3,int4);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	}
+	if(arg_count >= 11){
+		SAOI_ExtractValue(areaid,int1,int2,int3,int4);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
+	}
+	if(arg_count >= 12){
+		SAOI_ExtractValue(priority,int1,int2,int3,int4);
+		fputchar(outf,int4,false);
+	}
+	if(arg_count >= 13){
 		SAOI_ExtractValue(element_flag,int1,int2,int3,int4);
 		fputchar(outf,int4,false);
 	}
@@ -2078,6 +2257,20 @@ SAOI_Function:: SAOI_CleanupElements(SAOI:index){
 		}
 	}
 	
+	//Actors
+	if(SAOIFile[index][SAOIV:cnt_actor] > 0){
+		new max_idx = SAOIFile[index][SAOIV:cnt_actor], i = SAOIFile[index][SAOIV:offset_actor], j = Streamer_GetUpperBound(STREAMER_TYPE_ACTOR);
+		while(i <= j && max_idx > 0){
+			if(IsValidDynamicActor(i)){
+					if(Streamer_GetIntData(STREAMER_TYPE_ACTOR,i,E_STREAMER_EXTRA_ID) == (SAOI_EXTRA_ID_OFFSET+SAOIToInt(index))){
+					max_idx--;
+					DestroyDynamicActor(i);
+				}
+			}
+			i++;
+		}
+	}
+	
 	//Areas
 	if(SAOIFile[index][SAOIV:cnt_area] > 0){
 		new max_idx = SAOIFile[index][SAOIV:cnt_area], i = SAOIFile[index][SAOIV:offset_area], j = Streamer_GetUpperBound(STREAMER_TYPE_AREA);
@@ -2113,10 +2306,11 @@ SAOI_Function:: SAOI_CleanupElements(SAOI:index){
 	return true;
 }
 
-SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
+SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_boot=false){
 	if(!CRC_SAOIAccess) return SAOI_ERROR_MEMORY_BLOCKED;
 	new SAOI:index = SAOI_GetFreeID();
 	if(index == INVALID_SAOI_FILE) return SAOI_ERROR_NOT_ENOUGH_CAPACITY;
+	if(!fast_boot && IsSAOIFileLoaded(name)) return SAOI_ERROR_IS_LOADED;
 	
 	new NTTime = GetTickCount();
 	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
@@ -2146,7 +2340,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 		txdname[MAX_TXD_NAME], texturename[MAX_TEXTURE_NAME], materialcolor, txdsize, texturenamesize,
 		text[MAX_TEXT_NAME], fontface[MAX_FONT_NAME], textsize, materialsize, fontfacesize, bold, fontcolor, backcolor,
 		textalignment, fontsize, load_time, type, style, color,
-		color1, color2, respawn_delay, addsiren, Float:size,
+		color1, color2, respawn_delay, addsiren, Float:size, invulnerable, Float:health,
 		Float:minx, Float:miny, Float:minz, Float:maxx, Float:maxy, Float:maxz,
 		Float:Polygon_Points[MAX_POLYGON_POINTS*2], max_points, DynamicAreas[512], testlos;
 	
@@ -2343,7 +2537,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 				}
 				Streamer_SetIntData(STREAMER_TYPE_OBJECT,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
 				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_OBJECT,elementid,1);
+					Streamer_ToggleItemInvAreas(STREAMER_TYPE_OBJECT,elementid,1);
 				}
 				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_NO_CAMERA_COL) == 1){
 					SetDynamicObjectNoCameraCol(elementid);
@@ -2357,8 +2551,82 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 						if(SAOIFile[index][SAOIV:offset_caobject] == -1){
 							SAOIFile[index][SAOIV:offset_caobject] = col_elementid;
 						}
+					} else if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_COLSTATIC) == 1){
+						CA_CreateObject(modelid,x,y,z,rx,ry,rz,false);
+						SAOIFile[index][SAOIV:cnt_caobject]++;
+						SAOIFile[index][SAOIV:is_static] = true;
 					}
 				#endif
+				continue;
+			}
+			
+			case SAOI_BUMPER_ACTOR: {
+				arg_count = fgetchar(inpf,0,false), idx++;
+				
+				//Reset Data
+				elementid = INVALID_STREAMER_ID;
+				invulnerable = 1;
+				health = 100.0;
+				worldid = -1;
+				interiorid = -1;
+				streamdistance = STREAMER_OBJECT_SD;
+				areaid = -1;
+				priority = 0;
+				element_flag = 0;
+				
+				SAOI_MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+				SAOI_MergeFloat(x,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+				SAOI_MergeFloat(y,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+				SAOI_MergeFloat(z,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+				SAOI_MergeFloat(rz,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+				idx += 18;
+			
+				if(arg_count >= 6){
+					SAOI_MergeValue(invulnerable,0,0,0,fgetchar(inpf,0,false));
+					idx += 1;
+				}
+				if(arg_count >= 7){
+					SAOI_MergeFloat(health,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+					idx += 4;
+				}
+				if(arg_count >= 8){
+					SAOI_MergeValue(worldid,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+					idx += 4;
+				}
+				if(arg_count >= 9){
+					SAOI_MergeValue(interiorid,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+					idx += 4;
+				}
+				if(arg_count >= 10){
+					SAOI_MergeFloat(streamdistance,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+					idx += 4;
+				}
+				if(arg_count >= 11){
+					SAOI_MergeValue(areaid,fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false),fgetchar(inpf,0,false));
+					idx += 4;
+				}
+				if(arg_count >= 12){
+					SAOI_MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
+					idx += 1;
+				}
+				if(arg_count >= 13){
+					SAOI_MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
+					idx += 1;
+				}
+				if(areaid == -1){
+					elementid = CreateDynamicActor(modelid,x,y,z,rz,invulnerable,health,worldid,interiorid,-1,streamdistance,areaid,priority);
+				} else {
+					elementid = CreateDynamicActor(modelid,x,y,z,rz,invulnerable,health,worldid,interiorid,-1,streamdistance,DynamicAreas[areaid],priority);
+				}
+				
+				if(SAOIFile[index][SAOIV:offset_actor] == INVALID_STREAMER_ID){
+					SAOIFile[index][SAOIV:offset_actor] = elementid;
+				}
+				Streamer_SetIntData(STREAMER_TYPE_ACTOR,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
+				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
+					Streamer_ToggleItemInvAreas(STREAMER_TYPE_ACTOR,elementid,1);
+				}
+				SAOIFile[index][SAOIV:cnt_actor]++;
 				continue;
 			}
 			
@@ -2431,7 +2699,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 				}
 				Streamer_SetIntData(STREAMER_TYPE_3D_TEXT_LABEL,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
 				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_3D_TEXT_LABEL,elementid,1);
+					Streamer_ToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,elementid,1);
 				}
 				SAOIFile[index][SAOIV:cnt_3dtext]++;
 				continue;
@@ -2486,7 +2754,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 				}
 				Streamer_SetIntData(STREAMER_TYPE_PICKUP,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
 				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_PICKUP,elementid,1);
+					Streamer_ToggleItemInvAreas(STREAMER_TYPE_PICKUP,elementid,1);
 				}
 				SAOIFile[index][SAOIV:cnt_pickup]++;
 				continue;
@@ -2552,7 +2820,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 				}
 				Streamer_SetIntData(STREAMER_TYPE_MAP_ICON,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+SAOIToInt(index));
 				if(SAOI_GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemAntiAreas(STREAMER_TYPE_MAP_ICON,elementid,1);
+					Streamer_ToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,elementid,1);
 				}
 				SAOIFile[index][SAOIV:cnt_mapicon]++;
 				continue;
@@ -2883,6 +3151,10 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 				}
 				continue;
 			}
+			case SAOI_BUMPER_EOF: {
+				idx = asize;
+				break;
+			}
 			default: {
 				SAOI_CleanupElements(index);
 				SAOIFile[index][SAOIV:status] = false;
@@ -2929,7 +3201,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 	
 	if(save_logs){
 		new buffer[256];
-		format(buffer,sizeof buffer,"File %s has been loaded in %d ms",name,load_time);
+		format(buffer,sizeof buffer,"File %s has been loaded as %s in %d ms",name,(SAOI_IsStatic(index)?("static"):("dynamic")),load_time);
 		printf(buffer);
 		format(buffer,sizeof buffer,"Author: %s Version: %s Items: %d",author,version,SAOI_CountAllElementsByIndex(index));
 		printf(buffer);
@@ -2944,7 +3216,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true){
 
 SAOI_Function:: bool:UnloadObjectImage(SAOI:index){
 	if(!CRC_SAOIAccess) return false;
-	if(!SAOI_IsLoaded(index)) return false;
+	if(!SAOI_IsLoaded(index) || SAOI_IsStatic(index)) return false;
 	SAOI_CleanupElements(index);
 	SAOIFile[index] = SAOIV:Construct();
 	return true;

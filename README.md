@@ -19,14 +19,16 @@
 - CreateDynamicPickup
 - CreateDynamicMapIcon
 - CreateDynamic3DTextLabel
+- CreateDynamicActor
 - CreateDynamicCircle
 - CreateDynamicCylinder
 - CreateDynamicSphere
 - CreateDynamicRectangle
 - CreateDynamicCube
 - CreateDynamicPolygon
-- Streamer_ToggleItemAntiAreas
+- Streamer_ToggleItemInvAreas
 - CA_CreateDynamicObject_DC
+- CA_CreateDynamicObject_SC
 - RemoveBuildingForPlayer
 - CreateVehicle
 - LinkVehicleToInterior
@@ -115,7 +117,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 ## SAOI Functions:
 - SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");
 - SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]);
-- SAOI:LoadObjectImage(const name[],bool:save_logs=true);
+- SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_boot=false);
 - bool:UnloadObjectImage(&SAOI:index);
 - bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);
 - SAOI:SAOIHeaderCopy(const input[],const output[]);
@@ -124,6 +126,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI:SaveDynamicMapIcon(iconid,const name[]);
 - SAOI:SaveDynamic3DTextLabel(Text3D:textid,const name[]);
 - SAOI:SaveDynamicArea(areaid,const name[]);
+- SAOI:SaveDynamicActor(actorid,const name[]);
 - SAOI:SetSAOIBumperIP(const name[],server_ip[]);
 - SAOI:SetSAOIBumperPort(const name[],server_port);
 - bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);
@@ -135,6 +138,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_CountDynamicPickup(SAOI:index);
 - SAOI_CountDynamicMapIcon(SAOI:index);
 - SAOI_CountDynamicArea(SAOI:index);
+- SAOI_CountDynamicActor(SAOI:index);
 - SAOI_CountVehicle(SAOI:index);
 - SAOI_CountMaterial(SAOI:index);
 - SAOI_CountMaterialText(SAOI:index);
@@ -148,6 +152,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_CountFileLoaded();
 - SAOI_CountAllElementsByIndex(SAOI:index);
 - SAOI_CountAllElements();
+- SAOI:SAOI_SetEOF(const name[]);
 
 ## SAOI Extended Functions:
 - SAOIToInt(SAOI:variable);
@@ -163,6 +168,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_CountRemovedBuildings();
 - SAOI_GetMemoryLoaded();
 - SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name));
+- SAOI_IsStatic(SAOI:index);
 
 ## SAOI Callbacks:
 - SAOI_OnRemovedBuildings(playerid,buildings);

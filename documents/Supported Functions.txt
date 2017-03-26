@@ -5,16 +5,19 @@ SetDynamicObjectMaterialText
 SetDynamicObjectNoCameraCol
 CreateDynamicPickup
 CreateDynamicMapIcon
+CreateDynamic3DTextLabel
+CreateDynamicActor
 CreateDynamicCircle
 CreateDynamicCylinder
 CreateDynamicSphere
 CreateDynamicRectangle
 CreateDynamicCube
 CreateDynamicPolygon
-Streamer_ToggleItemAntiAreas
+Streamer_ToggleItemInvAreas
 
 - ColAndreas.inc
 CA_CreateDynamicObject_DC
+CA_CreateDynamicObject_SC
 
 - a_players.inc
 RemoveBuildingForPlayer

@@ -55,7 +55,8 @@ $DATA: {
 					anti_area size:1b
 					no_camera_col size:1b
 					ca_object size:1b
-					null size:5b
+					ca_static size:1b
+					null size:4b
 				} size:8b
 			}
 			
@@ -95,6 +96,34 @@ $DATA: {
 				fontcolor size:32b
 				backcolor size:32b
 				textalignment size:8b
+			}
+		}
+		
+		ARG: 99 {
+			function: {
+				CreateDynamicActor(modelid,Float:x,Float:y,Float:z,Float:r,invulnerable,Float:health,worldid,interiorid,playerid,Float:streamdistance,areaid,priority);
+			}
+			arguments: {
+				internal_arg_count size:8b data: {
+					ARG: 5 - 13: {
+						modelid size:16b
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						Float:r size:32b
+						invulnerable size:8b
+						Float:health size:32b
+						worldid size:32b
+						interiorid size:32b
+						Float:streamdistance size:32b
+						areaid is virtual_areaid size:32b
+						priority size:8b
+						element_flag {
+							anti_area size:1b
+							null size:7b
+						} size:8b
+					}
+				}
 			}
 		}
 		
@@ -373,6 +402,15 @@ $DATA: {
 				Float:y size:32b
 				Float:z size:32b
 				Float:radius size:32b
+			}
+		}
+		
+		ARG: 255 {
+			function: {
+				EOF();
+			}
+			arguments: {
+				null size:0b
 			}
 		}
 	}
