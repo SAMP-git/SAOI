@@ -11,6 +11,8 @@ File: {
 	$HEADER_KEY
 	$AUTHOR_DATA
 	$DATA
+	$EOF
+	$RUBBISH
 }
 
 $HEADER_KEY: {
