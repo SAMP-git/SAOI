@@ -1,0 +1,2 @@
+
+SAOI_SetStaticSize(size); //Set Static file size

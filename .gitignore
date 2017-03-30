@@ -44,5 +44,4 @@ Temporary Items
 
 *.amx
 include/crc.pwn
-SAOI Generator (Windows)
 saoi_copy.cmd
