@@ -169,6 +169,7 @@ https://www.youtube.com/watch?v=bNXAT_MzQUI
 - SAOI_GetMemoryLoaded();
 - SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name));
 - SAOI_IsStatic(SAOI:index);
+- SAOI_IsReadOnly(SAOI:index);
 
 ## SAOI Callbacks:
 - SAOI_OnRemovedBuildings(playerid,buildings);

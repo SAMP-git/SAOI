@@ -62,6 +62,7 @@
  * SAOI:SAOI_GetFreeID();                                                                                                         *
  * SAOI_IsLoaded(SAOI:index);                                                                                                     *
  * SAOI_IsStatic(SAOI:index);                                                                                                     *
+ * SAOI_IsReadOnly(SAOI:index);                                                                                                   *
  * SAOI_GetFreeRemoveBuildingID();                                                                                                *
  * SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius);                                                  *
  * SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius);                               *
@@ -295,6 +296,7 @@ enum e_saoi {
 	SAOIV:load_time,
 	SAOIV:active_tick,
 	SAOIV:file_size,
+	bool:SAOIV:write_lock,
 	
 	Float:SAOIV:X,
 	Float:SAOIV:Y,
@@ -323,6 +325,7 @@ forward SAOI_OnVehicleCreated(vehicleid);
 #define SAOI_GetActiveTime(%0)				(GetTickCount()-SAOIFile[(%0)][SAOIV:active_tick])
 #define SAOI_GetFileName(%0)				(SAOIFile[(%0)][SAOIV:name])
 #define SAOI_GetLoadTime(%0)				(SAOIFile[(%0)][SAOIV:load_time])
+#define SAOI_IsReadOnly(%0)					(SAOIFile[(%0)][SAOIV:write_lock])
 #define SAOI_CountDynamicObject(%0)			(SAOIFile[(%0)][SAOIV:cnt_object])
 #define SAOI_CountDynamicPickup(%0)			(SAOIFile[(%0)][SAOIV:cnt_pickup])
 #define SAOI_CountDynamic3DTextLabel(%0)	(SAOIFile[(%0)][SAOIV:cnt_3dtext])
@@ -3152,7 +3155,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_
 				continue;
 			}
 			case SAOI_BUMPER_EOF: {
-				idx = asize;
+				SAOIFile[index][SAOIV:write_lock] = true;
 				break;
 			}
 			default: {
@@ -3190,7 +3193,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_
 		}
 	}
 	
-	SAOIFile[index][SAOIV:file_size] = flength(inpf);
+	SAOIFile[index][SAOIV:file_size] = idx;
 	
 	fclose(inpf);
 	

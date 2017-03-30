@@ -542,7 +542,7 @@ stock SAOI_RemoveFindDynamicMapIcon(){
 		GetPlayerPos(playerid,px,py,pz);
 		for(new i = 0; i <= MAX_PICKUPS; i++){
 			if(cnt >= MAX_FIND_PICKUP) break;
-			if(IsValidPickup(i)){
+			if(IsValidPickup(i) && Streamer_GetItemStreamerID(playerid,STREAMER_TYPE_PICKUP,i) == INVALID_STREAMER_ID){
 				GetPickupPos(i,x,y,z);
 				if(GetDistanceBetweenPoints3D(x,y,z,px,py,pz) <= findradius){
 					szLIST = "";
@@ -686,13 +686,13 @@ stock SAOI_RemoveFindRemoveBuilding(){
 }
 
 //FINDER:Actor
-stock SAOI_FindActor(Float:streamdistance = 20.0){
+stock SAOI_FindActor(playerid,Float:streamdistance = 20.0){
 	new buffer[256], szLIST[1000], cnt = 0,
 		Float:x, Float:y, Float:z, Float:angle, Float:health;
 	
 	for(new i = 0, j = GetActorPoolSize(); i <= j; i++){
 		if(cnt >= MAX_FIND_ACTOR) break;
-		if(IsValidActor(i)){
+		if(IsValidActor(i) && Streamer_GetItemStreamerID(playerid,STREAMER_TYPE_ACTOR,i) == INVALID_STREAMER_ID){
 			GetActorPos(i,x,y,z);
 			GetActorFacingAngle(i,angle);
 			GetActorHealth(i,health);
@@ -760,10 +760,10 @@ stock SAOI_FindDynamicActor(playerid,Float:findradius,Float:streamdistance = 20.
 				format(buffer,sizeof buffer,"{89C1FA}Invulnerable: {00AAFF}%s {89C1FA}Health: {00AAFF}%.0f",IsDynamicActorInvulnerable(i)?("YES"):("NO"),health);
 				strcat(szLIST,buffer);
 				
-				/*
 				#if defined _YSF_included
-					new animlib[64], animname[64], Float:fDelta, loop, lockx, locky, freeze, time;
-					GetDynamicActorAnimation(i,animlib,sizeof(animlib),animname,sizeof(animname),fDelta,loop,lockx,locky,freeze,time);
+					new animlib[64], animname[64], Float:fDelta, loop, lockx, locky, freeze, time, actorid;
+					actorid = Streamer_GetItemInternalID(playerid,STREAMER_TYPE_ACTOR,i);
+					GetActorAnimation(actorid,animlib,sizeof(animlib),animname,sizeof(animname),fDelta,loop,lockx,locky,freeze,time);
 					if(!isnull(animlib) && !isnull(animname)){
 						strcat(szLIST,"\n");
 						format(buffer,sizeof buffer,"{89C1FA}Anim Library: {00AAFF}%s {89C1FA}Anim Name: {00AAFF}%s\n",animlib,animname);
@@ -774,7 +774,6 @@ stock SAOI_FindDynamicActor(playerid,Float:findradius,Float:streamdistance = 20.
 						strcat(szLIST,buffer);
 					}
 				#endif
-				*/
 				
 				FindDynamicActorLabel[cnt] = CreateDynamic3DTextLabel(szLIST,0x89C1FAFF,x,y,z+0.2,streamdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,-1,-1,-1,streamdistance);
 				cnt++;
@@ -1072,7 +1071,7 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Description: {00FF00}%s\n",description);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s\n",(SAOI_IsStatic(index)?("Static"):("Dynamic")));
+	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s\n",(SAOI_IsStatic(index)?("Static"):("Dynamic")),(SAOI_IsReadOnly(index)?("Read-Only"):("Read/Write")));
 	strcat(szLIST,buffer);
 	
 	strcat(szLIST,"\n");
@@ -1149,17 +1148,20 @@ CMD:streaminfo(playerid){
 	format(buffer,sizeof buffer,"Objects\t%d\t%d\t---\n",CountObjects(),MAX_OBJECTS);
 	strcat(szLIST,buffer);
 	
+	new pcnt;
+	
 	#if defined _YSF_included
 		new cnt = 0;
 		for(new i = 0, j = MAX_PICKUPS; i < j; i++){
 			if(IsValidPickup(i)) cnt++;
 		}
-		new pcnt = Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP,1);
+		pcnt = Streamer_CountVisibleItems(playerid,STREAMER_TYPE_PICKUP,1);
 		format(buffer,sizeof buffer,"Pickups\t%d\t%d\t---\n",cnt-pcnt,MAX_PICKUPS-pcnt);
 		strcat(szLIST,buffer);
 	#endif
 	
-	format(buffer,sizeof buffer,"Actors\t%d\t%d\t%d\n",CountActors(),MAX_ACTORS,CountVisibleActors(playerid));
+	pcnt = Streamer_CountVisibleItems(playerid,STREAMER_TYPE_ACTOR,1);
+	format(buffer,sizeof buffer,"Actors\t%d\t%d\t%d\n",CountActors(),MAX_ACTORS-pcnt,CountVisibleActors(playerid)-Streamer_CountVisibleItems(playerid,STREAMER_TYPE_ACTOR,0));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"Vehicles\t%d\t%d\t%d\n",CountVehicles(),MAX_VEHICLES,CountVisibleVehicles(playerid));
 	strcat(szLIST,buffer);
@@ -1707,7 +1709,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 						SAOI_FindDynamicActor(playerid,findr,sd);
 					}
 					case e_actor: {
-						SAOI_FindActor(sd);
+						SAOI_FindActor(playerid,sd);
 					}
 					#if defined _YSF_included
 						case e_object: {
