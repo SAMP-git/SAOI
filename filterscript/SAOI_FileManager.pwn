@@ -25,24 +25,6 @@
  *                                                                                                                                *
  * Commands:                                                                                                                      *
  * /saoicmd - show saoi cmd                                                                                                       *
- * /saoicfg - edit saoi config                                                                                                    *
- * /saoi - shows statistics saoi                                                                                                  *
- * /saoifinder - element finder                                                                                                   *
- * /saoidestroy - destroy element                                                                                                 *
- * /objstatus - show total object status                                                                                          *
- * /saoiinfo - show saoi file information                                                                                         *
- * /saoiload - load saoi file                                                                                                     *
- * /saoiboot - load saoi file (Add to SAOIFiles.txt)                                                                              *
- * /saoiunload - unload saoi file                                                                                                 *
- * /saoiunboot - unload saoi file (Remove from SAOIFiles.txt)                                                                     *
- * /saoireload - reload saoi file                                                                                                 *
- * /saoireboot - reload all saoi files                                                                                            *
- * /saoilist - show loaded saoi files                                                                                             *
- * /streaminfo - show stream info                                                                                                 *
- * /saoitp - teleport to saoi flag                                                                                                *
- * /tptoobj - teleport to object                                                                                                  *
- * /objmaterial - get object materials                                                                                            *
- * /objmaterialtext - get object material text                                                                                    *
  *                                                                                                                                *
  **********************************************************************************************************************************/
  

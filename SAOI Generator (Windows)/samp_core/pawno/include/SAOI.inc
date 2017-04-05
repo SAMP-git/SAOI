@@ -156,7 +156,7 @@
 #define INVALID_SAOI_FILE					(SAOI:0)		//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
 
-#define MAX_SAOI_FILE_SIZE					(0x40FFFFF)		//64 MB
+#define MAX_SAOI_FILE_SIZE					(0x4000000)		//64 MB
 #define MAX_SAOI_FILE						(SAOI:512)		//more ? why not
 #define MAX_SAOI_NAME_SIZE					(64)
 
@@ -304,6 +304,8 @@ enum e_saoi {
 	Float:SAOIV:A,
 	SAOIV:VW,
 	SAOIV:INT,
+	
+	SAOIV:oninit,
 	
 	SAOIV:created[32]
 }
@@ -2329,6 +2331,7 @@ SAOI_Function:: SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_
 	
 	SAOIFile[index] = SAOIV:Construct();
 	SAOIFile[index][SAOIV:status] = true;
+	SAOIFile[index][SAOIV:oninit] = GetTickCount();
 	format(SAOIFile[index][SAOIV:name],MAX_SAOI_NAME_SIZE,"%s",name);
 	for(new i = strlen(SAOIFile[index][SAOIV:name])-1; i >= 0; i--){
 		if(SAOIFile[index][SAOIV:name][i] == '.'){

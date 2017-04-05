@@ -156,7 +156,7 @@
 #define INVALID_SAOI_FILE					(SAOI:0)		//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
 
-#define MAX_SAOI_FILE_SIZE					(0x40FFFFF)		//64 MB
+#define MAX_SAOI_FILE_SIZE					(0x4000000)		//64 MB
 #define MAX_SAOI_FILE						(SAOI:512)		//more ? why not
 #define MAX_SAOI_NAME_SIZE					(64)
 
