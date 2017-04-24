@@ -1,0 +1,6 @@
+Technical Data:
+- Unique compressed file structure (Dynamic moving datagram)
+- Encrypted information: Author, Version, Description
+- Ability to load, unload the selected files
+- Compression performance. Ratio ~33%
+- Filtering ip/port server, if anyone needs

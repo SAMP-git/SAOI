@@ -4,37 +4,10 @@
 ###### What is that ? This is the script allows you to load binary objects file which have a dynamic structure.
 
 
-## Technical Data:
-- Unique compressed file structure (Dynamic moving datagram)
-- Encrypted information: Author, Version, Description
-- Ability to load, unload the selected files
-- Compression performance. Ratio ~33%
-- Filtering ip/port server, if anyone needs
-
-## Supported Functions:
-- CreateDynamicObject
-- SetDynamicObjectMaterial
-- SetDynamicObjectMaterialText
-- SetDynamicObjectNoCameraCol
-- CreateDynamicPickup
-- CreateDynamicMapIcon
-- CreateDynamic3DTextLabel
-- CreateDynamicActor
-- CreateDynamicCircle
-- CreateDynamicCylinder
-- CreateDynamicSphere
-- CreateDynamicRectangle
-- CreateDynamicCube
-- CreateDynamicPolygon
-- Streamer_ToggleItemInvAreas
-- CA_CreateDynamicObject_DC
-- CA_CreateDynamicObject_SC
-- RemoveBuildingForPlayer
-- CreateVehicle
-- LinkVehicleToInterior
-- SetVehicleVirtualWorld
-- Position Flag
-- Creation Date
+## Documentation:
+[Technical Data](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Technical%20Data.txt)
+[Supported Functions](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Supported%20Functions.txt)
+[SAOI File Structure](https://github.com/AbyssMorgan/SAOI/blob/master/documents/SAOI%20File%20Structure.txt)
 
 ## How to use SAOI:
 - Download and extract SAOI Generator (Windows).zip
@@ -87,91 +60,44 @@ myobject.saoi
 
 ## SAOI_FileManager Commands:
 - /saoicmd - show saoi cmd
-- /saoicfg - edit saoi config
-- /saoi - shows statistics saoi
-- /saoifinder - element finder
-- /saoidestroy - destroy element
-- /objstatus - show total object status
-- /saoiinfo - show saoi file information
-- /saoiload - load saoi file
-- /saoiboot - load saoi file (Add to SAOIFiles.txt)
-- /saoiunload - unload saoi file
-- /saoiunboot - unload saoi file (Remove from SAOIFiles.txt)
-- /saoireload - reload saoi file
-- /saoireboot - reload all saoi files
-- /saoilist - show loaded saoi files
-- /streaminfo - show stream info
-- /saoitp - teleport to saoi flag
-- /tptoobj - teleport to object
-- /objmaterial - get object materials
-- /objmaterialtext - get object material text
-
-## SAOI File Manager Video:
-https://www.youtube.com/watch?v=bNXAT_MzQUI
 
 
-## Fragment file:
-![alt SAOI](http://i.imgur.com/AcoMhEM.png)
+## Video:
+[url=https://www.youtube.com/watch?v=M_WiwgS-Kqk]SAOI File Generator[/url]
+[url=https://www.youtube.com/watch?v=tcJitQRub-E]SAOI File Manager v1.9[/url]
 
 
-## SAOI Functions:
-- SAOI:CreateSAOIFile(const name[],author[],version[],description[] = "");
-- SAOI:GetSAOIFileHeader(const name[],author[],version[],description[]);
-- SAOI:LoadObjectImage(const name[],bool:save_logs=true,bool:fast_boot=false);
-- bool:UnloadObjectImage(&SAOI:index);
-- bool:IsSAOIFileLoaded(const name[],&SAOI:index=INVALID_SAOI_FILE);
-- SAOI:SAOIHeaderCopy(const input[],const output[]);
-- SAOI:SaveDynamicObject(objectid,const name[]);
-- SAOI:SaveDynamicPickup(pickupid,const name[]);
-- SAOI:SaveDynamicMapIcon(iconid,const name[]);
-- SAOI:SaveDynamic3DTextLabel(Text3D:textid,const name[]);
-- SAOI:SaveDynamicArea(areaid,const name[]);
-- SAOI:SaveDynamicActor(actorid,const name[]);
-- SAOI:SetSAOIBumperIP(const name[],server_ip[]);
-- SAOI:SetSAOIBumperPort(const name[],server_port);
-- bool:GetSAOIPositionFlag(SAOI:index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);
-- SAOI:SetSAOIPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);
-- SAOI:SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius);
-- SAOI:SAOI_SaveVehicle(const name[],vehicletype,Float:x,Float:y,Float:z,Float:rotation,color1,color2,respawn_delay,addsiren=0,worldid=0,interiorid=0);
-- bool:SAOI_GetFileCreationDate(SAOI:index,output[],max_dest = sizeof(output));
-- SAOI_CountDynamicObject(SAOI:index);
-- SAOI_CountDynamicPickup(SAOI:index);
-- SAOI_CountDynamicMapIcon(SAOI:index);
-- SAOI_CountDynamicArea(SAOI:index);
-- SAOI_CountDynamicActor(SAOI:index);
-- SAOI_CountVehicle(SAOI:index);
-- SAOI_CountMaterial(SAOI:index);
-- SAOI_CountMaterialText(SAOI:index);
-- SAOI_CountRemoveBuilding(SAOI:index);
-- SAOI_CountDynamic3DTextLabel(SAOI:index);
-- SAOI_CountColAndreasObject(SAOI:index);
-- SAOI_GetFileName(SAOI:index);
-- SAOI_GetLoadTime(SAOI:index);
-- SAOI_GetActiveTime(SAOI:index);
-- SAOI_GetFileSize(SAOI:index);
-- SAOI_CountFileLoaded();
-- SAOI_CountAllElementsByIndex(SAOI:index);
-- SAOI_CountAllElements();
-- SAOI:SAOI_SetEOF(const name[]);
+## Remote Control:
+```
+//GameMode/FilterScripts
+forward SAOI_OnRemovedBuildings(playerid,buildings);
+forward SAOI_OnVehicleDestroyed(vehicleid);
+forward SAOI_OnVehicleCreated(vehicleid);
+forward SAOI_IsAdmin(playerid);
 
-## SAOI Extended Functions:
-- SAOIToInt(SAOI:variable);
-- SAOI:SAOI_GetFreeID();
-- SAOI_IsLoaded(SAOI:index);
-- SAOI_GetFreeRemoveBuildingID();
-- SAOI_RemoveBuilding(SAOI:index,modelid,Float:x,Float:y,Float:z,Float:radius);
-- SAOI_GetRemoveBuilding(remove_id,&SAOI:index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius);
-- SAOI_DropRemoveBuildings(SAOI:index);
-- SAOI_CleanupElements(SAOI:index);
-- SAOI_RemoveBuildingsForPlayer(playerid);
-- SAOI_UpdateBuildingsForPlayer(playerid,SAOI:index);
-- SAOI_CountRemovedBuildings();
-- SAOI_GetMemoryLoaded();
-- SAOI_GetErrorName(SAOI:index,error_name[],maxdest = sizeof(error_name));
-- SAOI_IsStatic(SAOI:index);
-- SAOI_IsReadOnly(SAOI:index);
+//e.g. SAOI_ToggleVisibleItems("/SAOI/Wyspas.saoi",playerid,STREAMER_TYPE_OBJECT,0);
+stock SAOI_ToggleVisibleItems(const name[],playerid,type,toggle){
+	return CallRemoteFunction("SAOI_ToggleVisibleItems","sddd",name,playerid,type,toggle);
+}
 
-## SAOI Callbacks:
-- SAOI_OnRemovedBuildings(playerid,buildings);
-- SAOI_OnVehicleDestroyed(vehicleid);
-- SAOI_OnVehicleCreated(vehicleid);
+public SAOI_OnRemovedBuildings(playerid,buildings){
+
+	return 1;
+}
+
+public SAOI_OnVehicleDestroyed(vehicleid){
+
+	return 1;
+}
+
+public SAOI_OnVehicleCreated(vehicleid){
+
+	return 1;
+}
+
+public SAOI_IsAdmin(playerid){
+	//you code
+	//don't need add rcon admin
+	//return 1 if admin, 0 if not
+}
+```
