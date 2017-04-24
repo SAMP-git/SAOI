@@ -62,9 +62,9 @@ myobject.saoi
 - /saoicmd - show saoi cmd
 
 
-## Video:
-[SAOI File Generator](https://www.youtube.com/watch?v=M_WiwgS-Kqk)
-[SAOI File Manager v1.9](https://www.youtube.com/watch?v=tcJitQRub-E)
+## Videos:
+- [SAOI File Generator](https://www.youtube.com/watch?v=M_WiwgS-Kqk)
+- [SAOI File Manager v1.9](https://www.youtube.com/watch?v=tcJitQRub-E)
 
 
 ## Remote Control:
