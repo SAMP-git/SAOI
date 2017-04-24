@@ -5,9 +5,9 @@
 
 
 ## Documentation:
-[Technical Data](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Technical%20Data.txt)
-[Supported Functions](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Supported%20Functions.txt)
-[SAOI File Structure](https://github.com/AbyssMorgan/SAOI/blob/master/documents/SAOI%20File%20Structure.txt)
+- [Technical Data](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Technical%20Data.txt)
+- [Supported Functions](https://github.com/AbyssMorgan/SAOI/blob/master/documents/Supported%20Functions.txt)
+- [SAOI File Structure](https://github.com/AbyssMorgan/SAOI/blob/master/documents/SAOI%20File%20Structure.txt)
 
 ## How to use SAOI:
 - Download and extract SAOI Generator (Windows).zip
