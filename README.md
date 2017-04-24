@@ -1,4 +1,4 @@
-# San Andreas Object Image Loader.
+# San Andreas Object Image Loader v1.9.0
 
 
 ###### What is that ? This is the script allows you to load binary objects file which have a dynamic structure.
@@ -63,8 +63,8 @@ myobject.saoi
 
 
 ## Video:
-[url=https://www.youtube.com/watch?v=M_WiwgS-Kqk]SAOI File Generator[/url]
-[url=https://www.youtube.com/watch?v=tcJitQRub-E]SAOI File Manager v1.9[/url]
+[SAOI File Generator](https://www.youtube.com/watch?v=M_WiwgS-Kqk)
+[SAOI File Manager v1.9](https://www.youtube.com/watch?v=tcJitQRub-E)
 
 
 ## Remote Control:
