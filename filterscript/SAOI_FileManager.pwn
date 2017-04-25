@@ -32,7 +32,7 @@
  *                                                                                                                                *
  **********************************************************************************************************************************/
 
-#define IsAdmin(%0)					(IsPlayerAdmin(%0) || CallRemoteFunction("SAOI_IsAdmin","d",playerid))
+#define IsAdmin(%0)					(IsPlayerAdmin(%0) || CallRemoteFunction("SAOI_IsAdmin","d",(%0)))
 
 //#define MAX_SAOI_FILE				(SAOI:2001)
 #define DIALOG_OFFSET				(1000)
