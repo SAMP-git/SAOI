@@ -58,16 +58,15 @@
 #include <sscanf2>
 #include <streamer>
 #tryinclude <YSF>
-#tryinclude <SAOI_Developer>
 
 #tryinclude <izcmd>
 #if !defined CMD
-	#include <zcmd>
+	#tryinclude <zcmd>
 #endif
 
 #tryinclude <colandreas>
 #if !defined COLANDREAS
-	#include <mapandreas>
+	#tryinclude <mapandreas>
 #endif
 
 #include <SAM/StreamerFunction>
@@ -782,6 +781,8 @@ stock SAOI_GetStatus(errorlevel){
 	}
 	return buffer;
 }
+
+#tryinclude <SAOI_Developer>
 
 //Commands
 CMD:saoi(playerid){
