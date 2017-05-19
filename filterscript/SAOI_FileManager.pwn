@@ -11,13 +11,13 @@
  *                                                                                                                                *
  * File Version: 1.9.0                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
- * Streamer Version: 2.9.0                                                                                                        *
+ * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  * MapAndreas Version: 1.2.1                                                                                                      *
  * ColAndreas Version: 1.4.0                                                                                                      *
  * SAOI Version: 1.6.1                                                                                                            *
- * 3DTryg Version: 4.2.0                                                                                                          *
- * StreamerFunction Version: 2.7.0                                                                                                *
+ * 3DTryg Version: 4.3.0                                                                                                          *
+ * StreamerFunction Version: 2.8.0                                                                                                *
  * YSF Version: R18                                                                                                               *
  *                                                                                                                                *
  * Notice:                                                                                                                        *
@@ -82,20 +82,20 @@
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
-	#error [ADM] You need StreamerFunction.inc v2.7.0
+	#error [ADM] You need StreamerFunction.inc v2.8.0
 #elseif !defined Streamer_Spec_Version
-	#error [ADM] Update you StreamerFunction.inc to v2.7.0
-#elseif (Streamer_Spec_Version < 20700)
-	#error [ADM] Update you StreamerFunction.inc to v2.7.0
+	#error [ADM] Update you StreamerFunction.inc to v2.8.0
+#elseif (Streamer_Spec_Version < 20800)
+	#error [ADM] Update you StreamerFunction.inc to v2.8.0
 #endif
 
 //Check Version 3DTryg.inc
 #if !defined _3D_Tryg
-	#error [ADM] You need 3DTryg.inc v4.2.0
+	#error [ADM] You need 3DTryg.inc v4.3.0
 #elseif !defined Tryg3D_Version
-	#error [ADM] Update you 3DTryg.inc to v4.2.0
-#elseif (Tryg3D_Version < 40200)
-	#error [ADM] Update you 3DTryg.inc to v4.2.0
+	#error [ADM] Update you 3DTryg.inc to v4.3.0
+#elseif (Tryg3D_Version < 40300)
+	#error [ADM] Update you 3DTryg.inc to v4.3.0
 #endif
 
 //Check Version SAOI.inc
@@ -122,10 +122,6 @@
 //Update Checker
 #if !defined HTTP
 	#tryinclude <a_http>
-#endif
-
-#if !defined HTTP
-	#tryinclude "a_http"
 #endif
 
 #if !defined HTTP
@@ -161,18 +157,18 @@ enum find_elements {
 	e_vehicle,
 	e_removebuilding,
 	e_gangzone
-}
+};
 
 enum find_option {
 	bool:o_active,
 	o_count
-}
+};
 
 enum saoi_config {
 	bool:save_log,
 	bool:global_msg,
 	bool:auto_freeze
-}
+};
 
 new elements_name[][] = {
 	"DynamicObject",

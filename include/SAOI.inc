@@ -230,7 +230,7 @@ enum e_remove_building {
 	Float:SAOIV:Y,
 	Float:SAOIV:Z,
 	Float:SAOIV:R
-}
+};
 
 enum e_saoi {
 	bool:SAOIV:status,
@@ -275,7 +275,7 @@ enum e_saoi {
 	SAOIV:INT,
 	
 	SAOIV:created[32]
-}
+};
 
 new SAOIFile[SAOI:MAX_SAOI_FILE][e_saoi],
 	SAOI:SAOI_Vehicles[MAX_VEHICLES],
