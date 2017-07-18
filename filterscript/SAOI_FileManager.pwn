@@ -80,6 +80,10 @@
 #define SAOIFM_EXTRA_ID_OFFSET		(1100000)		//You can never change !!!
 #define MAX_PATH					(70)
 
+#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
+	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+#endif
+
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
 	#error [ADM] You need StreamerFunction.inc v2.8.0

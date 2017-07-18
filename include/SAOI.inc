@@ -94,6 +94,10 @@
 #endif
 */
 
+#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
+	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+#endif
+
 #if !defined Streamer_AppendArrayData
 	#error [ADM] Unknown Streamer Version
 #endif
