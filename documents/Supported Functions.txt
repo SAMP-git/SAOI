@@ -31,3 +31,6 @@ SetVehicleVirtualWorld
 SetSAOIBumperIP
 SetSAOIBumperPort
 SetSAOIPositionFlag
+
+- CA3.inc
+CreateDynamicArt (improvement)

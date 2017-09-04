@@ -127,6 +127,26 @@ $DATA: {
 					}
 				}
 			}
+			
+			[if !isnull(animlib)]
+			function: {
+				ApplyDynamicActorAnimation(actorid,animlib[],animname[],Float:fdelta,loop,lockx,locky,freeze,time);
+			}
+			arguments: {
+				animlibsize = strlen(animlib) size:8b
+				animlib size:animlibsize
+				animnamesize = strlen(animname) size:8b
+				animname size:animnamesize
+				Float:fdelta size:32b
+				time size:32b
+				element_flag {
+					loop size:1b
+					lockx size:1b
+					locky size:1b
+					freeze size:1b
+					null size:4b
+				} size:8b
+			}
 		}
 		
 		ARG: 100 {

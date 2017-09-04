@@ -1,4 +1,4 @@
-# San Andreas Object Image Loader v1.9.0
+# San Andreas Object Image Loader v2.0.0
 
 
 ###### What is that ? This is the script allows you to load binary objects file which have a dynamic structure.
@@ -23,10 +23,10 @@ SetDynamicObjectMaterial(tmpobj,2,10817,"airportgnd_sfse","black64",0x00000000);
 SetDynamicObjectMaterial(tmpobj,3,10817,"airportgnd_sfse","black64",0x00000000);
 
 //additional
-SetSAOIPositionFlag(MY_SAOI_FILE,1025.1938,1356.8513,10.8377,183.2121,0,0);
+SAOI::SetPositionFlag(MY_SAOI_FILE,1025.1938,1356.8513,10.8377,183.2121,0,0);
 
-SetSAOIBumperIP(MY_SAOI_FILE,"127.0.0.1");
-SetSAOIBumperPort(MY_SAOI_FILE,7777);
+SAOI::SetBumperIP(MY_SAOI_FILE,"127.0.0.1");
+SAOI::SetBumperPort(MY_SAOI_FILE,7777);
 
 //example for RemoveBuildingForPlayer
 //LV-LOT Old Gate
