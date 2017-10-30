@@ -7,9 +7,9 @@
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                                                         *
  *                                                                                                                                *
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
- * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD                                                                            *
+ * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
- * File Version: 2.0.0                                                                                                            *
+ * File Version: 2.0.1                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -71,14 +71,21 @@
 
 #include <SAM/StreamerFunction>
 #include <SAM/3DTryg>
+#include <SAM/SWAP>
 #include <SAOI>
 
-#define SAOI_FILE_LIST				"/SAOI/SaoiFiles.txt"
-#define SAOI_FILE_TMP				"/SAOI/SaoiFiles.tmp"
-#define SAOI_FILE_CFG				"/SAOI/SAOI.cfg"
+#define SAOI_OLDFILE_LIST			"/SAOI/SaoiFiles.txt"
+#define SAOI_OLDFILE_CFG			"/SAOI/SAOI.cfg"
+#define SAOI_FILE_BOOT					"/SAOI/boot"
 
 #define SAOIFM_EXTRA_ID_OFFSET		(1100000)		//You can never change !!!
-#define MAX_PATH					(70)
+#define MAX_SAOI_PATH				(70)
+
+#define SAOI_BOOT_SIZE_HEADER		(0x00001000)
+#define SAOI_BOOT_SIZE_CONFIG		(0x00000080)
+#define SAOI_BOOT_SIZE_FILE			(MAX_SAOI_PATH)
+#define SAOI_BOOT_OFFSET_FILES		(SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG)
+#define SAOI_BOOT_OFFSET_CONFIG		(SAOI_BOOT_SIZE_HEADER)
 
 #if (!defined GetPlayerPoolSize || !defined GetSVarInt)
 	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
@@ -119,6 +126,10 @@
 	#error [ADM] You need a_actor.inc
 #endif
 
+#if !defined _SWAP_include
+	#error [ADM] You need SWAP.inc (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/SWAP.inc)
+#endif
+
 #if !defined CMD
 	#error [ADM] You need izcmd.inc or zcmd.inc
 #endif
@@ -132,8 +143,19 @@
 	#error [ADM] You need a_http.inc
 #endif
 
-#define SAOI_SecToTimeDay(%0)		((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
-#define SAOI_MSToTimeDay(%0)		SAOI_SecToTimeDay((%0)/1000)
+#define SAOI_SecToTimeDay(%0)					((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
+#define SAOI_MSToTimeDay(%0)					SAOI_SecToTimeDay((%0)/1000)
+
+#define SAOI_GetValueBit(%0,%1)					((%0) >>> (%1) & 0x01)
+#define SAOI_SetValueBit(%0,%1,%2)				((%0) = (((%0) & ~(0x01 << (%1))) | ((0x01 << (%1))*(%2))))
+
+//Dynamic Toggle Config Macros
+#define SAOI_GetConfigAddress(%0)				(floatround((%0)/32))
+#define SAOI_GetConfigBit(%0)					((%0) % 32)
+#define SAOI_GetConfigSize(%0)					(((%0) / 32)+1)
+
+#define SAOI_IsToggleConfigInformation(%0,%1)	SAOI_GetValueBit(%0[SAOI_GetConfigAddress(%1)],SAOI_GetConfigBit(%1))
+#define SAOI_ToggleConfigInformation(%0,%1,%2)	SAOI_SetValueBit(%0[SAOI_GetConfigAddress(%1)],SAOI_GetConfigBit(%1),((%2) & 0x1))
 
 enum saoi_dialog {
 	DIALOG_SAOI_NUL = DIALOG_OFFSET,
@@ -189,6 +211,18 @@ new elements_name[][] = {
 	"GangZone"
 };
 
+new SAOI_CFG_KEY[2][] = {
+	{101,225,251,191,58,96,176,35,9,252,40,145,83,113,52,186,15,64,127,27,158,39,90,213,113,98,68,77,124,164,60,131,
+	89,212,199,51,61,136,192,174,155,66,227,117,154,109,24,154,55,21,127,215,58,106,63,107,218,243,15,184,47,145,128,158,
+	92,59,17,149,120,115,241,140,65,138,146,133,128,153,242,237,58,59,168,188,155,11,177,81,163,225,248,11,141,203,167,167,
+	4,205,48,92,5,89,26,184,146,141,140,56,28,47,154,170,174,104,83,67,217,67,135,128,99,229,88,189,174,138,135,150},
+	
+	{155,31,5,65,198,160,80,221,247,4,216,111,173,143,204,70,241,192,129,229,98,217,166,43,143,158,188,179,132,92,196,125,
+	167,44,57,205,195,120,64,82,101,190,29,139,102,147,232,102,201,235,129,41,198,150,193,149,38,13,241,72,209,111,128,98,
+	164,197,239,107,136,141,15,116,191,118,110,123,128,103,14,19,198,197,88,68,101,245,79,175,93,31,8,245,115,53,89,89,
+	252,51,208,164,251,167,230,72,110,115,116,200,228,209,102,86,82,152,173,189,39,189,121,128,157,27,168,67,82,118,121,106}
+};
+
 new SAOI::Finder[find_elements][find_option],
 	PlayerLastSAOI[MAX_PLAYERS],
 	PlayerLastItem[MAX_PLAYERS],
@@ -197,104 +231,62 @@ new SAOI::Finder[find_elements][find_option],
 	SAOI::ErrorLevel = 0,
 	bool:fm_fast_boot = true;
 
+stock SAOI::CreateBootFile(){
+	if(fexist(SAOI_FILE_BOOT)) return 0;
+	new size = SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG + (MAX_SAOI_FILE*SAOI_BOOT_SIZE_FILE),
+		orm = 4096 - (size % 4096);
+	size += orm;
+	SWAP::reserve(SAOI_FILE_BOOT,size);
+	SWAP::format_random(SAOI_FILE_BOOT);
+	new tmp[128];
+	for(new x = 0; x < SAOI_BOOT_SIZE_HEADER; x += SAOI_BOOT_SIZE_FILE){
+		SWAP::write_block(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],x,tmp,128);
+	}
+	return size;
+}
+
+stock SAOI::FindBootID(const name[]){
+	new buffer[256], saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)];
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
+		if(SAOI::IsToggleConfigInformation(saoi_boot,i)){
+			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),buffer,SAOI_BOOT_SIZE_FILE);
+			if(!strcmp(name,buffer,true)) return i;
+		}
+	}
+	return -1;
+}
+
+stock SAOI::FindFreeBootID(){
+	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)];
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
+		if(!SAOI::IsToggleConfigInformation(saoi_boot,i)) return i;
+	}
+	return -1;
+}
+
+stock SAOI::SetBoot(name[],toggle){
+	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)], id = -1;
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	if((id = SAOI::FindBootID(name)) == -1){
+		if(toggle){
+			id = SAOI::FindFreeBootID();
+			if(id != -1){
+				SAOI::ToggleConfigInformation(saoi_boot,id,1);
+				SWAP::write_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],SAOI_BOOT_OFFSET_FILES+(id*SAOI_BOOT_SIZE_FILE),name,strlen(name)+1);
+			}
+		}
+	} else {
+		if(!toggle){
+			SAOI::ToggleConfigInformation(saoi_boot,id,0);
+		}
+	}
+	SWAP::write_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],0,saoi_boot,sizeof(saoi_boot));
+	return id;
+}
+
 //Main
-stock SAOI::fcreate(const name[]){
-	if(!fexist(name)){
-		new File:cfile = fopen(name,io_readwrite);
-		fwrite(cfile,"");
-		fclose(cfile);
-		return 1;
-	}
-	return 0;
-}
-
-stock SAOI::frename(oldname[],newname[]){
-	new File:inpf, File:outf;
-	if(!fexist(oldname)) return 0;
-	if(fexist(newname)) fremove(newname);
-	SAOI::fcreate(newname);
-	
-	inpf = fopen(oldname,io_read);
-	if(!inpf) return 0;
-	outf = fopen(newname,io_append);
-	if(!outf){
-		fclose(inpf);
-		return 0;
-	}
-	new asize = flength(inpf), idx = 0;
-	while(idx < asize){
-		fputchar(outf,fgetchar(inpf,0,false),false);
-		idx++;
-	}
-	fclose(inpf);
-	fclose(outf);
-	fremove(oldname);
-	return 1;
-}
-
-stock bool:SAOI::FileInBoot(file_name[]){
-	new File:obj_list = fopen(SAOI_FILE_LIST,io_read),
-		line[128],
-		fname[MAX_SAOI_NAME_SIZE],
-		path[MAX_PATH],
-		find_name[MAX_SAOI_NAME_SIZE];
-		
-	if(!obj_list){
-		printf("Cannot open file: %s",SAOI_FILE_LIST);
-		return false;
-	}
-	
-	format(find_name,sizeof(find_name),"%s.saoi",file_name);
-
-	while(fread(obj_list,line)){
-		sscanf(line,"s[64]",fname);
-		format(path,sizeof(path),"%s",fname);
-		if(path[strlen(path)-1] == '\n') path[strlen(path)-1] = EOS;
-		if(path[strlen(path)-1] == '\r') path[strlen(path)-1] = EOS;
-		if(!strcmp(path,find_name,true)){
-			fclose(obj_list);
-			return true;
-		}
-	}
-	fclose(obj_list);
-	return false;
-}
-
-stock bool:SAOI::SetFileInBoot(file_name[],bool:boot){
-	SAOI::frename(SAOI_FILE_LIST,SAOI_FILE_TMP);
-	SAOI::fcreate(SAOI_FILE_LIST);
-	
-	new File:inpf = fopen(SAOI_FILE_TMP,io_read),
-		File:outf = fopen(SAOI_FILE_LIST,io_append),
-		line[128],
-		fname[MAX_SAOI_NAME_SIZE],
-		path[MAX_PATH],
-		find_name[MAX_SAOI_NAME_SIZE];
-		
-	format(find_name,sizeof(find_name),"%s.saoi",file_name);
-	
-	while(fread(inpf,line)){
-		sscanf(line,"s[64]",fname);
-		format(path,sizeof(path),"%s",fname);
-		if(path[strlen(path)-1] == '\n') path[strlen(path)-1] = EOS;
-		if(path[strlen(path)-1] == '\r') path[strlen(path)-1] = EOS;
-		if(!strcmp(path,find_name,true)){
-			
-		} else {
-			fwrite(outf,fname);
-		}
-	}
-	
-	if(boot){
-		fwrite(outf,"\n");
-		fwrite(outf,find_name);
-	}
-	
-	fclose(inpf);
-	fclose(outf);
-	fremove(SAOI_FILE_TMP);
-}
-
 stock SAOI::RemoveFinderLabel(find_elements:type){
 	new idx = SAOIFM_EXTRA_ID_OFFSET + _:type;
 	ForDynamic3DTextLabels(i){
@@ -317,7 +309,7 @@ stock SAOI::RemoveFinderLabel(find_elements:type){
 
 //FINDER:DynamicObject
 stock SAOI::FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, index, fname[MAX_PATH],
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, index, fname[MAX_SAOI_PATH],
 		Float:sd, Float:dd, Text3D:elementid, targetid,
 		Float:x, Float:y, Float:z,
 		Float:rx, Float:ry, Float:rz,
@@ -413,7 +405,7 @@ stock SAOI::FindDynamicObject(playerid,Float:findradius,Float:streamdistance = 2
 
 //FINDER:DynamicPickup
 stock SAOI::FindDynamicPickup(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, index, fname[MAX_PATH],
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, index, fname[MAX_SAOI_PATH],
 		Float:x, Float:y, Float:z, Float:sd,
 		Text3D:elementid;
 	
@@ -446,7 +438,7 @@ stock SAOI::FindDynamicPickup(playerid,Float:findradius,Float:streamdistance = 2
 
 //FINDER:DynamicMapIcon
 stock SAOI::FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, Float:mz, index, fname[MAX_PATH],
+	new buffer[256], szLIST[768], cnt = 0, Float:px, Float:py, Float:pz, Float:mz, index, fname[MAX_SAOI_PATH],
 		Float:x, Float:y, Float:z, Float:sd,
 		Text3D:elementid;
 	
@@ -485,7 +477,7 @@ stock SAOI::FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 
 #if defined _YSF_included
 	//FINDER:Vehicle
 	stock SAOI::FindVehicle(Float:streamdistance = 20.0){
-		new buffer[256], szLIST[768], cnt = 0, Float:x, Float:y, Float:z, Float:angle, color1, color2, modelid, fname[MAX_PATH],
+		new buffer[256], szLIST[768], cnt = 0, Float:x, Float:y, Float:z, Float:angle, color1, color2, modelid, fname[MAX_SAOI_PATH],
 			v_status[16], Float:tx, Float:ty, Float:tz,
 			Text3D:elementid;
 		
@@ -662,7 +654,7 @@ stock SAOI::FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 
 
 //FINDER:RemoveBuilding
 stock SAOI::FindRemoveBuilding(Float:streamdistance = 20.0){
-	new buffer[256], szLIST[768], cnt = 0, modelid, Float:x, Float:y, Float:z, Float:radius, index, fname[MAX_PATH],
+	new buffer[256], szLIST[768], cnt = 0, modelid, Float:x, Float:y, Float:z, Float:radius, index, fname[MAX_SAOI_PATH],
 		Text3D:elementid;
 	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
 		if(SAOIRemoveBuildings[i][SAOI::modelid] != 0){
@@ -1027,7 +1019,7 @@ CMD:objmaterialtext(playerid,params[]){
 CMD:saoiinfo(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiinfo <name> (Only file name, without extension)");
-	new buffer[512], path[MAX_PATH], index;
+	new buffer[512], path[MAX_SAOI_PATH], index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!SAOI::IsFileLoaded(path,index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
@@ -1189,7 +1181,7 @@ CMD:streaminfo(playerid){
 CMD:saoiload(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiload <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_PATH];
+	new buffer[256], path[MAX_SAOI_PATH];
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(SAOI::IsFileLoaded(path)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is already loaded",params);
@@ -1219,7 +1211,7 @@ CMD:saoiload(playerid,params[]){
 CMD:saoiboot(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiboot <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_PATH];
+	new buffer[256], path[MAX_SAOI_PATH];
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(SAOI::IsFileLoaded(path)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is already loaded",params);
@@ -1236,8 +1228,8 @@ CMD:saoiboot(playerid,params[]){
 	if(edi > 0){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}loaded",params);
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
-		if(!SAOI::FileInBoot(params)){
-			SAOI::SetFileInBoot(params,true);
+		if(SAOI::FindBootID(path) == -1){
+			SAOI::SetBoot(path,1);
 		}
 	} else {
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not loaded",path);
@@ -1252,7 +1244,7 @@ CMD:saoiboot(playerid,params[]){
 CMD:saoiunload(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunload <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_PATH], index;
+	new buffer[256], path[MAX_SAOI_PATH], index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!SAOI::IsFileLoaded(path,index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
@@ -1278,7 +1270,7 @@ CMD:saoiunload(playerid,params[]){
 CMD:saoiunboot(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunboot <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_PATH], index;
+	new buffer[256], path[MAX_SAOI_PATH], index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!SAOI::IsFileLoaded(path,index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
@@ -1290,8 +1282,8 @@ CMD:saoiunboot(playerid,params[]){
 		SendClientMessageToAll(0xFF0000FF,buffer);
 	}
 	
-	if(SAOI::FileInBoot(params)){
-		SAOI::SetFileInBoot(params,false);
+	if(SAOI::FindBootID(path) != -1){
+		SAOI::SetBoot(path,0);
 	}
 	
 	if(SAOI::UnloadObjectImage(index)){
@@ -1309,7 +1301,7 @@ CMD:saoireload(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoireload <name> (Only file name, without extension)");
 	
-	new buffer[256], path[MAX_PATH], index;
+	new buffer[256], path[MAX_SAOI_PATH], index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	
 	if(!fexist(path)) return SendClientMessage(playerid,0xB01010FF,"File not exist");
@@ -1395,7 +1387,7 @@ CMD:saoilist(playerid,params[]){
 	if(offset < 1 || offset*100 >= _:MAX_SAOI_FILE) return SendClientMessage(playerid,0xB01010FF,"List not exist");
 	offset--;
 	PlayerListOffset[playerid] = offset;
-	new buffer[256], szLIST[4096], fname[MAX_PATH];
+	new buffer[256], szLIST[4096], fname[MAX_SAOI_PATH];
 	for(new i = (1+(offset*100)); i < MAX_SAOI_FILE; i++){
 		if(i-(offset*100) > 100) break;
 		if(SAOI::IsLoaded(i)){
@@ -1419,7 +1411,7 @@ CMD:saoilist(playerid,params[]){
 CMD:saoitp(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoitp <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_PATH], index;
+	new buffer[256], path[MAX_SAOI_PATH], index;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
 	if(!SAOI::IsFileLoaded(path,index)){
 		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
@@ -1517,9 +1509,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			PlayerLastSAOI[playerid] = (tmp_find);
 			PlayerLastItem[playerid] = listitem;
 			
-			new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE], buffer[128];
-			format(fname,sizeof(fname),"%s",SAOI::GetFileName(PlayerLastSAOI[playerid]));
-			sscanf(fname,"'/SAOI/'s[64]",nname);
+			new path[MAX_SAOI_PATH], buffer[128];
+			format(path,sizeof(path),"%s.saoi",SAOI::GetFileName(PlayerLastSAOI[playerid]));
 			
 			buffer = "{FFFFFF}";
 			if(SAOI::IsStatic(PlayerLastSAOI[playerid])){
@@ -1527,7 +1518,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			} else {
 				format(buffer,sizeof(buffer),"File Information\nReload File\nUnload File\n{%s}Teleport To Flag{FFFFFF}\n",SAOI::IsPositionFlagSet(PlayerLastSAOI[playerid])?("00FF00"):("FF0000"));
 			}
-			if(SAOI::FileInBoot(nname)){
+			if(SAOI::FindBootID(path) != -1){
 				strcat(buffer,"Boot: {00FF00}Enabled");
 			} else {
 				strcat(buffer,"Boot: {FF0000}Disabled");
@@ -1542,19 +1533,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 				format(tmp_params,sizeof(tmp_params),"%d",PlayerListOffset[playerid]+1);
 				return cmd_saoilist(playerid,tmp_params);
 			}
-			new fname[MAX_PATH], nname[MAX_SAOI_NAME_SIZE];
-			format(fname,sizeof(fname),"%s",SAOI::GetFileName(PlayerLastSAOI[playerid]));
-			sscanf(fname,"'/SAOI/'s[64]",nname);
+			new path[MAX_SAOI_PATH], nname[MAX_SAOI_NAME_SIZE];
+			format(path,sizeof(path),"%s",SAOI::GetFileName(PlayerLastSAOI[playerid]));
+			sscanf(path,"'/SAOI/'s[64]",nname);
+			strcat(path,".saoi");
 			
 			if(SAOI::IsStatic(PlayerLastSAOI[playerid])){
 				switch(listitem){
 					case 0: return cmd_saoiinfo(playerid,nname);
 					case 1: return cmd_saoitp(playerid,nname);
 					case 2: {
-						if(SAOI::FileInBoot(nname)){
-							SAOI::SetFileInBoot(nname,false);
+						if(SAOI::FindBootID(path) != -1){
+							SAOI::SetBoot(path,0);
 						} else {
-							SAOI::SetFileInBoot(nname,true);
+							SAOI::SetBoot(path,1);
 						}
 						new tmp_params[64];
 						format(tmp_params,sizeof(tmp_params),"%d. Unknown",_:PlayerLastSAOI[playerid]);
@@ -1568,10 +1560,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 					case 2: return cmd_saoiunload(playerid,nname);
 					case 3: return cmd_saoitp(playerid,nname);
 					case 4: {
-						if(SAOI::FileInBoot(nname)){
-							SAOI::SetFileInBoot(nname,false);
+						if(SAOI::FindBootID(path) != -1){
+							SAOI::SetBoot(path,0);
 						} else {
-							SAOI::SetFileInBoot(nname,true);
+							SAOI::SetBoot(path,1);
 						}
 						new tmp_params[64];
 						format(tmp_params,sizeof(tmp_params),"%d. Unknown",_:PlayerLastSAOI[playerid]);
@@ -1788,19 +1780,19 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			if(!IsAdmin(playerid)) return 0;
 			if(!response) return 0;
 			switch(listitem){
-				case 0: SAOI::Config[save_log] =		(SAOI::Config[save_log]?false:true);
-				case 1: SAOI::Config[global_msg] =		(SAOI::Config[global_msg]?false:true);
-				case 2: SAOI::Config[auto_freeze] = 	(SAOI::Config[auto_freeze]?false:true);
+				case 0: {
+					SAOI::Config[save_log] =		(SAOI::Config[save_log]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
+				}
+				case 1: {
+					SAOI::Config[global_msg] =		(SAOI::Config[global_msg]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
+				}
+				case 2: {
+					SAOI::Config[auto_freeze] = 	(SAOI::Config[auto_freeze]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
+				}
 			}
-			
-			if(fexist(SAOI_FILE_CFG)) fremove(SAOI_FILE_CFG);
-			SAOI::fcreate(SAOI_FILE_CFG);
-			
-			new File:outf = fopen(SAOI_FILE_CFG,io_append), buffer[256];
-			format(buffer,sizeof(buffer),"%d:%d:%d",SAOI::Config[global_msg],SAOI::Config[save_log],SAOI::Config[auto_freeze]);
-			fwrite(outf,buffer);
-			fclose(outf);
-			
 			return cmd_saoicfg(playerid);
 		}
 	}
@@ -1812,58 +1804,84 @@ stock SAOI::LoadManager(){
 	printf("Load SAOI File Manager");
 	printf(" ");
 	
-	if(!fexist(SAOI_FILE_CFG)){
-		printf("Create file: %s",SAOI_FILE_CFG);
+	new start_time = GetTickCount();
+	
+	//Create Boot Loader
+	if(!fexist(SAOI_FILE_BOOT)){
+		SAOI::CreateBootFile();
+		if(!fexist(SAOI_FILE_BOOT)){
+			printf("Cannot create file: %s",SAOI_FILE_BOOT);
+			return 0;
+		} else {
+			printf("[SAOI DEBUG] Create boot file: %s",SAOI_FILE_BOOT);
+		}
+	}
+	
+	//Copy old records
+	if(fexist(SAOI_OLDFILE_LIST)){
+		printf("[SAOI DEBUG] Move old records to new boot file.");
+		new File:obj_list = fopen(SAOI_OLDFILE_LIST,io_read), line[128];
+	
+		if(!obj_list){
+			printf("Cannot open file: %s",SAOI_OLDFILE_LIST);
+			return 0;
+		}
+		
+		new fname[MAX_SAOI_NAME_SIZE], path[MAX_SAOI_PATH];
+		while(fread(obj_list,line)){
+			if(strlen(line) < 5) continue; //empty line
+			sscanf(line,"s[64]",fname);
+			format(path,sizeof(path),"/SAOI/%s",fname);
+			if(path[strlen(path)-1] == '\n') path[strlen(path)-1] = EOS;
+			if(path[strlen(path)-1] == '\r') path[strlen(path)-1] = EOS;
+			SAOI::SetBoot(path,1);
+		}
+		fclose(obj_list);
+		printf("[SAOI DEBUG] Remove: %s",SAOI_OLDFILE_LIST);
+		fremove(SAOI_OLDFILE_LIST);
+	}
+	
+	//Copy old config
+	if(fexist(SAOI_OLDFILE_CFG)){
+		printf("[SAOI DEBUG] Move old config to new boot file.");
 		new buffer[256];
-		SAOI::fcreate(SAOI_FILE_CFG);
-		new File:outf = fopen(SAOI_FILE_CFG,io_append);
-		SAOI::Config[global_msg] = true;
-		SAOI::Config[save_log] = true;
-		SAOI::Config[auto_freeze] = true;
-		format(buffer,sizeof(buffer),"%d:%d:%d",SAOI::Config[global_msg],SAOI::Config[save_log],SAOI::Config[auto_freeze]);
-		fwrite(outf,buffer);
-		fclose(outf);
-	} else {
-		new buffer[256];
-		new File:inpf = fopen(SAOI_FILE_CFG,io_read);
+		new File:inpf = fopen(SAOI_OLDFILE_CFG,io_read);
 		fread(inpf,buffer);
 		sscanf(buffer,"p<:>D(1)D(1)D(1)",SAOI::Config[global_msg],SAOI::Config[save_log],SAOI::Config[auto_freeze]);
 		fclose(inpf);
+		
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
+		
+		printf("[SAOI DEBUG] Remove: %s",SAOI_OLDFILE_CFG);
+		fremove(SAOI_OLDFILE_CFG);
 	}
+
+	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)],
+		path[MAX_SAOI_PATH],
+		error_name[MAX_SAOI_ERROR_NAME],
+		lcnt_t = 0, lcnt_f = 0, edi;
 	
-	new start_time = GetTickCount();
-	if(!fexist(SAOI_FILE_LIST)){
-		printf("Create file: %s",SAOI_FILE_LIST);
-		SAOI::fcreate(SAOI_FILE_LIST);
-		if(!fexist(SAOI_FILE_LIST)){
-			printf("Cannot create file: %s",SAOI_FILE_LIST);
-			return 0;
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	
+	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
+		if(SAOI::IsToggleConfigInformation(saoi_boot,i)){
+			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),path,SAOI_BOOT_SIZE_FILE);
+			edi = SAOI::LoadObjectImage(path,SAOI::Config[save_log],fm_fast_boot);
+			if(edi > 0 || edi == SAOI_ERROR_IS_LOADED){
+				lcnt_t++;
+			} else {
+				SAOI::GetErrorName(edi,error_name);
+				printf("[SAOI DEBUG] %s: %s",path,error_name);
+				lcnt_f++;
+			}
 		}
 	}
-	new File:obj_list = fopen(SAOI_FILE_LIST,io_read), line[128], lcnt_t = 0, lcnt_f = 0;
 	
-	if(!obj_list){
-		printf("Cannot open file: %s",SAOI_FILE_LIST);
-		return 0;
-	}
-	
-	new fname[MAX_SAOI_NAME_SIZE], path[MAX_PATH], edi, error_name[MAX_SAOI_ERROR_NAME];
-	while(fread(obj_list,line)){
-		if(strlen(line) < 5) continue; //empty line
-		sscanf(line,"s[64]",fname);
-		format(path,sizeof(path),"/SAOI/%s",fname);
-		if(path[strlen(path)-1] == '\n') path[strlen(path)-1] = EOS;
-		if(path[strlen(path)-1] == '\r') path[strlen(path)-1] = EOS;
-		edi = SAOI::LoadObjectImage(path,SAOI::Config[save_log],fm_fast_boot);
-		if(edi > 0 || edi == SAOI_ERROR_IS_LOADED){
-			lcnt_t++;
-		} else {
-			SAOI::GetErrorName(edi,error_name);
-			printf("[SAOI DEBUG] %s: %s",path,error_name);
-			lcnt_f++;
-		}
-	}
-	fclose(obj_list);
+	SAOI::Config[global_msg] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
+	SAOI::Config[save_log] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
+	SAOI::Config[auto_freeze] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
 	
 	new stop_time = GetTickCount();
 	if((lcnt_t+lcnt_f) > 0){
