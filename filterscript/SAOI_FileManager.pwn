@@ -9,7 +9,7 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
- * File Version: 2.0.1                                                                                                            *
+ * File Version: 2.0.2                                                                                                            *
  * SA:MP Version: 0.3.7                                                                                                           *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -76,7 +76,7 @@
 
 #define SAOI_OLDFILE_LIST			"/SAOI/SaoiFiles.txt"
 #define SAOI_OLDFILE_CFG			"/SAOI/SAOI.cfg"
-#define SAOI_FILE_BOOT					"/SAOI/boot"
+#define SAOI_FILE_BOOT				"/SAOI/boot"
 
 #define SAOIFM_EXTRA_ID_OFFSET		(1100000)		//You can never change !!!
 #define MAX_SAOI_PATH				(70)
@@ -126,8 +126,13 @@
 	#error [ADM] You need a_actor.inc
 #endif
 
+//Check Version SWAP.inc
 #if !defined _SWAP_include
-	#error [ADM] You need SWAP.inc (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/SWAP.inc)
+	#error [ADM] You need SWAP.inc v1.2.0 (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/SWAP.inc)
+#elseif !defined SWAP_Version
+	#error [ADM] Update you SWAP.inc to v1.2.0 (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/SWAP.inc)
+#elseif (SWAP_Version < 10200)
+	#error [ADM] Update you SWAP.inc to v1.2.0 (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/SWAP.inc)
 #endif
 
 #if !defined CMD
@@ -239,18 +244,39 @@ stock SAOI::CreateBootFile(){
 	SWAP::reserve(SAOI_FILE_BOOT,size);
 	SWAP::format_random(SAOI_FILE_BOOT);
 	new tmp[128];
-	for(new x = 0; x < SAOI_BOOT_SIZE_HEADER; x += SAOI_BOOT_SIZE_FILE){
-		SWAP::write_block(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],x,tmp,128);
+	for(new x = 0; x < SAOI_BOOT_SIZE_HEADER; x += 128){
+		SWAP::write_block(SAOI_FILE_BOOT,SAOI_CFG_KEY,x,tmp,128);
 	}
 	return size;
 }
 
+stock SAOI::BootResize(max_elements){
+	if(!fexist(SAOI_FILE_BOOT)) return 0;
+	new size = SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG + (max_elements*SAOI_BOOT_SIZE_FILE),
+		orm = 4096 - (size % 4096);
+	size += orm;
+	new File:outf = fopen(SAOI_FILE_BOOT,io_readwrite), asize = flength(outf);
+	if(asize > size) return 0;
+	
+	//reserve space
+	fseek(outf,size-1,seek_start);
+	fputchar(outf,0,false);
+	
+	//format new space
+	fseek(outf,asize,seek_start);
+	for(new i = asize; i < size; i++){
+		fputchar(outf,random(256),false);
+	}
+	fclose(outf);
+	return size-asize;
+}
+
 stock SAOI::FindBootID(const name[]){
 	new buffer[256], saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)];
-	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
 		if(SAOI::IsToggleConfigInformation(saoi_boot,i)){
-			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),buffer,SAOI_BOOT_SIZE_FILE);
+			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY,SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),buffer,SAOI_BOOT_SIZE_FILE);
 			if(!strcmp(name,buffer,true)) return i;
 		}
 	}
@@ -259,7 +285,7 @@ stock SAOI::FindBootID(const name[]){
 
 stock SAOI::FindFreeBootID(){
 	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)];
-	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
 		if(!SAOI::IsToggleConfigInformation(saoi_boot,i)) return i;
 	}
@@ -268,13 +294,13 @@ stock SAOI::FindFreeBootID(){
 
 stock SAOI::SetBoot(name[],toggle){
 	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)], id = -1;
-	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	if((id = SAOI::FindBootID(name)) == -1){
 		if(toggle){
 			id = SAOI::FindFreeBootID();
 			if(id != -1){
 				SAOI::ToggleConfigInformation(saoi_boot,id,1);
-				SWAP::write_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],SAOI_BOOT_OFFSET_FILES+(id*SAOI_BOOT_SIZE_FILE),name,strlen(name)+1);
+				SWAP::write_string(SAOI_FILE_BOOT,SAOI_CFG_KEY,SAOI_BOOT_OFFSET_FILES+(id*SAOI_BOOT_SIZE_FILE),name,strlen(name)+1);
 			}
 		}
 	} else {
@@ -282,7 +308,7 @@ stock SAOI::SetBoot(name[],toggle){
 			SAOI::ToggleConfigInformation(saoi_boot,id,0);
 		}
 	}
-	SWAP::write_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],0,saoi_boot,sizeof(saoi_boot));
+	SWAP::write_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	return id;
 }
 
@@ -1028,7 +1054,12 @@ CMD:saoiinfo(playerid,params[]){
 	
 	PlayerLastSAOI[playerid] = index;
 	PlayerLastItem[playerid] = index-1;
-	new szLIST[1024], author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE], created_data[32];
+	new szLIST[1024],
+		author[MAX_SAOI_AUTHOR_SIZE],
+		version[MAX_SAOI_VERSION_SIZE],
+		description[MAX_SAOI_DESCRIPTION_SIZE],
+		created_data[32],
+		bootid = SAOI::FindBootID(path);
 	
 	szLIST = "";
 	SAOI::GetFileHeader(path,author,version,description);
@@ -1040,7 +1071,13 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Description: {00FF00}%s\n",description);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s\n",(SAOI::IsStatic(index)?("Static"):("Dynamic")),(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")));
+	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s",(SAOI::IsStatic(index)?("Static"):("Dynamic")),(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")));
+	strcat(szLIST,buffer);
+	if(bootid != -1){
+		format(buffer,sizeof buffer,"{00AAFF}BootID: {00FF00}%d\n",bootid);
+	} else {
+		format(buffer,sizeof buffer,"{00AAFF}BootID: {00FF00}None\n",bootid);
+	}
 	strcat(szLIST,buffer);
 	
 	strcat(szLIST,"\n");
@@ -1782,15 +1819,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 			switch(listitem){
 				case 0: {
 					SAOI::Config[save_log] =		(SAOI::Config[save_log]?false:true);
-					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
 				}
 				case 1: {
 					SAOI::Config[global_msg] =		(SAOI::Config[global_msg]?false:true);
-					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
 				}
 				case 2: {
 					SAOI::Config[auto_freeze] = 	(SAOI::Config[auto_freeze]?false:true);
-					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
 				}
 			}
 			return cmd_saoicfg(playerid);
@@ -1801,8 +1838,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 
 stock SAOI::LoadManager(){
 	printf(" ");
-	printf("Load SAOI File Manager");
-	printf(" ");
+	printf("[SAOI] Load File Manager");
 	
 	new start_time = GetTickCount();
 	
@@ -1810,7 +1846,7 @@ stock SAOI::LoadManager(){
 	if(!fexist(SAOI_FILE_BOOT)){
 		SAOI::CreateBootFile();
 		if(!fexist(SAOI_FILE_BOOT)){
-			printf("Cannot create file: %s",SAOI_FILE_BOOT);
+			printf("[SAOI DEBUG] Cannot create file: %s",SAOI_FILE_BOOT);
 			return 0;
 		} else {
 			printf("[SAOI DEBUG] Create boot file: %s",SAOI_FILE_BOOT);
@@ -1850,49 +1886,73 @@ stock SAOI::LoadManager(){
 		sscanf(buffer,"p<:>D(1)D(1)D(1)",SAOI::Config[global_msg],SAOI::Config[save_log],SAOI::Config[auto_freeze]);
 		fclose(inpf);
 		
-		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
-		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
-		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_WRITE],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),_:SAOI::Config[global_msg]);
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log),_:SAOI::Config[save_log]);
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
 		
 		printf("[SAOI DEBUG] Remove: %s",SAOI_OLDFILE_CFG);
 		fremove(SAOI_OLDFILE_CFG);
+	}
+	
+	//Resize Boot if need
+	new boot_size = SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG + (MAX_SAOI_FILE*SAOI_BOOT_SIZE_FILE),
+		orm = 4096 - (boot_size % 4096),
+		File:inpf = fopen(SAOI_FILE_BOOT,io_read),
+		asize = flength(inpf);
+	boot_size += orm;
+	fclose(inpf);
+	if(asize < boot_size){
+		printf("[SAOI DEBUG] Resize Boot File: %s [%d B -> %d B] (+%d Bytes)",SAOI_FILE_BOOT,asize,boot_size,SAOI::BootResize(MAX_SAOI_FILE));
 	}
 
 	new saoi_boot[SAOI::GetConfigSize(MAX_SAOI_FILE)],
 		path[MAX_SAOI_PATH],
 		error_name[MAX_SAOI_ERROR_NAME],
-		lcnt_t = 0, lcnt_f = 0, edi;
+		lcnt_t = 0, lcnt_f = 0, edi, bad_record = 0;
 	
-	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],0,saoi_boot,sizeof(saoi_boot));
+	printf("[SAOI] Init Boot Manager");
+	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	
 	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
 		if(SAOI::IsToggleConfigInformation(saoi_boot,i)){
-			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),path,SAOI_BOOT_SIZE_FILE);
-			edi = SAOI::LoadObjectImage(path,SAOI::Config[save_log],fm_fast_boot);
-			if(edi > 0 || edi == SAOI_ERROR_IS_LOADED){
-				lcnt_t++;
+			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY,SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),path,SAOI_BOOT_SIZE_FILE);
+			if(isnull(path) || !(path[1] == 'S' && path[2] == 'A' && path[3] == 'O' && path[4] == 'I')){
+				printf("[SAOI DEBUG] Remove bad boot record: %d",i);
+				SAOI::ToggleConfigInformation(saoi_boot,i,0);
+				bad_record++;
 			} else {
-				SAOI::GetErrorName(edi,error_name);
-				printf("[SAOI DEBUG] %s: %s",path,error_name);
-				lcnt_f++;
+				edi = SAOI::LoadObjectImage(path,SAOI::Config[save_log],fm_fast_boot);
+				if(edi > 0 || edi == SAOI_ERROR_IS_LOADED){
+					lcnt_t++;
+				} else {
+					SAOI::GetErrorName(edi,error_name);
+					printf("[SAOI DEBUG] %s: %s",path,error_name);
+					lcnt_f++;
+				}
 			}
 		}
 	}
 	
-	SAOI::Config[global_msg] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
-	SAOI::Config[save_log] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
-	SAOI::Config[auto_freeze] = bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY[SWAP_READ],(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
+	if(bad_record){
+		printf("[SAOI DEBUG] Fixed %d boot record errors",bad_record);
+		SWAP::write_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
+	}
+	
+	SAOI::Config[global_msg] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
+	SAOI::Config[save_log] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
+	SAOI::Config[auto_freeze] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
 	
 	new stop_time = GetTickCount();
 	if((lcnt_t+lcnt_f) > 0){
-		printf("Total loaded files %d/%d in %d ms",lcnt_t,(lcnt_t+lcnt_f),stop_time-start_time);
-		printf("Total loaded items %d",SAOI::CountAllElements());
+		printf("[SAOI] Total loaded files %d/%d in %d ms",lcnt_t,(lcnt_t+lcnt_f),stop_time-start_time);
+		printf("[SAOI] Total loaded items %d",SAOI::CountAllElements());
 		if(lcnt_f > 0){
-			printf("Failed to load %d files",lcnt_f);
+			printf("[SAOI] Failed to load %d files",lcnt_f);
 		}
 	}
 	SAOI::ErrorLevel += lcnt_f;
 	fm_fast_boot = false;
+	printf(" ");
 	return 1;
 }
 
@@ -1914,7 +1974,7 @@ SAOI::Public:: SAOI::OnRequestResponse(index, response_code, data[]){
 
 public OnFilterScriptExit(){
 	printf(" ");
-	printf("Unload SAOI File Manager");
+	printf("[SAOI] Unload SAOI File Manager");
 	printf(" ");
 	SAOI::Foreach(i){
 		if(SAOI::IsLoaded(i)){
