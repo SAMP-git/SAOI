@@ -4,7 +4,7 @@ Extension:      saoi
 Name:           San Andreas Object Image
 Data Type:      Binary
 Structure type: Dynamic expandable
-Version:        1.1
+Version:        2.0
 Author:         Abyss Morgan
 
 File: {
@@ -34,32 +34,36 @@ $AUTHOR_DATA: {
 
 $DATA: {
 	arg_number size:8b data: {
-		ARG: 7 - 14 {
+		ARG: SAOI_BUMPER_OBJECT {
 			function: {
 				CreateDynamicObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,worldid,interiorid,playerid,Float:streamdistance,Float:drawdistance,areaid,priority);
 				CA_CreateObject(modelid,Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz,bool:add = false);
 			}
 			arguments: {
-				modelid size:16b
-				Float:x size:32b
-				Float:y size:32b
-				Float:z size:32b
-				Float:rx size:32b
-				Float:ry size:32b
-				Float:rz size:32b
-				worldid size:32b
-				interiorid size:32b
-				Float:streamdistance size:32b
-				Float:drawdistance size:32b
-				areaid is virtual_areaid size:32b
-				priority size:8b
-				element_flag {
-					anti_area size:1b
-					no_camera_col size:1b
-					ca_object size:1b
-					ca_static size:1b
-					null size:4b
-				} size:8b
+				internal_arg_count size:8b data: {
+					ARG: 7 - 14 {
+						modelid size:32b
+						Float:x size:32b
+						Float:y size:32b
+						Float:z size:32b
+						Float:rx size:32b
+						Float:ry size:32b
+						Float:rz size:32b
+						worldid size:32b
+						interiorid size:32b
+						Float:streamdistance size:32b
+						Float:drawdistance size:32b
+						areaid is virtual_areaid size:32b
+						priority size:32b
+						element_flag {
+							anti_area size:1b
+							no_camera_col size:1b
+							ca_object size:1b
+							ca_static size:1b
+							null size:4b
+						} size:8b
+					}
+				}
 			}
 			
 			values: {
@@ -71,7 +75,7 @@ $DATA: {
 				SetDynamicObjectMaterial(objectid,materialindex,modelid,const txdname[],const texturename[],materialcolor);
 			}
 			arguments: {
-				modelid size:16b
+				modelid size:32b
 				txdsize = strlen(txdname) size:8b
 				txdname size:txdsize
 				texturenamesize = strlen(texturename) size:8b
@@ -108,7 +112,7 @@ $DATA: {
 			arguments: {
 				internal_arg_count size:8b data: {
 					ARG: 5 - 13: {
-						modelid size:16b
+						modelid size:32b
 						Float:x size:32b
 						Float:y size:32b
 						Float:z size:32b
@@ -119,7 +123,7 @@ $DATA: {
 						interiorid size:32b
 						Float:streamdistance size:32b
 						areaid is virtual_areaid size:32b
-						priority size:8b
+						priority size:32b
 						element_flag {
 							anti_area size:1b
 							null size:7b
@@ -168,7 +172,7 @@ $DATA: {
 						interiorid size:32b
 						Float:streamdistance size:32b
 						areaid is virtual_areaid size:32b
-						priority size:8b
+						priority size:32b
 						element_flag {
 							anti_area size:1b
 							null size:7b
@@ -185,7 +189,7 @@ $DATA: {
 			arguments: {
 				internal_arg_count size:8b data: {
 					ARG: 5 - 11 {
-						modelid size:16b
+						modelid size:32b
 						type size:8b
 						Float:x size:32b
 						Float:y size:32b
@@ -194,7 +198,7 @@ $DATA: {
 						interiorid size:32b
 						Float:streamdistance size:32b
 						areaid is virtual_areaid size:32b
-						priority size:8b
+						priority size:32b
 						element_flag {
 							anti_area size:1b
 							null size:7b
@@ -221,7 +225,7 @@ $DATA: {
 						Float:streamdistance size:32b
 						style size:8b
 						areaid is virtual_areaid size:32b
-						priority size:8b
+						priority size:32b
 						element_flag {
 							anti_area size:1b
 							null size:7b
@@ -419,7 +423,7 @@ $DATA: {
 				RemoveBuildingForPlayer(playerid,modelid,Float:fX,Float:fY,Float:fZ,Float:fRadius);
 			}
 			arguments: {
-				modelid size:16b
+				modelid size:32b
 				Float:x size:32b
 				Float:y size:32b
 				Float:z size:32b

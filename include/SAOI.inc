@@ -10,8 +10,8 @@
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 2.0.0                                                                                                            *
- * SA:MP Version: 0.3.7                                                                                                           *
+ * File Version: 2.1.0                                                                                                            *
+ * SA:MP Version: 0.3.8 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  *                                                                                                                                *
@@ -21,7 +21,6 @@
  * SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot); //save_logs = true, fast_boot = false                       *
  * SAOI::UnloadObjectImage(index);                                                                                                *
  * SAOI::IsFileLoaded(const name[],&index=INVALID_SAOI_FILE);                                                                     *
- * SAOI::CopyHeader(const input[],const output[]);                                                                                *
  * SAOI::SaveDynamicObject(objectid,const name[]);                                                                                *
  * SAOI::SaveDynamic3DTextLabel(Text3D:textid,const name[]);                                                                      *
  * SAOI::SaveDynamicPickup(pickupid,const name[]);                                                                                *
@@ -30,6 +29,7 @@
  * SAOI::SaveDynamicActor(actorid,const name[]);                                                                                  *
  * SAOI::SetBumperIP(const name[],server_ip[]);                                                                                   *
  * SAOI::SetBumperPort(const name[],server_port);                                                                                 *
+ * SAOI::SetEOF(const name[]);                                                                                                    *
  * SAOI::GetPositionFlag(index,&Float:x,&Float:y,&Float:z,&Float:angle,&virtualworld,&interior);                                  *
  * SAOI::SetPositionFlag(const name[],Float:x,Float:y,Float:z,Float:angle,virtualworld,interior);                                 *
  * SAOI::SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,Float:z,Float:radius);                                           *
@@ -54,7 +54,6 @@
  * SAOI::CountFileLoaded();                                                                                                       *
  * SAOI::CountAllElementsByIndex(index);                                                                                          *
  * SAOI::CountAllElements();                                                                                                      *
- * SAOI::SetEOF(const name[]);                                                                                                    *
  * SAOI::IsPositionFlagSet(index);                                                                                                *
  * SAOI::ToggleVisibleItems(const name[],playerid,type,toggle);                                                                   *
  *                                                                                                                                *
@@ -84,17 +83,19 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v2.0.0
+	#error You need SAOI.inc v2.1.0
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v2.0.0
-#elseif (SAOI_LOADER_VERSION < 20000)
-	#error Update you SAOI.inc to v2.0.0
+	#error Update you SAOI.inc to v2.1.0
+#elseif (SAOI_LOADER_VERSION < 20100)
+	#error Update you SAOI.inc to v2.1.0
 #endif
 */
 
-#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
-	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+/*
+#if (!defined GetPlayerPoolSize || !defined GetSVarInt || !defined OnPlayerFinishedDownloading)
+	#error [ADM] This include requires SA:MP version 0.3.8 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
 #endif
+*/
 
 #if ((!defined Streamer_AppendArrayData) || (!defined INVALID_STREAMER_ID) || (!defined STREAMER_TYPE_ACTOR))
 	#error [ADM] You need Streamer v2.9.1 (github.com/samp-incognito/samp-streamer-plugin/releases)
@@ -115,9 +116,9 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(20000)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(20100)			//a.b[c] 10000*a+100*b+c
 
-#define SAOI_HEADER_KEY						"SAOI 1.1 ADM"	//You can never change !!!
+#define SAOI_HEADER_KEY						"SAOI 2.0 ADM"	//You can never change !!!
 
 #define INVALID_SAOI_FILE					(0)				//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
@@ -137,6 +138,10 @@
 
 #if !defined MAX_SAOI_FILE
 	#define MAX_SAOI_FILE					(2001)			//more ? why not
+#endif
+
+#if (MAX_SAOI_FILE > 32768)
+	#error [ADM] MAX_SAOI_FILE is too high, maximum value is 32768
 #endif
 
 #define SAOI_ERROR_UNEXEC					(0)				//function unexecutable
@@ -169,17 +174,18 @@
 
 #define INVALID_REMOVE_BUILDING_ID			(-1)
 
-#define SAOI_BUMPER_ACTOR					(99)
-#define SAOI_BUMPER_3D_TEXT_LABEL			(100)
-#define SAOI_BUMPER_PICKUP					(101)
+#define SAOI_BUMPER_OBJECT					(101)
+#define SAOI_BUMPER_PICKUP					(102)
+#define SAOI_BUMPER_3D_TEXT_LABEL			(103)
 #define SAOI_BUMPER_MAPICON					(104)
-#define SAOI_BUMPER_VEHICLE					(109)
-#define SAOI_BUMPER_AREA_CIRCLE				(110)
-#define SAOI_BUMPER_AREA_CYLINDER			(111)
-#define SAOI_BUMPER_AREA_SPHERE				(112)
-#define SAOI_BUMPER_AREA_RECTANGLE			(113)
-#define SAOI_BUMPER_AREA_CUBOID				(114)
-#define SAOI_BUMPER_AREA_POLYGON			(115)
+#define SAOI_BUMPER_ACTOR					(105)
+#define SAOI_BUMPER_VEHICLE					(106)
+#define SAOI_BUMPER_AREA_CIRCLE				(107)
+#define SAOI_BUMPER_AREA_CYLINDER			(108)
+#define SAOI_BUMPER_AREA_SPHERE				(109)
+#define SAOI_BUMPER_AREA_RECTANGLE			(110)
+#define SAOI_BUMPER_AREA_CUBOID				(111)
+#define SAOI_BUMPER_AREA_POLYGON			(112)
 
 #define SAOI_BUMPER_IP						(201)
 #define SAOI_BUMPER_PORT					(202)
@@ -203,8 +209,11 @@
 #define SAOI_IntMod(%0)						(0xFF & (%0)+128)
 #define SAOI_Comp(%0,%1)					(SAOI_IntMod(%0) != (%1))
 #define SAOI_Foreach(%0)					for(new %0 = 1; %0 < MAX_SAOI_FILE; %0++)
-#define SAOI_GetByteFloat(%0,%1)			SAOI_MergeFloat((%1),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false))
-#define SAOI_GetByteInteger(%0,%1)			SAOI_MergeValue((%1),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false))
+#define SAOI_GetByteFloat(%0,%1,%2)			SAOI_MergeFloat((%1),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false)), %2+=4
+#define SAOI_GetByteInteger(%0,%1,%2)		SAOI_MergeValue((%1),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false),fgetchar((%0),0,false)), %2+=4
+#define SAOI_GetArgument(%0,%1,%2)			(%1) = fgetchar((%0),0,false), %2++
+#define SAOI_GetValue(%0,%1,%2)				SAOI_MergeValue((%1),0,0,fgetchar((%0),0,false),fgetchar((%0),0,false)), %2+=2
+#define SAOI_GetArgumentMod(%0,%1,%2)		(%1) = SAOI_IntMod(fgetchar((%0),0,false)), %2++
 
 #define SAOI_Function::						stock
 #define SAOI_Public::%0(%1)					forward %0(%1); public %0(%1)
@@ -564,7 +573,7 @@ SAOI::Function:: SAOI::SaveRemoveBuilding(const name[],modelid,Float:x,Float:y,F
 	fputchar(outf,SAOI_BUMPER_REMOVEBUILDING,false);
 	
 	SAOI::ExtractValue(modelid,int1,int2,int3,int4);
-	fputchar(outf,int3,false), fputchar(outf,int4,false);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 
 	SAOI::ExtractFloat(x,int1,int2,int3,int4);
 	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
@@ -786,11 +795,12 @@ SAOI::Function:: SAOI::SaveDynamicObject(objectid,const name[]){
 	new int1, int2, int3, int4;
 	
 	//Save Arg Count
+	fputchar(outf,SAOI_BUMPER_OBJECT,false);
 	fputchar(outf,arg_count,false);
 	
 	//Save Object Info
 	SAOI::ExtractValue(modelid,int1,int2,int3,int4);
-	fputchar(outf,int3,false), fputchar(outf,int4,false);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	
 	SAOI::ExtractFloat(x,int1,int2,int3,int4);
 	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
@@ -832,7 +842,7 @@ SAOI::Function:: SAOI::SaveDynamicObject(objectid,const name[]){
 	}
 	if(arg_count >= 13){
 		SAOI::ExtractValue(priority,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	}
 	if(arg_count >= 14){
 		SAOI::ExtractValue(element_flag,int1,int2,int3,int4);
@@ -856,7 +866,7 @@ SAOI::Function:: SAOI::SaveDynamicObject(objectid,const name[]){
 			GetDynamicObjectMaterial(objectid,i,mid,txdname,texturename,materialcolor);
 			
 			SAOI::ExtractValue(mid,int1,int2,int3,int4);
-			fputchar(outf,int3,false), fputchar(outf,int4,false);
+			fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 			
 			fputchar(outf,strlen(txdname),false);
 			for(new k = 0, l = strlen(txdname); k < l; k++){
@@ -1009,7 +1019,7 @@ SAOI::Function:: SAOI::SaveDynamicPickup(pickupid,const name[]){
 	
 	//Save Pickup Info
 	SAOI::ExtractValue(modelid,int1,int2,int3,int4);
-	fputchar(outf,int3,false), fputchar(outf,int4,false);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	
 	SAOI::ExtractValue(type,int1,int2,int3,int4);
 	fputchar(outf,int4,false);
@@ -1041,7 +1051,7 @@ SAOI::Function:: SAOI::SaveDynamicPickup(pickupid,const name[]){
 	}
 	if(arg_count >= 10){
 		SAOI::ExtractValue(priority,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	}
 	if(arg_count >= 11){
 		SAOI::ExtractValue(element_flag,int1,int2,int3,int4);
@@ -1192,7 +1202,7 @@ SAOI::Function:: SAOI::SaveDynamic3DTextLabel(Text3D:textid,const name[]){
 	}
 	if(arg_count >= 13){
 		SAOI::ExtractValue(priority,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	}
 	if(arg_count >= 14){
 		SAOI::ExtractValue(element_flag,int1,int2,int3,int4);
@@ -1333,7 +1343,7 @@ SAOI::Function:: SAOI::SaveDynamicMapIcon(iconid,const name[]){
 	}
 	if(arg_count >= 11){
 		SAOI::ExtractValue(priority,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	}
 	if(arg_count >= 12){
 		SAOI::ExtractValue(element_flag,int1,int2,int3,int4);
@@ -1445,7 +1455,7 @@ SAOI::Function:: SAOI::SaveDynamicActor(actorid,const name[]){
 	
 	//Save Actor Info
 	SAOI::ExtractValue(modelid,int1,int2,int3,int4);
-	fputchar(outf,int3,false), fputchar(outf,int4,false);
+	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	
 	SAOI::ExtractFloat(x,int1,int2,int3,int4);
 	fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
@@ -1485,7 +1495,7 @@ SAOI::Function:: SAOI::SaveDynamicActor(actorid,const name[]){
 	}
 	if(arg_count >= 12){
 		SAOI::ExtractValue(priority,int1,int2,int3,int4);
-		fputchar(outf,int4,false);
+		fputchar(outf,int1,false), fputchar(outf,int2,false), fputchar(outf,int3,false), fputchar(outf,int4,false);
 	}
 	if(arg_count >= 13){
 		SAOI::ExtractValue(element_flag,int1,int2,int3,int4);
@@ -2079,85 +2089,6 @@ SAOI::Function:: SAOI::GetFileHeader(const name[],author[],version[],description
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOI::Function:: SAOI::CopyHeader(const input[],const output[]){
-	if(!fexist(input)) return SAOI_ERROR_INPUT_NOT_EXIST;
-	if(fexist(output)) return SAOI_ERROR_OUTPUT_EXIST;
-	new File:inpf = fopen(input,io_read);
-	if(!inpf) return SAOI_ERROR_INPUT_NOT_OPEN;
-	new File:outf = fopen(output,io_append);
-	if(!outf){
-		fclose(inpf);
-		return SAOI_ERROR_OUTPUT_NOT_OPEN;
-	}
-	new h_len = strlen(SAOI_HEADER_KEY), h_key[32];
-	for(new i = 0; i < h_len; i++){
-		h_key[i] = fgetchar(inpf,0,false);
-	}
-	h_key[h_len] = EOS;
-	if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
-		new key[32],
-			author[MAX_SAOI_AUTHOR_SIZE],
-			version[MAX_SAOI_VERSION_SIZE],
-			description[MAX_SAOI_DESCRIPTION_SIZE],
-			author_size,
-			version_size,
-			description_size;
-		
-		//load
-		author_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < author_size; i++){
-			author[i] = fgetchar(inpf,0,false);
-		}
-		
-		version_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < version_size; i++){
-			version[i] = fgetchar(inpf,0,false);
-		}
-		
-		description_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < description_size; i++){
-			description[i] = fgetchar(inpf,0,false);
-		}
-		
-		for(new i = 0; i < 32; i++){
-			key[i] = fgetchar(inpf,0,false);
-		}
-		
-		
-		//save
-		fwrite(outf,SAOI_HEADER_KEY);
-		
-		fputchar(outf,author_size,false);
-		for(new i = 0; i < author_size; i++){
-			fputchar(outf,author[i],false);
-		}
-		
-		fputchar(outf,version_size,false);
-		for(new i = 0; i < version_size; i++){
-			fputchar(outf,version[i],false);
-		}
-		
-		fputchar(outf,description_size,false);
-		for(new i = 0; i < description_size; i++){
-			fputchar(outf,description[i],false);
-		}
-		
-		for(new i = 0; i < 32; i++){
-			fputchar(outf,key[i],false);
-		}
-		
-	} else {
-		fclose(inpf);
-		fclose(outf);
-		fremove(output);
-		return SAOI_ERROR_INVALID_HEADER;
-	}
-	fclose(inpf);
-	fclose(outf);
-	return SAOI_ERROR_SUCCESS;
-	
-}
-
 SAOI::Function:: SAOI::CleanupElements(index){
 	if(!SAOI::IsLoaded(index)) return false;
 	
@@ -2297,7 +2228,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
 	new File:inpf = fopen(name,io_read);
 	if(!inpf) return SAOI_ERROR_INPUT_NOT_OPEN;
-	new asize = flength(inpf), idx = 0;
+	new asize = flength(inpf), offset = 0;
 	if(asize > MAX_SAOI_FILE_SIZE || asize < 0){
 		fclose(inpf);
 		return SAOI_ERROR_FILE_SIZE;
@@ -2333,52 +2264,46 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 	//Get Header
 	new h_len = strlen(SAOI_HEADER_KEY), h_key[32];
 	for(new i = 0; i < h_len; i++){
-		h_key[i] = fgetchar(inpf,0,false), idx++;
+		SAOI::GetArgument(inpf,h_key[i],offset);
 	}
 	h_key[h_len] = EOS;
 	if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
 		new author_size, version_size, description_size, key[32];
 		
-		author_size = fgetchar(inpf,0,false), idx++;
+		SAOI::GetArgument(inpf,author_size,offset);
 		for(new i = 0; i < author_size; i++){
-			author[i] = fgetchar(inpf,0,false), idx++;
+			SAOI::GetArgument(inpf,author[i],offset);
 		}
 		
-		version_size = fgetchar(inpf,0,false), idx++;
+		SAOI::GetArgument(inpf,version_size,offset);
 		for(new i = 0; i < version_size; i++){
-			version[i] = fgetchar(inpf,0,false), idx++;
+			SAOI::GetArgument(inpf,version[i],offset);
 		}
 		
-		description_size = fgetchar(inpf,0,false), idx++;
+		SAOI::GetArgument(inpf,description_size,offset);
 		for(new i = 0; i < description_size; i++){
-			description[i] = fgetchar(inpf,0,false), idx++;
+			SAOI::GetArgument(inpf,description[i],offset);
 		}
 		
 		for(new i = 0; i < 32; i++){
-			key[i] = fgetchar(inpf,0,false), idx++;
+			SAOI::GetArgument(inpf,key[i],offset);
 		}
 		
 		new step;
 		
 		step = 0;
 		for(new i = 0; i < author_size; i++){
-			author[i] = ((author[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
+			author[i] = ((author[i]+key[step++ % 32]) & 0xFF);
 		}
 		
 		step = 0;
 		for(new i = 0; i < version_size; i++){
-			version[i] = ((version[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
+			version[i] = ((version[i]+key[step++ % 32]) & 0xFF);
 		}
 		
 		step = 0;
 		for(new i = 0; i < description_size; i++){
-			description[i] = ((description[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
+			description[i] = ((description[i]+key[step++ % 32]) & 0xFF);
 		}
 	} else {
 		SAOIFile[index][SAOI::status] = false;
@@ -2386,11 +2311,12 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		return SAOI_ERROR_INVALID_HEADER;
 	}
 	
-	while(idx < asize){
+	while(offset < asize){
 		//Get Arg Count
-		arg_count = fgetchar(inpf,0,false), idx++;
+		SAOI::GetArgument(inpf,arg_count,offset);
 		switch(arg_count){
-			case 7..14: {
+			case SAOI_BUMPER_OBJECT: {
+				SAOI::GetArgument(inpf,arg_count,offset);
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				material_used = 0;
@@ -2403,72 +2329,48 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				priority = 0;
 				element_flag = 0;
 		
-				SAOI::MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,rx);
-				SAOI::GetByteFloat(inpf,ry);
-				SAOI::GetByteFloat(inpf,rz);
-				idx += 26;
+				SAOI::GetByteInteger(inpf,modelid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,rx,offset);
+				SAOI::GetByteFloat(inpf,ry,offset);
+				SAOI::GetByteFloat(inpf,rz,offset);
 				
-				if(arg_count >= 8){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 9){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
-				if(arg_count >= 10){
-					SAOI::GetByteFloat(inpf,streamdistance);
-					idx += 4;
-				}
-				if(arg_count >= 11){
-					SAOI::GetByteFloat(inpf,drawdistance);
-					idx += 4;
-				}
-				if(arg_count >= 12){
-					SAOI::GetByteInteger(inpf,areaid);
-					idx += 4;
-				}
-				if(arg_count >= 13){
-					SAOI::MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 14){
-					SAOI::MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
+				if(arg_count >= 8)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 9)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				if(arg_count >= 10)	SAOI::GetByteFloat(inpf,streamdistance,offset);
+				if(arg_count >= 11)	SAOI::GetByteFloat(inpf,drawdistance,offset);
+				if(arg_count >= 12)	SAOI::GetByteInteger(inpf,areaid,offset);
+				if(arg_count >= 13)	SAOI::GetByteInteger(inpf,priority,offset);
+				if(arg_count >= 14)	SAOI::GetArgument(inpf,element_flag,offset);
+				
 				if(areaid == -1){
 					elementid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,areaid,priority);
 				} else {
 					elementid = CreateDynamicObject(modelid,x,y,z,rx,ry,rz,worldid,interiorid,-1,streamdistance,drawdistance,DynamicAreas[areaid],priority);
 				}
 				//Get Materials
-				SAOI::MergeValue(material_used,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				idx += 2;
+				SAOI::GetValue(inpf,material_used,offset);
 				
 				for(new mat = 0; mat < 16; mat++){
 					if(SAOI::GetValueBit(material_used,mat) == 1){
-						SAOI::MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-						idx += 2;
+						SAOI::GetByteInteger(inpf,modelid,offset);
 						
-						txdsize = fgetchar(inpf,0,false), idx++;
+						SAOI::GetArgument(inpf,txdsize,offset);
 						for(new i = 0; i < txdsize; i++){
-							txdname[i] = SAOI::IntMod(fgetchar(inpf,0,false)), idx++;
+							SAOI::GetArgumentMod(inpf,txdname[i],offset);
 						}
 						txdname[txdsize] = EOS;
 						
-						texturenamesize = fgetchar(inpf,0,false), idx++;
+						SAOI::GetArgument(inpf,texturenamesize,offset);
 						
 						for(new i = 0; i < texturenamesize; i++){
-							texturename[i] = SAOI::IntMod(fgetchar(inpf,0,false)), idx++;
+							SAOI::GetArgumentMod(inpf,texturename[i],offset);
 						}
 						texturename[texturenamesize] = EOS;
 
-						SAOI::GetByteInteger(inpf,materialcolor);
-						idx += 4;
+						SAOI::GetByteInteger(inpf,materialcolor,offset);
 						
 						SetDynamicObjectMaterial(elementid,mat,modelid,txdname,texturename,materialcolor);
 						SAOIFile[index][SAOI::cnt_material]++;
@@ -2476,39 +2378,32 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				}
 				
 				//Get Materials Text
-				SAOI::MergeValue(material_text_used,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				idx += 2;
-				
+				SAOI::GetValue(inpf,material_text_used,offset);
+	
 				for(new mat = 0; mat < 16; mat++){
 					if(SAOI::GetValueBit(material_text_used,mat) == 1){
-						SAOI::MergeValue(textsize,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-						idx += 2;
 						
+						SAOI::GetValue(inpf,textsize,offset);
 						for(new i = 0; i < textsize; i++){
-							text[i] = SAOI::IntMod(fgetchar(inpf,0,false)), idx++;
+							SAOI::GetArgumentMod(inpf,text[i],offset);
 						}
 						text[textsize] = EOS;
-
-						materialsize = fgetchar(inpf,0,false), idx++;
 						
-						fontfacesize = fgetchar(inpf,0,false), idx++;
+						SAOI::GetArgument(inpf,materialsize,offset);
 						
+						SAOI::GetArgument(inpf,fontfacesize,offset);
 						for(new i = 0; i < fontfacesize; i++){
-							fontface[i] = SAOI::IntMod(fgetchar(inpf,0,false)), idx++;
+							SAOI::GetArgumentMod(inpf,fontface[i],offset);
 						}
 						fontface[fontfacesize] = EOS;
-
-						fontsize = fgetchar(inpf,0,false), idx++;
 						
-						bold = fgetchar(inpf,0,false), idx++;
+						SAOI::GetArgument(inpf,fontsize,offset);
+						SAOI::GetArgument(inpf,bold,offset);
 						
-						SAOI::GetByteInteger(inpf,fontcolor);
-						idx += 4;
+						SAOI::GetByteInteger(inpf,fontcolor,offset);
+						SAOI::GetByteInteger(inpf,backcolor,offset);
 						
-						SAOI::GetByteInteger(inpf,backcolor);
-						idx += 4;
-						
-						textalignment = fgetchar(inpf,0,false), idx++;
+						SAOI::GetArgument(inpf,textalignment,offset);
 						
 						SetDynamicObjectMaterialText(elementid,mat,text,materialsize,fontface,fontsize,bold,fontcolor,backcolor,textalignment);
 						SAOIFile[index][SAOI::cnt_materialtext]++;
@@ -2543,7 +2438,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 			
 			case SAOI_BUMPER_ACTOR: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
@@ -2556,45 +2451,21 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				priority = 0;
 				element_flag = 0;
 				
-				SAOI::MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,rz);
-				idx += 18;
+				SAOI::GetByteInteger(inpf,modelid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,rz,offset);
 			
-				if(arg_count >= 6){
-					SAOI::MergeValue(invulnerable,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteFloat(inpf,health);
-					idx += 4;
-				}
-				if(arg_count >= 8){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 9){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
-				if(arg_count >= 10){
-					SAOI::GetByteFloat(inpf,streamdistance);
-					idx += 4;
-				}
-				if(arg_count >= 11){
-					SAOI::GetByteInteger(inpf,areaid);
-					idx += 4;
-				}
-				if(arg_count >= 12){
-					SAOI::MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 13){
-					SAOI::MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
+				if(arg_count >= 6)	SAOI::GetArgument(inpf,invulnerable,offset);
+				if(arg_count >= 7)	SAOI::GetByteFloat(inpf,health,offset);
+				if(arg_count >= 8)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 9)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				if(arg_count >= 10)	SAOI::GetByteFloat(inpf,streamdistance,offset);
+				if(arg_count >= 11)	SAOI::GetByteInteger(inpf,areaid,offset);
+				if(arg_count >= 12)	SAOI::GetByteInteger(inpf,priority,offset);
+				if(arg_count >= 13)	SAOI::GetArgument(inpf,element_flag,offset);
+				
 				if(areaid == -1){
 					elementid = CreateDynamicActor(modelid,x,y,z,rz,invulnerable,health,worldid,interiorid,-1,streamdistance,areaid,priority);
 				} else {
@@ -2613,7 +2484,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 			
 			case SAOI_BUMPER_3D_TEXT_LABEL: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
@@ -2627,49 +2498,26 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				priority = 0;
 				element_flag = 0;
 				
-				SAOI::MergeValue(textsize,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				idx += 2;
-				
+				SAOI::GetValue(inpf,textsize,offset);
 				for(new i = 0; i < textsize; i++){
-					text[i] = SAOI::IntMod(fgetchar(inpf,0,false)), idx++;
+					SAOI::GetArgumentMod(inpf,text[i],offset);
 				}
 				text[textsize] = EOS;
 				
-				SAOI::GetByteInteger(inpf,color);
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,drawdistance);
-				idx += 20;
+				SAOI::GetByteInteger(inpf,color,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,drawdistance,offset);
 				
-				if(arg_count >= 8){
-					SAOI::MergeValue(testlos,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 9){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 10){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
-				if(arg_count >= 11){
-					SAOI::GetByteFloat(inpf,streamdistance);
-					idx += 4;
-				}
-				if(arg_count >= 12){
-					SAOI::GetByteInteger(inpf,areaid);
-					idx += 4;
-				}
-				if(arg_count >= 13){
-					SAOI::MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 14){
-					SAOI::MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
+				if(arg_count >= 8)	SAOI::GetArgument(inpf,testlos,offset);
+				if(arg_count >= 9)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 10)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				if(arg_count >= 11)	SAOI::GetByteFloat(inpf,streamdistance,offset);
+				if(arg_count >= 12)	SAOI::GetByteInteger(inpf,areaid,offset);
+				if(arg_count >= 13)	SAOI::GetByteInteger(inpf,priority,offset);
+				if(arg_count >= 14)	SAOI::GetArgument(inpf,element_flag,offset);
+				
 				if(areaid == -1){
 					elementid = _:CreateDynamic3DTextLabel(text,color,x,y,z,drawdistance,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,testlos,worldid,interiorid,-1,streamdistance,areaid,priority);
 				} else {
@@ -2688,43 +2536,25 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 			
 			case SAOI_BUMPER_PICKUP: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID, type = 0, worldid = -1, interiorid = -1, streamdistance = STREAMER_OBJECT_SD,
 				areaid = -1, priority = 0, element_flag = 0;
 		
-				SAOI::MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::MergeValue(type,0,0,0,fgetchar(inpf,0,false));
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				idx += 15;
+				SAOI::GetByteInteger(inpf,modelid,offset);
+				SAOI::GetArgument(inpf,type,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
 				
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
-				if(arg_count >= 8){
-					SAOI::GetByteFloat(inpf,streamdistance);
-					idx += 4;
-				}
-				if(arg_count >= 9){
-					SAOI::GetByteInteger(inpf,areaid);
-					idx += 4;
-				}
-				if(arg_count >= 10){
-					SAOI::MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 11){
-					SAOI::MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				if(arg_count >= 8)	SAOI::GetByteFloat(inpf,streamdistance,offset);
+				if(arg_count >= 9)	SAOI::GetByteInteger(inpf,areaid,offset);
+				if(arg_count >= 10)	SAOI::GetByteInteger(inpf,priority,offset);
+				if(arg_count >= 11)	SAOI::GetArgument(inpf,element_flag,offset);
+
 				if(areaid == -1){
 					elementid = CreateDynamicPickup(modelid,type,x,y,z,worldid,interiorid,-1,streamdistance,areaid,priority);
 				} else {
@@ -2743,7 +2573,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_MAPICON: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
@@ -2756,41 +2586,20 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				element_flag = 0;
 				
 		
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::MergeValue(type,0,0,0,fgetchar(inpf,0,false));
-				SAOI::GetByteInteger(inpf,color);
-				idx += 17;
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetArgument(inpf,type,offset);
+				SAOI::GetByteInteger(inpf,color,offset);
 				
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
-				if(arg_count >= 8){
-					SAOI::GetByteFloat(inpf,streamdistance);
-					idx += 4;
-				}
-				if(arg_count >= 9){
-					SAOI::MergeValue(style,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 10){
-					SAOI::GetByteInteger(inpf,areaid);
-					idx += 4;
-				}
-				if(arg_count >= 11){
-					SAOI::MergeValue(priority,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
-				if(arg_count >= 12){
-					SAOI::MergeValue(element_flag,0,0,0,fgetchar(inpf,0,false));
-					idx += 1;
-				}
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				if(arg_count >= 8)	SAOI::GetByteFloat(inpf,streamdistance,offset);
+				if(arg_count >= 9)	SAOI::GetArgument(inpf,style,offset);
+				if(arg_count >= 10)	SAOI::GetByteInteger(inpf,areaid,offset);
+				if(arg_count >= 11)	SAOI::GetByteInteger(inpf,priority,offset);
+				if(arg_count >= 12)	SAOI::GetArgument(inpf,element_flag,offset);
+
 				if(areaid == -1){
 					elementid = CreateDynamicMapIcon(x,y,z,type,color,worldid,interiorid,-1,streamdistance,style,areaid,priority);
 				} else {
@@ -2809,18 +2618,17 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_VEHICLE: {
-				SAOI::MergeValue(type,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,rz);
-				SAOI::MergeValue(color1,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::MergeValue(color2,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::GetByteInteger(inpf,respawn_delay);
-				SAOI::MergeValue(addsiren,0,0,0,fgetchar(inpf,0,false));
-				SAOI::GetByteInteger(inpf,worldid);
-				SAOI::GetByteInteger(inpf,interiorid);
-				idx += 35;
+				SAOI::GetValue(inpf,type,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,rz,offset);
+				SAOI::GetValue(inpf,color1,offset);
+				SAOI::GetValue(inpf,color2,offset);
+				SAOI::GetByteInteger(inpf,respawn_delay,offset);
+				SAOI::GetArgument(inpf,addsiren,offset);
+				SAOI::GetByteInteger(inpf,worldid,offset);
+				SAOI::GetByteInteger(inpf,interiorid,offset);
 				
 				if(color1 == 0xFFFF) color1 = -1;
 				if(color2 == 0xFFFF) color2 = -1;
@@ -2846,27 +2654,21 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_CIRCLE: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,size);
-				idx += 16;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,size,offset);
 				
-				if(arg_count >= 5){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 5)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,interiorid,offset);
+
 				elementid = CreateDynamicCircle(x,y,size,worldid,interiorid,-1);
 				DynamicAreas[areaid] = elementid;
 				
@@ -2880,29 +2682,23 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_CYLINDER: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,minz);
-				SAOI::GetByteFloat(inpf,maxz);
-				SAOI::GetByteFloat(inpf,size);
-				idx += 24;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,minz,offset);
+				SAOI::GetByteFloat(inpf,maxz,offset);
+				SAOI::GetByteFloat(inpf,size,offset);
 				
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 8){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 8)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				
 				elementid = CreateDynamicCylinder(x,y,minz,maxz,size,worldid,interiorid,-1);
 				
 				DynamicAreas[areaid] = elementid;
@@ -2917,28 +2713,22 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_SPHERE: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,size);
-				idx += 20;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,size,offset);
 				
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,interiorid,offset);
+
 				elementid = CreateDynamicSphere(x,y,z,size,worldid,interiorid,-1);
 				DynamicAreas[areaid] = elementid;
 				
@@ -2952,28 +2742,22 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_RECTANGLE: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::GetByteFloat(inpf,minx);
-				SAOI::GetByteFloat(inpf,miny);
-				SAOI::GetByteFloat(inpf,maxx);
-				SAOI::GetByteFloat(inpf,maxy);
-				idx += 20;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetByteFloat(inpf,minx,offset);
+				SAOI::GetByteFloat(inpf,miny,offset);
+				SAOI::GetByteFloat(inpf,maxx,offset);
+				SAOI::GetByteFloat(inpf,maxy,offset);
 				
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,interiorid,offset);
+				
 				elementid = CreateDynamicRectangle(minx,miny,maxx,maxy,worldid,interiorid,-1);
 				DynamicAreas[areaid] = elementid;
 				
@@ -2987,30 +2771,24 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_CUBOID: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::GetByteFloat(inpf,minx);
-				SAOI::GetByteFloat(inpf,miny);
-				SAOI::GetByteFloat(inpf,minz);
-				SAOI::GetByteFloat(inpf,maxx);
-				SAOI::GetByteFloat(inpf,maxy);
-				SAOI::GetByteFloat(inpf,maxz);
-				idx += 28;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetByteFloat(inpf,minx,offset);
+				SAOI::GetByteFloat(inpf,miny,offset);
+				SAOI::GetByteFloat(inpf,minz,offset);
+				SAOI::GetByteFloat(inpf,maxx,offset);
+				SAOI::GetByteFloat(inpf,maxy,offset);
+				SAOI::GetByteFloat(inpf,maxz,offset);
 				
-				if(arg_count >= 8){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 9){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 8)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 9)	SAOI::GetByteInteger(inpf,interiorid,offset);
+
 				elementid = CreateDynamicCube(minx,miny,minz,maxx,maxy,maxz,worldid,interiorid,-1);
 				DynamicAreas[areaid] = elementid;
 				
@@ -3024,7 +2802,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			}
 
 			case SAOI_BUMPER_AREA_POLYGON: {
-				arg_count = fgetchar(inpf,0,false), idx++;
+				SAOI::GetArgument(inpf,arg_count,offset);
 				
 				//Reset Data
 				elementid = INVALID_STREAMER_ID;
@@ -3033,31 +2811,17 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				worldid = -1;
 				interiorid = -1;
 				
-				SAOI::GetByteInteger(inpf,areaid);
-				SAOI::MergeValue(max_points,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				idx += 6;
+				SAOI::GetByteInteger(inpf,areaid,offset);
+				SAOI::GetValue(inpf,max_points,offset);
 				
 				for(new k = 0; k < max_points; k++){
-					SAOI::GetByteFloat(inpf,Polygon_Points[k]);
-					idx += 4;
+					SAOI::GetByteFloat(inpf,Polygon_Points[k],offset);
 				}
 				
-				if(arg_count >= 4){
-					SAOI::GetByteFloat(inpf,minz);
-					idx += 4;
-				}
-				if(arg_count >= 5){
-					SAOI::GetByteFloat(inpf,maxz);
-					idx += 4;
-				}
-				if(arg_count >= 6){
-					SAOI::GetByteInteger(inpf,worldid);
-					idx += 4;
-				}
-				if(arg_count >= 7){
-					SAOI::GetByteInteger(inpf,interiorid);
-					idx += 4;
-				}
+				if(arg_count >= 4)	SAOI::GetByteFloat(inpf,minz,offset);
+				if(arg_count >= 5)	SAOI::GetByteFloat(inpf,maxz,offset);
+				if(arg_count >= 6)	SAOI::GetByteInteger(inpf,worldid,offset);
+				if(arg_count >= 7)	SAOI::GetByteInteger(inpf,interiorid,offset);
 
 				elementid = CreateDynamicPolygon(Polygon_Points,minz,maxz,max_points,worldid,interiorid,-1);
 				DynamicAreas[areaid] = elementid;
@@ -3073,43 +2837,40 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			
 			case SAOI_BUMPER_REMOVEBUILDING: {
 				//RemoveBuildingForPlayer
-				modelid = SAOI::MergeValue(modelid,0,0,fgetchar(inpf,0,false),fgetchar(inpf,0,false));
-				SAOI::GetByteFloat(inpf,x);
-				SAOI::GetByteFloat(inpf,y);
-				SAOI::GetByteFloat(inpf,z);
-				SAOI::GetByteFloat(inpf,streamdistance);
-				idx += 18;
+				SAOI::GetByteInteger(inpf,modelid,offset);
+				SAOI::GetByteFloat(inpf,x,offset);
+				SAOI::GetByteFloat(inpf,y,offset);
+				SAOI::GetByteFloat(inpf,z,offset);
+				SAOI::GetByteFloat(inpf,streamdistance,offset);
 				SAOI::RemoveBuilding(index,modelid,x,y,z,streamdistance);
 				SAOIFile[index][SAOI::cnt_removebuilding]++;
 				continue;
 			}
 			case SAOI_BUMPER_CREATED: {
 				new year,month,day,hour,minute,second;
-				SAOI::MergeValue(year,0,0,SAOI::IntMod(fgetchar(inpf,0,false)),SAOI::IntMod(fgetchar(inpf,0,false)));
-				month = SAOI::IntMod(fgetchar(inpf,0,false));
-				day = SAOI::IntMod(fgetchar(inpf,0,false));
-				hour = SAOI::IntMod(fgetchar(inpf,0,false));
-				minute = SAOI::IntMod(fgetchar(inpf,0,false));
-				second = SAOI::IntMod(fgetchar(inpf,0,false));
+				SAOI::MergeValue(year,0,0,SAOI::IntMod(fgetchar(inpf,0,false)),SAOI::IntMod(fgetchar(inpf,0,false))), offset +=2;
+				SAOI::GetArgumentMod(inpf,month,offset);
+				SAOI::GetArgumentMod(inpf,day,offset);
+				SAOI::GetArgumentMod(inpf,hour,offset);
+				SAOI::GetArgumentMod(inpf,minute,offset);
+				SAOI::GetArgumentMod(inpf,second,offset);
 				format(SAOIFile[index][SAOI::created],32,"%04d.%02d.%02d %02d:%02d:%02d",year,month,day,hour,minute,second);
-				idx += 7;
 				continue;
 			}
 			case SAOI_BUMPER_POS: {
-				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::X]);
-				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::Y]);
-				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::Z]);
-				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::A]);
-				SAOI::GetByteInteger(inpf,SAOIFile[index][SAOI::VW]);
-				SAOI::GetByteInteger(inpf,SAOIFile[index][SAOI::INT]);
-				idx += 24;
+				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::X],offset);
+				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::Y],offset);
+				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::Z],offset);
+				SAOI::GetByteFloat(inpf,SAOIFile[index][SAOI::A],offset);
+				SAOI::GetByteInteger(inpf,SAOIFile[index][SAOI::VW],offset);
+				SAOI::GetByteInteger(inpf,SAOIFile[index][SAOI::INT],offset);
 				continue;
 			}
 			case SAOI_BUMPER_IP: {
 				new serv_ipsum[4], saoi_ipsum[4], serv_ip[16];
 				GetServerVarAsString("bind",serv_ip,sizeof(serv_ip));
 				for(new i = 0; i < 4; i++){
-					saoi_ipsum[i] = fgetchar(inpf,0,false), idx++;
+					SAOI::GetArgument(inpf,saoi_ipsum[i],offset);
 				}
 				sscanf(serv_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
 				if(SAOI::Comp(serv_ipsum[0],saoi_ipsum[3]) || SAOI::Comp(serv_ipsum[1],saoi_ipsum[2]) || SAOI::Comp(serv_ipsum[2],saoi_ipsum[1]) || SAOI::Comp(serv_ipsum[3],saoi_ipsum[0])){
@@ -3123,7 +2884,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 			case SAOI_BUMPER_PORT: {
 				new serv_port = GetServerVarAsInt("port"), serv_portsum[4], saoi_portsum[4];
 				for(new i = 0; i < 4; i++){
-					saoi_portsum[i] = fgetchar(inpf,0,false), idx++;
+					SAOI::GetArgument(inpf,saoi_portsum[i],offset);
 				}
 				SAOI::ExtractValue(serv_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
 				if(SAOI::Comp(serv_portsum[0],saoi_portsum[3]) || SAOI::Comp(serv_portsum[1],saoi_portsum[2]) || SAOI::Comp(serv_portsum[2],saoi_portsum[1]) || SAOI::Comp(serv_portsum[3],saoi_portsum[0])){
@@ -3142,10 +2903,10 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				SAOI::CleanupElements(index);
 				SAOIFile[index][SAOI::status] = false;
 				
-				new d_raw[8], offset = idx-1;
+				new d_raw[8], foffset = offset-1;
 				for(new i = 0; i < 8; i++){
-					if(idx < asize){
-						d_raw[i] = fgetchar(inpf,0,false), idx++;
+					if(offset < asize){
+						d_raw[i] = fgetchar(inpf,0,false), offset++;
 					} else {
 						d_raw[i] = 0;
 					}
@@ -3155,7 +2916,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				
 				//Print Error Backtrace
 				printf(" ");
-				printf("[SAOI DEBUG] Parse Error '%s' Offset 0x%08x Argument: 0x%02x Buffer: %02x %02x %02x %02x %02x %02x %02x %02x",name,offset,arg_count,d_raw[0],d_raw[1],d_raw[2],d_raw[3],d_raw[4],d_raw[5],d_raw[6],d_raw[7]);
+				printf("[SAOI DEBUG] Parse Error '%s' Offset 0x%08x Argument: 0x%02x Buffer: %02x %02x %02x %02x %02x %02x %02x %02x",name,foffset,arg_count,d_raw[0],d_raw[1],d_raw[2],d_raw[3],d_raw[4],d_raw[5],d_raw[6],d_raw[7]);
 				printf("[SAOI DEBUG] File Size: 0x%08x",asize);
 				if(isnull(SAOIFile[index][SAOI::created])){
 					printf("[SAOI DEBUG] File Creation Date: (null)");
@@ -3173,7 +2934,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		}
 	}
 	
-	SAOIFile[index][SAOI::file_size] = idx;
+	SAOIFile[index][SAOI::file_size] = flength(inpf);
 	
 	fclose(inpf);
 	

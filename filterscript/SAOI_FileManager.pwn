@@ -5,12 +5,13 @@
  * Copyright © 2017 Abyss Morgan. All rights reserved.                                                                            *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                                                         *
+ * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
  *                                                                                                                                *
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
- * File Version: 2.0.2                                                                                                            *
- * SA:MP Version: 0.3.7                                                                                                           *
+ * File Version: 2.1.0                                                                                                            *
+ * SA:MP Version: 0.3.8 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  * MapAndreas Version: 1.2.1                                                                                                      *
@@ -87,9 +88,11 @@
 #define SAOI_BOOT_OFFSET_FILES		(SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG)
 #define SAOI_BOOT_OFFSET_CONFIG		(SAOI_BOOT_SIZE_HEADER)
 
-#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
-	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+/*
+#if (!defined GetPlayerPoolSize || !defined GetSVarInt || !defined OnPlayerFinishedDownloading)
+	#error [ADM] This include requires SA:MP version 0.3.8 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
 #endif
+*/
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
@@ -1071,7 +1074,7 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Description: {00FF00}%s\n",description);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s",(SAOI::IsStatic(index)?("Static"):("Dynamic")),(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")));
+	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s ",(SAOI::IsStatic(index)?("Static"):("Dynamic")),(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")));
 	strcat(szLIST,buffer);
 	if(bootid != -1){
 		format(buffer,sizeof buffer,"{00AAFF}BootID: {00FF00}%d\n",bootid);
@@ -1307,27 +1310,28 @@ CMD:saoiunload(playerid,params[]){
 CMD:saoiunboot(playerid,params[]){
 	if(!IsAdmin(playerid)) return 0;
 	if(isnull(params)) return SendClientMessage(playerid,0xB01010FF,"Usage: /saoiunboot <name> (Only file name, without extension)");
-	new buffer[256], path[MAX_SAOI_PATH], index;
+	new buffer[256], path[MAX_SAOI_PATH], index, bool:unboot = false;
 	format(path,sizeof(path),"/SAOI/%s.saoi",params);
-	if(!SAOI::IsFileLoaded(path,index)){
-		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded",params);
-		return SendClientMessage(playerid,0xFFFFFFFF,buffer);
-	}
-	
-	if(SAOI::Config[global_msg]){
-		format(buffer,sizeof buffer,"[IMPORTANT] Unload Objects: %s",params);
-		SendClientMessageToAll(0xFF0000FF,buffer);
-	}
 	
 	if(SAOI::FindBootID(path) != -1){
 		SAOI::SetBoot(path,0);
+		unboot = true;
 	}
 	
-	if(SAOI::UnloadObjectImage(index)){
-		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}unloaded",params);
-		SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	if(SAOI::IsFileLoaded(path,index)){
+		if(SAOI::Config[global_msg]){
+			format(buffer,sizeof buffer,"[IMPORTANT] Unload Objects: %s",params);
+			SendClientMessageToAll(0xFF0000FF,buffer);
+		}
+		if(SAOI::UnloadObjectImage(index)){
+			format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}unloaded %s",params,(unboot)?("(Removed from boot)"):(""));
+			SendClientMessage(playerid,0xFFFFFFFF,buffer);
+		} else {
+			format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not unloaded %s",params,(unboot)?("(Removed from boot)"):(""));
+			SendClientMessage(playerid,0xFFFFFFFF,buffer);
+		}
 	} else {
-		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}not unloaded",params);
+		format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}is not loaded %s",params,(unboot)?("(Removed from boot)"):(""));
 		SendClientMessage(playerid,0xFFFFFFFF,buffer);
 	}
 	
@@ -1910,7 +1914,12 @@ stock SAOI::LoadManager(){
 		error_name[MAX_SAOI_ERROR_NAME],
 		lcnt_t = 0, lcnt_f = 0, edi, bad_record = 0;
 	
-	printf("[SAOI] Init Boot Manager");
+	printf("[SAOI] Load Config");
+	SAOI::Config[global_msg] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
+	SAOI::Config[save_log] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
+	SAOI::Config[auto_freeze] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
+	
+	printf("[SAOI] Load Boot Manager");
 	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	
 	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
@@ -1937,10 +1946,6 @@ stock SAOI::LoadManager(){
 		printf("[SAOI DEBUG] Fixed %d boot record errors",bad_record);
 		SWAP::write_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
 	}
-	
-	SAOI::Config[global_msg] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
-	SAOI::Config[save_log] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
-	SAOI::Config[auto_freeze] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
 	
 	new stop_time = GetTickCount();
 	if((lcnt_t+lcnt_f) > 0){
