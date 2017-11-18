@@ -69,6 +69,8 @@ myobject.saoi
 - [SAOI File Generator](https://www.youtube.com/watch?v=M_WiwgS-Kqk)
 - [SAOI File Manager v1.9](https://www.youtube.com/watch?v=tcJitQRub-E)
 
+## Issues:
+- RemoveBuildingForPlayer: When a saoi file is unloaded, online players will not see again removed buildings. They see them only after re-entering the server.
 
 ## Remote Control:
 ```
