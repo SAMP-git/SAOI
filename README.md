@@ -1,4 +1,4 @@
-# San Andreas Object Image Loader v2.0.0
+# San Andreas Object Image Loader v2.1.0
 
 
 ###### What is that ? This is the script allows you to load binary objects file which have a dynamic structure.
@@ -48,6 +48,9 @@ CreateDynamicObject(869,911.87738,-671.97540,115.60636,-12.96000,-38.52000,0.000
 
 ## How to install SAOI_FileManager
 - Create folder scriptfiles\SAOI
+
+
+## How to fast import files to boot
 - Create file scriptfiles\SAOI\SaoiFiles.txt
 - Place the file name is in the file SaoiFiles.txt
 

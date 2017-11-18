@@ -16,7 +16,7 @@ File: {
 }
 
 $HEADER_KEY: {
-	static "SAOI 1.1 ADM"
+	static "SAOI 2.0 ADM"
 }
 
 $AUTHOR_DATA: {

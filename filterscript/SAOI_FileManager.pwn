@@ -11,7 +11,7 @@
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
  * File Version: 2.1.0                                                                                                            *
- * SA:MP Version: 0.3.8 (REQUIRE)                                                                                                 *
+ * SA:MP Version: 0.3.7 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  * MapAndreas Version: 1.2.1                                                                                                      *
@@ -88,11 +88,9 @@
 #define SAOI_BOOT_OFFSET_FILES		(SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG)
 #define SAOI_BOOT_OFFSET_CONFIG		(SAOI_BOOT_SIZE_HEADER)
 
-/*
-#if (!defined GetPlayerPoolSize || !defined GetSVarInt || !defined OnPlayerFinishedDownloading)
-	#error [ADM] This include requires SA:MP version 0.3.8 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
+	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
 #endif
-*/
 
 //Check Version StreamerFunction.inc
 #if !defined _streamer_spec
@@ -114,11 +112,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v2.0.0
+	#error You need SAOI.inc v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v2.0.0
-#elseif (SAOI_LOADER_VERSION < 20000)
-	#error Update you SAOI.inc to v2.0.0
+	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+#elseif (SAOI_LOADER_VERSION < 20100)
+	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -249,6 +247,9 @@ stock SAOI::CreateBootFile(){
 	new tmp[128];
 	for(new x = 0; x < SAOI_BOOT_SIZE_HEADER; x += 128){
 		SWAP::write_block(SAOI_FILE_BOOT,SAOI_CFG_KEY,x,tmp,128);
+	}
+	for(new x = SAOI_BOOT_OFFSET_CONFIG; x < SAOI_BOOT_OFFSET_CONFIG+SAOI_BOOT_SIZE_CONFIG; x++){
+		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,x,0);
 	}
 	return size;
 }
@@ -685,8 +686,8 @@ stock SAOI::FindDynamicMapIcon(playerid,Float:findradius,Float:streamdistance = 
 stock SAOI::FindRemoveBuilding(Float:streamdistance = 20.0){
 	new buffer[256], szLIST[768], cnt = 0, modelid, Float:x, Float:y, Float:z, Float:radius, index, fname[MAX_SAOI_PATH],
 		Text3D:elementid;
-	for(new i = SAOIRemoveUpperbound; i >= 0; i--){
-		if(SAOIRemoveBuildings[i][SAOI::modelid] != 0){
+	for(new i = SAOI::RemoveUpperbound; i >= 0; i--){
+		if(SAOI::RemoveBuildings[i][SAOI::modelid] != 0){
 			SAOI::GetRemoveBuilding(i,index,modelid,x,y,z,radius);
 			szLIST = "";
 			format(fname,sizeof(fname),"%s",SAOI::GetFileName(index));
@@ -1358,9 +1359,9 @@ CMD:saoireload(playerid,params[]){
 			format(buffer,sizeof buffer,"{00AAFF}SAOI File {00FF00}%s {00AAFF}cannot unload static file",params);
 			return SendClientMessage(playerid,0xFFFFFFFF,buffer);
 		}
-		if(SAOIFile[index][SAOI::offset_object] != INVALID_STREAMER_ID){
+		if(SAOI::File[index][SAOI::offset_object] != INVALID_STREAMER_ID){
 			freezed = true;
-			GetDynamicObjectPos(SAOIFile[index][SAOI::offset_object],x,y,z);
+			GetDynamicObjectPos(SAOI::File[index][SAOI::offset_object],x,y,z);
 			if(SAOI::Config[auto_freeze]){
 				Tryg3D::Foreach(i){
 					if(IsPlayerInRangeOfPoint(i,300.0,x,y,z)){
@@ -1460,9 +1461,9 @@ CMD:saoitp(playerid,params[]){
 	}
 	new Float:x, Float:y, Float:z, Float:angle, vw, int;
 	if(!SAOI::IsPositionFlagSet(index)){
-		if(SAOIFile[index][SAOI::offset_object] != INVALID_STREAMER_ID){
-			GetDynamicObjectPos(SAOIFile[index][SAOI::offset_object],x,y,z);
-			SetPlayerAbsolutePositionVeh(playerid,x,y,z,0.0,GetDynamicObjectVW(SAOIFile[index][SAOI::offset_object]),GetDynamicObjectINT(SAOIFile[index][SAOI::offset_object]),1000);
+		if(SAOI::File[index][SAOI::offset_object] != INVALID_STREAMER_ID){
+			GetDynamicObjectPos(SAOI::File[index][SAOI::offset_object],x,y,z);
+			SetPlayerAbsolutePositionVeh(playerid,x,y,z,0.0,GetDynamicObjectVW(SAOI::File[index][SAOI::offset_object]),GetDynamicObjectINT(SAOI::File[index][SAOI::offset_object]),1000);
 			return SendClientMessage(playerid,0xB01010FF,"Not found saved position (Teleported to first object)!");
 		}
 		return SendClientMessage(playerid,0xB01010FF,"Not found saved position!");
@@ -1523,9 +1524,9 @@ CMD:saoicmd(playerid){
 	strcat(szLIST,"{00FF00}/objstatus - {00AAFF}show total object status\n");
 	strcat(szLIST,"{00FF00}/saoiinfo - {00AAFF}show saoi file information\n");
 	strcat(szLIST,"{00FF00}/saoiload - {00AAFF}load saoi file\n");
-	strcat(szLIST,"{00FF00}/saoiboot - {00AAFF}load saoi file (Add to SAOIFiles.txt)\n");
+	strcat(szLIST,"{00FF00}/saoiboot - {00AAFF}load saoi file (Add to SAOI::Files.txt)\n");
 	strcat(szLIST,"{00FF00}/saoiunload - {00AAFF}unload saoi file\n");
-	strcat(szLIST,"{00FF00}/saoiunboot - {00AAFF}unload saoi file (Remove from SAOIFiles.txt)\n");
+	strcat(szLIST,"{00FF00}/saoiunboot - {00AAFF}unload saoi file (Remove from SAOI::Files.txt)\n");
 	strcat(szLIST,"{00FF00}/saoireload - {00AAFF}reload saoi file\n");
 	strcat(szLIST,"{00FF00}/saoireboot - {00AAFF}reload all saoi files\n");
 	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
