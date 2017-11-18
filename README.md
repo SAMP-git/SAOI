@@ -46,11 +46,11 @@ CreateDynamicObject(869,911.87738,-671.97540,115.60636,-12.96000,-38.52000,0.000
 - Use SAOI_FileManager.pwn
 
 
-## How to install SAOI_FileManager
+## How to install SAOI_FileManager:
 - Create folder scriptfiles\SAOI
 
 
-## How to fast import files to boot
+## How to fast import files to boot:
 - Create file scriptfiles\SAOI\SaoiFiles.txt
 - Place the file name is in the file SaoiFiles.txt
 
