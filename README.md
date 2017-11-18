@@ -43,7 +43,7 @@ CreateDynamicObject(869,911.87738,-671.97540,115.60636,-12.96000,-38.52000,0.000
 - Enter the full name of the file (example: file.txt)
 - Enter data: Author (max 32 character), Version (max 32 character), Description (max 128 character)
 - Submit and wait until the converter will create a file .saoi
-- Use function LoadObjectImage to load the saoi file or use SAOI_FileManager.pwn
+- Use SAOI_FileManager.pwn
 
 
 ## How to install SAOI_FileManager
