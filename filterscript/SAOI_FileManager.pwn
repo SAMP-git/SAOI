@@ -10,7 +10,7 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
- * File Version: 2.1.0                                                                                                            *
+ * File Version: 2.1.1                                                                                                            *
  * SA:MP Version: 0.3.7 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -78,6 +78,7 @@
 #define SAOI_OLDFILE_LIST			"/SAOI/SaoiFiles.txt"
 #define SAOI_OLDFILE_CFG			"/SAOI/SAOI.cfg"
 #define SAOI_FILE_BOOT				"/SAOI/boot"
+#define SAOI_FILE_STREAMER			"/SAOI/streamer"
 
 #define SAOIFM_EXTRA_ID_OFFSET		(1100000)		//You can never change !!!
 #define MAX_SAOI_PATH				(70)
@@ -199,7 +200,11 @@ enum find_option {
 enum saoi_config {
 	bool:save_log,
 	bool:global_msg,
-	bool:auto_freeze
+	bool:auto_freeze,
+	bool:streamer_optimization,
+	bool:streamer_reports,
+	bool:streamer_limits,
+	bool:saoi_fast_boot
 };
 
 new elements_name[][] = {
@@ -251,7 +256,43 @@ stock SAOI::CreateBootFile(){
 	for(new x = SAOI_BOOT_OFFSET_CONFIG; x < SAOI_BOOT_OFFSET_CONFIG+SAOI_BOOT_SIZE_CONFIG; x++){
 		SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,x,0);
 	}
+	SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log),1);
+	SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg),1);
+	SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),1);
+	SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_reports),Streamer_IsToggleErrorCallback());
 	return size;
+}
+
+stock SAOI::CreateStreamerConfig(){
+	if(fexist(SAOI_FILE_STREAMER)) return 0;
+	SWAP::reserve(SAOI_FILE_STREAMER,512);
+	SWAP::format_random(SAOI_FILE_STREAMER);
+	SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,0*4,500);	//Objects
+	SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,1*4,4096);	//Pickups
+	SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,2*4,100);	//Map Icons
+	SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,3*4,1024);	//3DText
+	SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,5*4,1000);	//Actors
+	for(new i = 0; i < STREAMER_MAX_TYPES; i++){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,128+i*4,Streamer_GetMaxItems(i));
+	}
+	return 1;
+}
+
+stock SAOI::LoadStreamerOptimization(){
+	if(!fexist(SAOI_FILE_STREAMER)) SAOI::CreateStreamerConfig();
+	Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT,			SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,0*4), -1);
+	Streamer_SetVisibleItems(STREAMER_TYPE_PICKUP,			SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,1*4), -1);
+	Streamer_SetVisibleItems(STREAMER_TYPE_MAP_ICON,		SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,2*4), -1);
+	Streamer_SetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL,	SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,3*4), -1);
+	Streamer_SetVisibleItems(STREAMER_TYPE_ACTOR,			SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,4*4), -1);
+	return 1;
+}
+
+stock SAOI::LoadStreamerLimits(){
+	if(!fexist(SAOI_FILE_STREAMER)) SAOI::CreateStreamerConfig();
+	for(new i = 0; i < STREAMER_MAX_TYPES; i++){
+		Streamer_SetMaxItems(i,SWAP::read_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,128+i*4));
+	}
 }
 
 stock SAOI::BootResize(max_elements){
@@ -1509,8 +1550,61 @@ CMD:saoicfg(playerid){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof(buffer),"%s\t{00AAFF}Freeze System\n",SAOI::Config[auto_freeze]?("{00FF00}[YES]"):("{FF0000}[NO]"));
 	strcat(szLIST,buffer);
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Streamer Optimization\n",SAOI::Config[streamer_optimization]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Streamer Reports\n",SAOI::Config[streamer_reports]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	format(buffer,sizeof(buffer),"%s\t{00AAFF}Streamer Limits\n",SAOI::Config[streamer_limits]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	strcat(szLIST,buffer);
+	#if defined SAOI_DEVELOPER_VERSION
+		format(buffer,sizeof(buffer),"%s\t{00AAFF}Fast Boot\n",SAOI::Config[saoi_fast_boot]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	#else
+		format(buffer,sizeof(buffer),"%s\t{909090}Fast Boot\n",SAOI::Config[saoi_fast_boot]?("{00FF00}[YES]"):("{FF0000}[NO]"));
+	#endif
+	strcat(szLIST,buffer);
 	
 	ShowPlayerDialog(playerid,DIALOG_SAOI_CFG,DIALOG_STYLE_LIST,"{00FFFF}SAOI Config",szLIST,"{00FF00}Select","{FF0000}Exit");
+	return 1;
+}
+
+CMD:streamerop(playerid,params[]){
+	if(!IsAdmin(playerid)) return 0;
+	if(!SAOI::Config[streamer_optimization]) return SendClientMessage(playerid,0xB01010FF,"Streamer Optimizations is disabled, check /saoicfg>");
+	new o_type[16], o_value;
+	if(sscanf(params,"s[16] d",o_type,o_value)) return SendClientMessage(playerid,0xB01010FF,"Usage: /streamerop <object/pickup/mapicon/3dtext/actor> <max_visible_items>");
+	if(!strcmp(o_type,"object",true)){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,0*4,o_value);
+		Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT,o_value,-1);
+	} else if(!strcmp(o_type,"pickup",true)){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,1*4,o_value);
+		Streamer_SetVisibleItems(STREAMER_TYPE_PICKUP,o_value,-1);
+	} else if(!strcmp(o_type,"mapicon",true)){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,2*4,o_value);
+		Streamer_SetVisibleItems(STREAMER_TYPE_MAP_ICON,o_value,-1);
+	} else if(!strcmp(o_type,"3dtext",true)){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,3*4,o_value);
+		Streamer_SetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL,o_value,-1);
+	} else if(!strcmp(o_type,"actor",true)){
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,4*4,o_value);
+		Streamer_SetVisibleItems(STREAMER_TYPE_ACTOR,o_value,-1);
+	}
+	return 1;
+}
+
+CMD:streamerlimit(playerid,params[]){
+	if(!IsAdmin(playerid)) return 0;
+	if(!SAOI::Config[streamer_limits]) return SendClientMessage(playerid,0xB01010FF,"Streamer Limits is disabled, check /saoicfg>");
+	new o_type, o_value;
+	if(sscanf(params,"dD(-2)",o_type,o_value)) return SendClientMessage(playerid,0xB01010FF,"Usage: /streamerlimit <type> [max_items]");
+	if(o_type < 0 || o_type >= STREAMER_MAX_TYPES) return SendClientMessage(playerid,0xB01010FF,"Invalid type.");
+	if(o_value == -2){
+		new buffer[128];
+		format(buffer,sizeof buffer,"{00AAFF}Streamer Type: {00FF00}%d {00AAFF}Max Items: {00FF00}%d",o_type,Streamer_GetMaxItems(o_type));
+		SendClientMessage(playerid,0xFFFFFFFF,buffer);
+	} else {
+		SWAP::write_int(SAOI_FILE_STREAMER,SAOI_CFG_KEY,128+o_type*4,o_value);
+		Streamer_SetMaxItems(o_type,o_value);
+	}
 	return 1;
 }
 
@@ -1532,6 +1626,8 @@ CMD:saoicmd(playerid){
 	strcat(szLIST,"{00FF00}/saoilist - {00AAFF}show loaded saoi files\n");
 	strcat(szLIST,"{00FF00}/saoitp - {00AAFF}teleport to saoi flag\n");
 	strcat(szLIST,"{00FF00}/streaminfo - {00AAFF}show stream info\n");
+	strcat(szLIST,"{00FF00}/streamerop - {00AAFF}change streamer config\n");
+	strcat(szLIST,"{00FF00}/streamerlimit - {00AAFF}change streamer limits\n");
 	strcat(szLIST,"{00FF00}/tptoobj - {00AAFF}teleport to object\n");
 	strcat(szLIST,"{00FF00}/objmaterial - {00AAFF}get object materials\n");
 	strcat(szLIST,"{00FF00}/objmaterialtext - {00AAFF}get object material text\n");
@@ -1834,6 +1930,29 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[]){
 					SAOI::Config[auto_freeze] = 	(SAOI::Config[auto_freeze]?false:true);
 					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze),_:SAOI::Config[auto_freeze]);
 				}
+				case 3: {
+					SAOI::Config[streamer_optimization] = (SAOI::Config[streamer_optimization]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_optimization),_:SAOI::Config[streamer_optimization]);
+					if(SAOI::Config[streamer_optimization]) SAOI::LoadStreamerOptimization();
+				}
+				case 4: {
+					SAOI::Config[streamer_reports] = (SAOI::Config[streamer_reports]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_reports),_:SAOI::Config[streamer_reports]);
+					Streamer_ToggleErrorCallback(_:SAOI::Config[streamer_reports]);
+				}
+				case 5: {
+					SAOI::Config[streamer_limits] = (SAOI::Config[streamer_limits]?false:true);
+					SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_limits),_:SAOI::Config[streamer_limits]);
+					if(SAOI::Config[streamer_limits]) SAOI::LoadStreamerLimits();
+				}
+				case 6: {
+					#if defined SAOI_DEVELOPER_VERSION
+						SAOI::Config[saoi_fast_boot] = (SAOI::Config[saoi_fast_boot]?false:true);
+						SWAP::write_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:saoi_fast_boot),_:SAOI::Config[saoi_fast_boot]);
+					#else
+						SendClientMessage(playerid,0xB01010FF,"Unable to change this value!");
+					#endif
+				}
 			}
 			return cmd_saoicfg(playerid);
 		}
@@ -1916,9 +2035,18 @@ stock SAOI::LoadManager(){
 		lcnt_t = 0, lcnt_f = 0, edi, bad_record = 0;
 	
 	printf("[SAOI] Load Config");
-	SAOI::Config[global_msg] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
-	SAOI::Config[save_log] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
-	SAOI::Config[auto_freeze] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
+	SAOI::Config[global_msg] =				bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:global_msg));
+	SAOI::Config[save_log] =				bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:save_log));
+	SAOI::Config[auto_freeze] =				bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:auto_freeze));
+	SAOI::Config[streamer_optimization] =	bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_optimization));
+	SAOI::Config[streamer_reports] =		bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_reports));
+	SAOI::Config[streamer_limits] =			bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:streamer_limits));
+	SAOI::Config[saoi_fast_boot] =			bool:SWAP::read_byte(SAOI_FILE_BOOT,SAOI_CFG_KEY,(SAOI_BOOT_OFFSET_CONFIG+_:saoi_fast_boot));
+	
+	Streamer_ToggleErrorCallback(_:SAOI::Config[streamer_reports]);
+	
+	if(SAOI::Config[streamer_optimization])	SAOI::LoadStreamerOptimization();
+	if(SAOI::Config[streamer_limits])		SAOI::LoadStreamerLimits();
 	
 	printf("[SAOI] Load Boot Manager");
 	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
@@ -1957,7 +2085,7 @@ stock SAOI::LoadManager(){
 		}
 	}
 	SAOI::ErrorLevel += lcnt_f;
-	fm_fast_boot = false;
+	fm_fast_boot = SAOI::Config[saoi_fast_boot];
 	printf(" ");
 	return 1;
 }
@@ -1975,6 +2103,11 @@ SAOI::Public:: SAOI::OnRequestResponse(index, response_code, data[]){
 			print(" ");
 		}
 	}
+	return 1;
+}
+
+public Streamer_OnPluginError(error[]){
+	printf("[STREAMER] %s",error);
 	return 1;
 }
 
