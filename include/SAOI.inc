@@ -134,6 +134,10 @@
 #define MAX_TEXTURE_NAME					(32)			//Max Value: 255 (These limits can be changed according to the San Andreas)
 #define MAX_TEXT_NAME						(2048)			//Max Value: 65535 (These limits can be changed according to the San Andreas)
 
+#if !defined MAX_REMOVE_OBJECTS
+	#define MAX_REMOVE_OBJECTS				(1000)
+#endif
+
 #if !defined MAX_SAOI_FILE
 	#define MAX_SAOI_FILE					(2001)			//more ? why not
 #endif
@@ -284,7 +288,7 @@ enum e_saoi {
 
 new SAOI::File[MAX_SAOI_FILE][e_saoi],
 	SAOI::Vehicles[MAX_VEHICLES],
-	SAOI::RemoveBuildings[MAX_OBJECTS][e_remove_building],
+	SAOI::RemoveBuildings[MAX_REMOVE_OBJECTS][e_remove_building],
 	SAOI::RemoveUpperbound = INVALID_REMOVE_BUILDING_ID,
 	bool:SAOI::PlayerFirstSpawn[MAX_PLAYERS],
 	bool:SAOI::Access = false;
@@ -391,7 +395,7 @@ SAOI::Function:: SAOI::CountRemovedBuildings(){
 
 SAOI::Function:: SAOI::GetFreeRemoveBuildingID(){
 	if(!SAOI::Access) return INVALID_REMOVE_BUILDING_ID;
-	for(new i = 0; i < MAX_OBJECTS; i++){
+	for(new i = 0; i < MAX_REMOVE_OBJECTS; i++){
 		if(SAOI::RemoveBuildings[i][SAOI::modelid] == 0){
 			if(i > SAOI::RemoveUpperbound) SAOI::RemoveUpperbound = i;
 			return i;
