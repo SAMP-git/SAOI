@@ -197,6 +197,8 @@
 #define SAOI_BUMPER_EOF						(255)
 
 #define SAOI::								SAOI_
+#define ColAndreas:: 						CA_
+#define Streamer:: 							Streamer_
 
 //BitFunctions.inc
 #define SAOI_GetValueBit(%0,%1)				((%0) >>> (%1) & 0x01)
@@ -717,26 +719,26 @@ SAOI::Function:: SAOI::SaveDynamicObject(objectid,const name[]){
 		arg_count = 14, material_used = 0, material_text_used = 0, element_flag;
 	
 	//Get Object Info
-	modelid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_MODEL_ID);
+	modelid = Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_MODEL_ID);
 	GetDynamicObjectPos(objectid,x,y,z);
 	GetDynamicObjectRot(objectid,rx,ry,rz);
-	worldid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_WORLD_ID);
-	interiorid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_INTERIOR_ID);
+	worldid = Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_WORLD_ID);
+	interiorid = Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_INTERIOR_ID);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_STREAM_DISTANCE,streamdistance);
-	Streamer_GetFloatData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_DRAW_DISTANCE,drawdistance);
+	Streamer::GetFloatData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	Streamer::GetFloatData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_DRAW_DISTANCE,drawdistance);
 	
-	areaid = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_AREA_ID);
-	priority = Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_PRIORITY);
+	areaid = Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_AREA_ID);
+	priority = Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_OBJECT,objectid)){
+	if(Streamer::IsToggleItemInvAreas(STREAMER_TYPE_OBJECT,objectid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	if(GetDynamicObjectNoCameraCol(objectid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_NO_CAMERA_COL,1);
 	}
 	
-	element_flag |= (Streamer_GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID) & 0xFF);
+	element_flag |= (Streamer::GetIntData(STREAMER_TYPE_OBJECT,objectid,E_STREAMER_EXTRA_ID) & 0xFF);
 	
 	//Count Arg
 	for(new i = arg_count; i > 7; i--){
@@ -945,22 +947,22 @@ SAOI::Function:: SAOI::SaveDynamicPickup(pickupid,const name[]){
 		arg_count = 11, element_flag;
 	
 	//Get Pickup Info
-	modelid = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_MODEL_ID);
+	modelid = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_MODEL_ID);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_X,x);
-	Streamer_GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_Y,y);
-	Streamer_GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_Z,z);
+	Streamer::GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_X,x);
+	Streamer::GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_Y,y);
+	Streamer::GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_Z,z);
 	
-	worldid = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_WORLD_ID);
-	interiorid = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_INTERIOR_ID);
+	worldid = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_WORLD_ID);
+	interiorid = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_INTERIOR_ID);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_STREAM_DISTANCE,streamdistance);
-	type = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_TYPE);
+	Streamer::GetFloatData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	type = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_TYPE);
 	
-	areaid = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_AREA_ID);
-	priority = Streamer_GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_PRIORITY);
+	areaid = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_AREA_ID);
+	priority = Streamer::GetIntData(STREAMER_TYPE_PICKUP,pickupid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_PICKUP,pickupid)){
+	if(Streamer::IsToggleItemInvAreas(STREAMER_TYPE_PICKUP,pickupid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1078,22 +1080,22 @@ SAOI::Function:: SAOI::SaveDynamic3DTextLabel(Text3D:textid,const name[]){
 	GetDynamic3DTextLabelText(textid,text,sizeof(text));
 	textsize = strlen(text);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_X,x);
-	Streamer_GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_Y,y);
-	Streamer_GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_Z,z);
+	Streamer::GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_X,x);
+	Streamer::GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_Y,y);
+	Streamer::GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_Z,z);
 	
-	worldid = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_WORLD_ID);
-	interiorid = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_INTERIOR_ID);
+	worldid = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_WORLD_ID);
+	interiorid = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_INTERIOR_ID);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_STREAM_DISTANCE,streamdistance);
-	Streamer_GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_DRAW_DISTANCE,drawdistance);
-	testlos = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_TEST_LOS);
-	color = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_COLOR);
+	Streamer::GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	Streamer::GetFloatData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_DRAW_DISTANCE,drawdistance);
+	testlos = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_TEST_LOS);
+	color = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_COLOR);
 	
-	areaid = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_AREA_ID);
-	priority = Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_PRIORITY);
+	areaid = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_AREA_ID);
+	priority = Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,textid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,textid)){
+	if(Streamer::IsToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,textid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1226,22 +1228,22 @@ SAOI::Function:: SAOI::SaveDynamicMapIcon(iconid,const name[]){
 		arg_count = 12, element_flag, color, style;
 	
 	//Get MapIcon Info
-	Streamer_GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_X,x);
-	Streamer_GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_Y,y);
-	Streamer_GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_Z,z);
+	Streamer::GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_X,x);
+	Streamer::GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_Y,y);
+	Streamer::GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_Z,z);
 	
-	worldid = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_WORLD_ID);
-	interiorid = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_INTERIOR_ID);
+	worldid = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_WORLD_ID);
+	interiorid = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_INTERIOR_ID);
 	
-	Streamer_GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_STREAM_DISTANCE,streamdistance);
-	type = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_TYPE);
-	color = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_COLOR);
-	style = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_STYLE);
+	Streamer::GetFloatData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	type = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_TYPE);
+	color = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_COLOR);
+	style = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_STYLE);
 	
-	areaid = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_AREA_ID);
-	priority = Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_PRIORITY);
+	areaid = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_AREA_ID);
+	priority = Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,iconid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,iconid)){
+	if(Streamer::IsToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,iconid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1370,19 +1372,19 @@ SAOI::Function:: SAOI::SaveDynamicActor(actorid,const name[]){
 	GetDynamicActorPos(actorid,x,y,z);
 	GetDynamicActorFacingAngle(actorid,z_angle);
 	
-	modelid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_MODEL_ID);
+	modelid = Streamer::GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_MODEL_ID);
 	worldid = GetDynamicActorVirtualWorld(actorid);
-	interiorid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_INTERIOR_ID);
+	interiorid = Streamer::GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_INTERIOR_ID);
 	
 	if(IsDynamicActorInvulnerable(actorid)) invulnerable = 1;
 	
-	Streamer_GetFloatData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_STREAM_DISTANCE,streamdistance);
+	Streamer::GetFloatData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_STREAM_DISTANCE,streamdistance);
 	GetDynamicActorHealth(actorid,health);
 	
-	areaid = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_AREA_ID);
-	priority = Streamer_GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_PRIORITY);
+	areaid = Streamer::GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_AREA_ID);
+	priority = Streamer::GetIntData(STREAMER_TYPE_ACTOR,actorid,E_STREAMER_PRIORITY);
 	
-	if(Streamer_IsToggleItemInvAreas(STREAMER_TYPE_ACTOR,actorid)){
+	if(Streamer::IsToggleItemInvAreas(STREAMER_TYPE_ACTOR,actorid)){
 		SAOI::SetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA,1);
 	}
 	
@@ -1518,17 +1520,17 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 	//RAW Generator
 	new int1, int2, int3, int4;
 	
-	switch(Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_TYPE)){
+	switch(Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_TYPE)){
 		case STREAMER_AREA_TYPE_CIRCLE: {
 			//Get Area Data
 			new arg_count = 6, Float:x, Float:y, Float:size, worldid = -1, interiorid = -1;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
 	
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 4; i--){
@@ -1580,16 +1582,16 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 			//Get Area Data
 			new arg_count = 8, Float:x, Float:y, Float:minz, Float:maxz, Float:size, worldid = -1, interiorid = -1;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
 	
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 6; i--){
@@ -1647,13 +1649,13 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 			//Get Area Data
 			new arg_count = 7, Float:x, Float:y, Float:z, Float:size, worldid = -1, interiorid = -1;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Z,z);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_X,x);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Y,y);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_Z,z);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_SIZE,size);
 	
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 5; i--){
@@ -1708,13 +1710,13 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 			//Get Area Data
 			new arg_count = 7, Float:minx, Float:miny, Float:maxx, Float:maxy, worldid = -1, interiorid = -1;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_X,minx);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Y,miny);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_X,maxx);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Y,maxy);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_X,minx);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Y,miny);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_X,maxx);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Y,maxy);
 	
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 5; i--){
@@ -1769,15 +1771,15 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 			//Get Area Data
 			new arg_count = 9, Float:minx, Float:miny, Float:minz, Float:maxx, Float:maxy, Float:maxz, worldid = -1, interiorid = -1;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_X,minx);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Y,miny);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_X,maxx);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Y,maxy);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_X,minx);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Y,miny);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_X,maxx);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Y,maxy);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
 	
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 7; i--){
@@ -1841,11 +1843,11 @@ SAOI::Function:: SAOI::SaveDynamicArea(areaid,const name[]){
 			GetDynamicPolygonPoints(areaid,Polygon_Points,sizeof(Polygon_Points));
 			max_points = GetDynamicPolygonNumberPoints(areaid) * 2;
 			
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
-			Streamer_GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MIN_Z,minz);
+			Streamer::GetFloatData(STREAMER_TYPE_AREA,areaid,E_STREAMER_MAX_Z,maxz);
 			
-			worldid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
-			interiorid = Streamer_GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
+			worldid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_WORLD_ID);
+			interiorid = Streamer::GetIntData(STREAMER_TYPE_AREA,areaid,E_STREAMER_INTERIOR_ID);
 			
 			//Count Arg
 			for(new i = arg_count; i > 3; i--){
@@ -2101,10 +2103,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//Objects
 	if(SAOI::File[index][SAOI::cnt_object] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_object], i = SAOI::File[index][SAOI::offset_object], j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
+		new max_idx = SAOI::File[index][SAOI::cnt_object], i = SAOI::File[index][SAOI::offset_object], j = Streamer::GetUpperBound(STREAMER_TYPE_OBJECT);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamicObject(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamicObject(i);
 				}
@@ -2113,14 +2115,14 @@ SAOI::Function:: SAOI::CleanupElements(index){
 		}
 	}
 
-	//CA_CreateObject
+	//ColAndreas::CreateObject
 	#if defined SAOI_ColAndreas
 		if(SAOI::File[index][SAOI::cnt_caobject] > 0){
 			new max_idx = SAOI::File[index][SAOI::cnt_caobject], i = SAOI::File[index][SAOI::offset_caobject];
 			while(i < MAX_CA_OBJECTS && max_idx > 0){
-				if(CA_GetObjectExtraID(i,CA_EXTRA_1) == extraid){
+				if(ColAndreas::GetObjectExtraID(i,ColAndreas::EXTRA_1) == extraid){
 					max_idx--;
-					CA_DestroyObject_DC(i);
+					ColAndreas::DestroyObject_DC(i);
 				}
 				i++;
 			}
@@ -2129,10 +2131,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//3DTextLabels
 	if(SAOI::File[index][SAOI::cnt_3dtext] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_3dtext], i = SAOI::File[index][SAOI::offset_3dtext], j = Streamer_GetUpperBound(STREAMER_TYPE_3D_TEXT_LABEL);
+		new max_idx = SAOI::File[index][SAOI::cnt_3dtext], i = SAOI::File[index][SAOI::offset_3dtext], j = Streamer::GetUpperBound(STREAMER_TYPE_3D_TEXT_LABEL);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamic3DTextLabel(Text3D:i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamic3DTextLabel(Text3D:i);
 				}
@@ -2143,10 +2145,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//Pickups
 	if(SAOI::File[index][SAOI::cnt_pickup] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_pickup], i = SAOI::File[index][SAOI::offset_pickup], j = Streamer_GetUpperBound(STREAMER_TYPE_PICKUP);
+		new max_idx = SAOI::File[index][SAOI::cnt_pickup], i = SAOI::File[index][SAOI::offset_pickup], j = Streamer::GetUpperBound(STREAMER_TYPE_PICKUP);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamicPickup(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_PICKUP,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_PICKUP,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamicPickup(i);
 				}
@@ -2157,10 +2159,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//MapIcons
 	if(SAOI::File[index][SAOI::cnt_mapicon] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_mapicon], i = SAOI::File[index][SAOI::offset_mapicon], j = Streamer_GetUpperBound(STREAMER_TYPE_MAP_ICON);
+		new max_idx = SAOI::File[index][SAOI::cnt_mapicon], i = SAOI::File[index][SAOI::offset_mapicon], j = Streamer::GetUpperBound(STREAMER_TYPE_MAP_ICON);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamicMapIcon(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamicMapIcon(i);
 				}
@@ -2171,10 +2173,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//Actors
 	if(SAOI::File[index][SAOI::cnt_actor] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_actor], i = SAOI::File[index][SAOI::offset_actor], j = Streamer_GetUpperBound(STREAMER_TYPE_ACTOR);
+		new max_idx = SAOI::File[index][SAOI::cnt_actor], i = SAOI::File[index][SAOI::offset_actor], j = Streamer::GetUpperBound(STREAMER_TYPE_ACTOR);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamicActor(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_ACTOR,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_ACTOR,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamicActor(i);
 				}
@@ -2185,10 +2187,10 @@ SAOI::Function:: SAOI::CleanupElements(index){
 	
 	//Areas
 	if(SAOI::File[index][SAOI::cnt_area] > 0){
-		new max_idx = SAOI::File[index][SAOI::cnt_area], i = SAOI::File[index][SAOI::offset_area], j = Streamer_GetUpperBound(STREAMER_TYPE_AREA);
+		new max_idx = SAOI::File[index][SAOI::cnt_area], i = SAOI::File[index][SAOI::offset_area], j = Streamer::GetUpperBound(STREAMER_TYPE_AREA);
 		while(i <= j && max_idx > 0){
 			if(IsValidDynamicArea(i)){
-				if(Streamer_GetIntData(STREAMER_TYPE_AREA,i,E_STREAMER_EXTRA_ID) == extraid){
+				if(Streamer::GetIntData(STREAMER_TYPE_AREA,i,E_STREAMER_EXTRA_ID) == extraid){
 					max_idx--;
 					DestroyDynamicArea(i);
 				}
@@ -2414,9 +2416,9 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_object] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_object] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_OBJECT,elementid,E_STREAMER_EXTRA_ID,extraid);
+				Streamer::SetIntData(STREAMER_TYPE_OBJECT,elementid,E_STREAMER_EXTRA_ID,extraid);
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemInvAreas(STREAMER_TYPE_OBJECT,elementid,1);
+					Streamer::ToggleItemInvAreas(STREAMER_TYPE_OBJECT,elementid,1);
 				}
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_NO_CAMERA_COL) == 1){
 					SetDynamicObjectNoCameraCol(elementid);
@@ -2424,14 +2426,14 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				SAOI::File[index][SAOI::cnt_object]++;
 				#if defined SAOI_ColAndreas
 					if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_COLANDREAS) == 1){
-						col_elementid = CA_CreateObject(modelid,x,y,z,rx,ry,rz,true);
-						CA_SetObjectExtraID(col_elementid,CA_EXTRA_1,extraid);
+						col_elementid = ColAndreas::CreateObject(modelid,x,y,z,rx,ry,rz,true);
+						ColAndreas::SetObjectExtraID(col_elementid,ColAndreas::EXTRA_1,extraid);
 						SAOI::File[index][SAOI::cnt_caobject]++;
 						if(SAOI::File[index][SAOI::offset_caobject] == -1){
 							SAOI::File[index][SAOI::offset_caobject] = col_elementid;
 						}
 					} else if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_COLSTATIC) == 1){
-						CA_CreateObject(modelid,x,y,z,rx,ry,rz,false);
+						ColAndreas::CreateObject(modelid,x,y,z,rx,ry,rz,false);
 						SAOI::File[index][SAOI::cnt_caobject]++;
 						SAOI::File[index][SAOI::is_static] = true;
 					}
@@ -2477,9 +2479,9 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_actor] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_actor] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_ACTOR,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_ACTOR,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemInvAreas(STREAMER_TYPE_ACTOR,elementid,1);
+					Streamer::ToggleItemInvAreas(STREAMER_TYPE_ACTOR,elementid,1);
 				}
 				SAOI::File[index][SAOI::cnt_actor]++;
 				continue;
@@ -2529,9 +2531,9 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_3dtext] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_3dtext] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_3D_TEXT_LABEL,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_3D_TEXT_LABEL,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,elementid,1);
+					Streamer::ToggleItemInvAreas(STREAMER_TYPE_3D_TEXT_LABEL,elementid,1);
 				}
 				SAOI::File[index][SAOI::cnt_3dtext]++;
 				continue;
@@ -2566,9 +2568,9 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_pickup] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_pickup] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_PICKUP,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_PICKUP,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemInvAreas(STREAMER_TYPE_PICKUP,elementid,1);
+					Streamer::ToggleItemInvAreas(STREAMER_TYPE_PICKUP,elementid,1);
 				}
 				SAOI::File[index][SAOI::cnt_pickup]++;
 				continue;
@@ -2611,9 +2613,9 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_mapicon] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_mapicon] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_MAP_ICON,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_MAP_ICON,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				if(SAOI::GetValueBit(element_flag,ELEMENT_FLAG_ANTI_AREA) == 1){
-					Streamer_ToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,elementid,1);
+					Streamer::ToggleItemInvAreas(STREAMER_TYPE_MAP_ICON,elementid,1);
 				}
 				SAOI::File[index][SAOI::cnt_mapicon]++;
 				continue;
@@ -2677,7 +2679,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2708,7 +2710,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2737,7 +2739,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2766,7 +2768,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2797,7 +2799,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2831,7 +2833,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				if(SAOI::File[index][SAOI::offset_area] == INVALID_STREAMER_ID){
 					SAOI::File[index][SAOI::offset_area] = elementid;
 				}
-				Streamer_SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
+				Streamer::SetIntData(STREAMER_TYPE_AREA,elementid,E_STREAMER_EXTRA_ID,SAOI_EXTRA_ID_OFFSET+index);
 				
 				SAOI::File[index][SAOI::cnt_area]++;
 				continue;
@@ -2979,12 +2981,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_OBJECT: {
 			//Objects
 			if(SAOI::File[index][SAOI::cnt_object] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_object], i = SAOI::File[index][SAOI::offset_object], j = Streamer_GetUpperBound(STREAMER_TYPE_OBJECT);
+				new max_idx = SAOI::File[index][SAOI::cnt_object], i = SAOI::File[index][SAOI::offset_object], j = Streamer::GetUpperBound(STREAMER_TYPE_OBJECT);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamicObject(i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_OBJECT,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,i,toggle);
+							Streamer::ToggleItem(playerid,type,i,toggle);
 							cnt++;
 						}
 					}
@@ -2995,12 +2997,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_PICKUP: {
 			//Pickups
 			if(SAOI::File[index][SAOI::cnt_pickup] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_pickup], i = SAOI::File[index][SAOI::offset_pickup], j = Streamer_GetUpperBound(STREAMER_TYPE_PICKUP);
+				new max_idx = SAOI::File[index][SAOI::cnt_pickup], i = SAOI::File[index][SAOI::offset_pickup], j = Streamer::GetUpperBound(STREAMER_TYPE_PICKUP);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamicPickup(i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_PICKUP,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_PICKUP,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,i,toggle);
+							Streamer::ToggleItem(playerid,type,i,toggle);
 							cnt++;
 						}
 					}
@@ -3011,12 +3013,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_MAP_ICON: {
 			//MapIcons
 			if(SAOI::File[index][SAOI::cnt_mapicon] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_mapicon], i = SAOI::File[index][SAOI::offset_mapicon], j = Streamer_GetUpperBound(STREAMER_TYPE_MAP_ICON);
+				new max_idx = SAOI::File[index][SAOI::cnt_mapicon], i = SAOI::File[index][SAOI::offset_mapicon], j = Streamer::GetUpperBound(STREAMER_TYPE_MAP_ICON);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamicMapIcon(i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_MAP_ICON,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_MAP_ICON,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,i,toggle);
+							Streamer::ToggleItem(playerid,type,i,toggle);
 							cnt++;
 						}
 					}
@@ -3027,12 +3029,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_3D_TEXT_LABEL: {
 			//3DTextLabels
 			if(SAOI::File[index][SAOI::cnt_3dtext] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_3dtext], i = SAOI::File[index][SAOI::offset_3dtext], j = Streamer_GetUpperBound(STREAMER_TYPE_3D_TEXT_LABEL);
+				new max_idx = SAOI::File[index][SAOI::cnt_3dtext], i = SAOI::File[index][SAOI::offset_3dtext], j = Streamer::GetUpperBound(STREAMER_TYPE_3D_TEXT_LABEL);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamic3DTextLabel(Text3D:i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_3D_TEXT_LABEL,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,Text3D:i,toggle);
+							Streamer::ToggleItem(playerid,type,Text3D:i,toggle);
 							cnt++;
 						}
 					}
@@ -3043,12 +3045,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_AREA: {
 			//Areas
 			if(SAOI::File[index][SAOI::cnt_area] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_area], i = SAOI::File[index][SAOI::offset_area], j = Streamer_GetUpperBound(STREAMER_TYPE_AREA);
+				new max_idx = SAOI::File[index][SAOI::cnt_area], i = SAOI::File[index][SAOI::offset_area], j = Streamer::GetUpperBound(STREAMER_TYPE_AREA);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamicArea(i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_AREA,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_AREA,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,i,toggle);
+							Streamer::ToggleItem(playerid,type,i,toggle);
 							cnt++;
 						}
 					}
@@ -3059,12 +3061,12 @@ SAOI::Public:: SAOI::ToggleVisibleItems(const name[],playerid,type,toggle){
 		case STREAMER_TYPE_ACTOR: {
 			//Actors
 			if(SAOI::File[index][SAOI::cnt_actor] > 0){
-				new max_idx = SAOI::File[index][SAOI::cnt_actor], i = SAOI::File[index][SAOI::offset_actor], j = Streamer_GetUpperBound(STREAMER_TYPE_ACTOR);
+				new max_idx = SAOI::File[index][SAOI::cnt_actor], i = SAOI::File[index][SAOI::offset_actor], j = Streamer::GetUpperBound(STREAMER_TYPE_ACTOR);
 				while(i <= j && max_idx > 0){
 					if(IsValidDynamicActor(i)){
-						if(Streamer_GetIntData(STREAMER_TYPE_ACTOR,i,E_STREAMER_EXTRA_ID) == extraid){
+						if(Streamer::GetIntData(STREAMER_TYPE_ACTOR,i,E_STREAMER_EXTRA_ID) == extraid){
 							max_idx--;
-							Streamer_ToggleItem(playerid,type,i,toggle);
+							Streamer::ToggleItem(playerid,type,i,toggle);
 							cnt++;
 						}
 					}
