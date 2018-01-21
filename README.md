@@ -1,4 +1,4 @@
-# San Andreas Object Image Loader v2.1.0
+# San Andreas Object Image Loader v2.2.0
 
 
 ###### What is that ? This is the script allows you to load binary objects file which have a dynamic structure.
