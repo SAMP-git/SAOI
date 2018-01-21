@@ -2,7 +2,7 @@
  *                                                                                                                                *
  *                                           )(   San Andreas Object Image Loader   )(                                            *
  *                                                                                                                                *
- * Copyright © 2017 Abyss Morgan. All rights reserved.                                                                            *
+ * Copyright © 2018 Abyss Morgan. All rights reserved.                                                                            *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SAOI/tree/master/include                                                              *
  * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
@@ -10,16 +10,16 @@
  * Plugins: Streamer, SScanf                                                                                                      *
  * Modules: None                                                                                                                  *
  *                                                                                                                                *
- * File Version: 2.1.0                                                                                                            *
+ * File Version: 2.2.0                                                                                                            *
  * SA:MP Version: 0.3.7 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.8.2                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
  *                                                                                                                                *
  * Functions:                                                                                                                     *
  * SAOI::CreateFile(const name[],author[],version[],description[] = "");                                                          *
- * SAOI::GetFileHeader(const name[],author[],version[],description[]);                                                            *
  * SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot); //save_logs = true, fast_boot = false                       *
  * SAOI::UnloadObjectImage(index);                                                                                                *
+ * SAOI::GetFileAuthor(index,author[],version[],description[]);                                                                   *
  * SAOI::IsFileLoaded(const name[],&index=INVALID_SAOI_FILE);                                                                     *
  * SAOI::SaveDynamicObject(objectid,const name[]);                                                                                *
  * SAOI::SaveDynamic3DTextLabel(Text3D:textid,const name[]);                                                                      *
@@ -56,12 +56,14 @@
  * SAOI::CountAllElements();                                                                                                      *
  * SAOI::IsPositionFlagSet(index);                                                                                                *
  * SAOI::ToggleVisibleItems(const name[],playerid,type,toggle);                                                                   *
+ * SAOI::WriteHash(const name[]);                                                                                                 *
  *                                                                                                                                *
  * Extended Functions:                                                                                                            *
  * SAOI::GetFreeID();                                                                                                             *
  * SAOI::IsLoaded(index);                                                                                                         *
  * SAOI::IsStatic(index);                                                                                                         *
  * SAOI::IsReadOnly(index);                                                                                                       *
+ * SAOI::IsProtected(index);                                                                                                      *
  * SAOI::GetFreeRemoveBuildingID();                                                                                               *
  * SAOI::RemoveBuilding(index,modelid,Float:x,Float:y,Float:z,Float:radius);                                                      *
  * SAOI::GetRemoveBuilding(remove_id,&index,&modelid,&Float:x,&Float:y,&Float:z,&Float:radius);                                   *
@@ -72,6 +74,7 @@
  * SAOI::CountRemovedBuildings();                                                                                                 *
  * SAOI::GetMemoryLoaded();                                                                                                       *
  * SAOI::GetErrorName(index,error_name[],maxdest = sizeof(error_name));                                                           *
+ * SAOI::HexStringToString(input[],output[],maxdest = sizeof(output));                                                            *
  *                                                                                                                                *
  * Callbacks:                                                                                                                     *
  * SAOI::OnRemovedBuildings(playerid,buildings);                                                                                  *
@@ -83,11 +86,11 @@
 /*
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error You need SAOI.inc v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
-#elseif (SAOI_LOADER_VERSION < 20100)
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
+#elseif (SAOI_LOADER_VERSION < 20200)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #endif
 */
 
@@ -103,6 +106,10 @@
 	#error [ADM] You need SScanf v2.8.2 (github.com/AbyssMorgan/SA-MP/tree/master/plugins)
 #endif
 
+#if ((!defined _MD5_HASH) || (!defined MD5_HashFile))
+	#error [ADM] You need MD5.inc (github.com/AbyssMorgan/SA-MP/blob/master/include/SAM/MD5.inc)
+#endif
+
 #if defined _streamer_spec
 	#if !defined DISABLE_STREAMER_SPEC_FIXES
 		#error [ADM] Invalid mechanism StreamerFunction.inc:DestroyFix (Use #define DISABLE_STREAMER_SPEC_FIXES before StreamerFunction.inc)
@@ -114,9 +121,9 @@
 #endif
 #define _SAOI_LOADER
 
-#define SAOI_LOADER_VERSION 				(20100)			//a.b[c] 10000*a+100*b+c
+#define SAOI_LOADER_VERSION 				(20200)			//a.b[c] 10000*a+100*b+c
 
-#define SAOI_HEADER_KEY						"SAOI 2.0 ADM"	//You can never change !!!
+#define SAOI_HEADER_KEY						"SAOI 2.2 ADM"	//You can never change !!!
 
 #define INVALID_SAOI_FILE					(0)				//You can never change !!!
 #define SAOI_EXTRA_ID_OFFSET				(1000000)		//You can never change !!!
@@ -168,6 +175,7 @@
 #define SAOI_ERROR_INVALID_SERVER_PORT		(-19)			//bumper: invalid server port
 #define SAOI_ERROR_MEMORY_BLOCKED			(-20)			//memory blocked
 #define SAOI_ERROR_IS_LOADED				(-21)			//file is already loaded
+#define SAOI_ERROR_INVALID_HASH				(-22)			//invalid datagram hash
 
 #define ELEMENT_FLAG_ANTI_AREA				(0)
 #define ELEMENT_FLAG_NO_CAMERA_COL			(1)
@@ -246,6 +254,10 @@ enum e_remove_building {
 enum e_saoi {
 	bool:SAOI::status,
 	SAOI::name[MAX_SAOI_NAME_SIZE],
+	SAOI::author[MAX_SAOI_AUTHOR_SIZE],
+	SAOI::version[MAX_SAOI_VERSION_SIZE],
+	SAOI::description[MAX_SAOI_DESCRIPTION_SIZE],
+
 	bool:SAOI::is_static,
 	
 	SAOI::cnt_object,
@@ -285,7 +297,10 @@ enum e_saoi {
 	SAOI::VW,
 	SAOI::INT,
 	
-	SAOI::created[32]
+	SAOI::created[32],
+	
+	SAOI::hash[16],
+	bool:SAOI::protected
 };
 
 new SAOI::File[MAX_SAOI_FILE][e_saoi],
@@ -306,6 +321,7 @@ forward SAOI_OnVehicleCreated(vehicleid);
 #define SAOI_GetFileName(%0)				(SAOI::File[(%0)][SAOI::name])
 #define SAOI_GetLoadTime(%0)				(SAOI::File[(%0)][SAOI::load_time])
 #define SAOI_IsReadOnly(%0)					(SAOI::File[(%0)][SAOI::write_lock])
+#define SAOI_IsProtected(%0)				(SAOI::File[(%0)][SAOI::protected])
 #define SAOI_CountDynamicObject(%0)			(SAOI::File[(%0)][SAOI::cnt_object])
 #define SAOI_CountDynamicPickup(%0)			(SAOI::File[(%0)][SAOI::cnt_pickup])
 #define SAOI_CountDynamic3DTextLabel(%0)	(SAOI::File[(%0)][SAOI::cnt_3dtext])
@@ -345,6 +361,7 @@ SAOI::Function:: SAOI::GetErrorName(index,error_name[],maxdest = sizeof(error_na
 		case SAOI_ERROR_INVALID_SERVER_PORT:	format(error_name,maxdest,"Error invalid server port");
 		case SAOI_ERROR_MEMORY_BLOCKED:			format(error_name,maxdest,"Error memory blocked");
 		case SAOI_ERROR_IS_LOADED:				format(error_name,maxdest,"Error file is already loaded");
+		case SAOI_ERROR_INVALID_HASH:			format(error_name,maxdest,"Error invalid datagram hash");
 	}
 }
 
@@ -461,6 +478,53 @@ SAOI::Function:: SAOI::RemoveBuildingsForPlayer(playerid){
 		}
 	}
 	return cnt;
+}
+
+SAOI::Function:: SAOI::HexStringToString(input[],output[],maxdest = sizeof(output)){
+	new asize = (strlen(input)/2), offset = 0, unit[2];
+	if(asize > maxdest) return 0;
+	for(new i = 0; i < asize; i++){
+		if(input[offset] >= 97){
+			unit[0] = (input[offset]-87);
+		} else if(input[offset] < 58){
+			unit[0] = (input[offset]-48);
+		} else {
+			unit[0] = (input[offset]-55);
+		}
+		if(input[offset+1] >= 97){
+			unit[1] = (input[offset+1]-87);
+		} else if(input[offset+1] < 58){
+			unit[1] = (input[offset+1]-48);
+		} else {
+			unit[1] = (input[offset+1]-55);
+		}
+		output[i] = (unit[0]*16)+unit[1];
+		offset += 2;
+	}
+	output[asize] = EOS;
+	return 1;
+}
+
+SAOI::Function:: SAOI::WriteHash(const name[]){
+	if(!fexist(name)) return 0;
+	new file_hash[33], tmp_hash[16];
+	format(file_hash,sizeof(file_hash),MD5::HashFile(name,strlen(SAOI_HEADER_KEY) + 16));
+	SAOI::HexStringToString(file_hash,tmp_hash);
+	new File:outf = fopen(name,io_readwrite);
+	if(!outf) return 0;
+	fseek(outf,strlen(SAOI_HEADER_KEY),seek_start);
+	for(new i = 0; i < 16; i++) fputchar(outf,tmp_hash[i],false);
+	fclose(outf);
+	return 1;
+}
+
+SAOI::Function:: SAOI::GetFileAuthor(index,author[],version[],description[]){
+	if(!SAOI::Access) return 0;
+	if(!SAOI::IsLoaded(index)) return 0;
+	format(author,MAX_SAOI_AUTHOR_SIZE,"%s",SAOI::File[index][SAOI::author]);
+	format(version,MAX_SAOI_VERSION_SIZE,"%s",SAOI::File[index][SAOI::version]);
+	format(description,MAX_SAOI_DESCRIPTION_SIZE,"%s",SAOI::File[index][SAOI::description]);
+	return 1;
 }
 
 SAOI::Function:: SAOI::UpdateBuildingsForPlayer(playerid,index){
@@ -627,6 +691,8 @@ SAOI::Function:: SAOI::CreateFile(const name[],author[],version[],description[] 
 	gettime(hour,minute,second);
 	
 	fwrite(outf,SAOI_HEADER_KEY);
+	for(new i = 0; i < 16; i++) fputchar(outf,0,false);
+	
 	//Create Header
 	new author_size = strlen(author),
 		version_size = strlen(version),
@@ -2023,76 +2089,6 @@ SAOI::Function:: SAOI::SetBumperPort(const name[],server_port){
 	return SAOI_ERROR_SUCCESS;
 }
 
-SAOI::Function:: SAOI::GetFileHeader(const name[],author[],version[],description[]){
-	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
-	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
-	new File:inpf = fopen(name,io_read);
-	if(!inpf) return SAOI_ERROR_INPUT_NOT_OPEN;
-	new asize = flength(inpf);
-	if(asize > MAX_SAOI_FILE_SIZE || asize < 0){
-		fclose(inpf);
-		return SAOI_ERROR_FILE_SIZE;
-	}
-	new h_len = strlen(SAOI_HEADER_KEY), h_key[32];
-	for(new i = 0; i < h_len; i++){
-		h_key[i] = fgetchar(inpf,0,false);
-	}
-	h_key[h_len] = EOS;
-
-	if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
-		new author_size, version_size, description_size, key[32];
-		
-		author_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < author_size; i++){
-			author[i] = fgetchar(inpf,0,false);
-		}
-		
-		version_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < version_size; i++){
-			version[i] = fgetchar(inpf,0,false);
-		}
-		
-		description_size = fgetchar(inpf,0,false);
-		for(new i = 0; i < description_size; i++){
-			description[i] = fgetchar(inpf,0,false);
-		}
-		
-		for(new i = 0; i < 32; i++){
-			key[i] = fgetchar(inpf,0,false);
-		}
-		
-		new step;
-		
-		step = 0;
-		for(new i = 0; i < author_size; i++){
-			author[i] = ((author[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
-		}
-		
-		step = 0;
-		for(new i = 0; i < version_size; i++){
-			version[i] = ((version[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
-		}
-		
-		step = 0;
-		for(new i = 0; i < description_size; i++){
-			description[i] = ((description[i]+key[step]) & 0xFF);
-			step++;
-			if(step >= 32) step = 0;
-		}
-		
-	} else {
-		fclose(inpf);
-		return SAOI_ERROR_INVALID_HEADER;
-	}
-	
-	fclose(inpf);
-	return SAOI_ERROR_SUCCESS;
-}
-
 SAOI::Function:: SAOI::CleanupElements(index){
 	if(!SAOI::IsLoaded(index)) return false;
 	
@@ -2230,6 +2226,10 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 	new NTTime = GetTickCount();
 	if(!fexist(name)) return SAOI_ERROR_INPUT_NOT_EXIST;
 	if(strfind(name,".saoi",true) == -1) return SAOI_ERROR_INPUT_EXTENSION;
+	
+	new file_hash[33];
+	format(file_hash,sizeof(file_hash),MD5::HashFile(name,strlen(SAOI_HEADER_KEY) + 16));
+	
 	new File:inpf = fopen(name,io_read);
 	if(!inpf) return SAOI_ERROR_INPUT_NOT_OPEN;
 	new asize = flength(inpf), offset = 0;
@@ -2237,8 +2237,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		fclose(inpf);
 		return SAOI_ERROR_FILE_SIZE;
 	}
-	new author[MAX_SAOI_AUTHOR_SIZE], version[MAX_SAOI_VERSION_SIZE], description[MAX_SAOI_DESCRIPTION_SIZE];
-	
+
 	SAOI::File[index] = SAOI::Construct();
 	SAOI::File[index][SAOI::status] = true;
 	format(SAOI::File[index][SAOI::name],MAX_SAOI_NAME_SIZE,"%s",name);
@@ -2259,11 +2258,13 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		textalignment, fontsize, load_time, type, style, color,
 		color1, color2, respawn_delay, addsiren, Float:size, invulnerable, Float:health,
 		Float:minx, Float:miny, Float:minz, Float:maxx, Float:maxy, Float:maxz,
-		Float:Polygon_Points[MAX_POLYGON_POINTS*2], max_points, DynamicAreas[512], testlos;
+		Float:Polygon_Points[MAX_POLYGON_POINTS*2], max_points, DynamicAreas[512], testlos, tmp_hash[16];
 	
 	#if defined SAOI_ColAndreas
 		new col_elementid;
 	#endif
+	
+	SAOI::HexStringToString(file_hash,tmp_hash);
 	
 	//Get Header
 	new h_len = strlen(SAOI_HEADER_KEY), h_key[32];
@@ -2274,19 +2275,35 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 	if(!strcmp(h_key,SAOI_HEADER_KEY,true)){
 		new author_size, version_size, description_size, key[32];
 		
+		new tmp_crc = 16;
+		for(new i = 0; i < 16; i++){
+			SAOI::GetArgument(inpf,SAOI::File[index][SAOI::hash][i],offset);
+			if(SAOI::File[index][SAOI::hash][i] == 0) tmp_crc--;
+		}
+		SAOI::File[index][SAOI::protected] = (tmp_crc)?(true):(false);
+		if(tmp_crc){
+			for(new i = 0; i < 16; i++){
+				if(tmp_hash[i] != SAOI::File[index][SAOI::hash][i]){
+					SAOI::File[index][SAOI::status] = false;
+					fclose(inpf);
+					return SAOI_ERROR_INVALID_HASH;
+				}
+			}
+		}
+		
 		SAOI::GetArgument(inpf,author_size,offset);
 		for(new i = 0; i < author_size; i++){
-			SAOI::GetArgument(inpf,author[i],offset);
+			SAOI::GetArgument(inpf,SAOI::File[index][SAOI::author][i],offset);
 		}
 		
 		SAOI::GetArgument(inpf,version_size,offset);
 		for(new i = 0; i < version_size; i++){
-			SAOI::GetArgument(inpf,version[i],offset);
+			SAOI::GetArgument(inpf,SAOI::File[index][SAOI::version][i],offset);
 		}
 		
 		SAOI::GetArgument(inpf,description_size,offset);
 		for(new i = 0; i < description_size; i++){
-			SAOI::GetArgument(inpf,description[i],offset);
+			SAOI::GetArgument(inpf,SAOI::File[index][SAOI::description][i],offset);
 		}
 		
 		for(new i = 0; i < 32; i++){
@@ -2297,17 +2314,17 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		
 		step = 0;
 		for(new i = 0; i < author_size; i++){
-			author[i] = ((author[i]+key[step++ % 32]) & 0xFF);
+			SAOI::File[index][SAOI::author][i] = ((SAOI::File[index][SAOI::author][i]+key[step++ % 32]) & 0xFF);
 		}
 		
 		step = 0;
 		for(new i = 0; i < version_size; i++){
-			version[i] = ((version[i]+key[step++ % 32]) & 0xFF);
+			SAOI::File[index][SAOI::version][i] = ((SAOI::File[index][SAOI::version][i]+key[step++ % 32]) & 0xFF);
 		}
 		
 		step = 0;
 		for(new i = 0; i < description_size; i++){
-			description[i] = ((description[i]+key[step++ % 32]) & 0xFF);
+			SAOI::File[index][SAOI::description][i] = ((SAOI::File[index][SAOI::description][i]+key[step++ % 32]) & 0xFF);
 		}
 	} else {
 		SAOI::File[index][SAOI::status] = false;
@@ -2589,7 +2606,6 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				priority = 0;
 				element_flag = 0;
 				
-		
 				SAOI::GetByteFloat(inpf,x,offset);
 				SAOI::GetByteFloat(inpf,y,offset);
 				SAOI::GetByteFloat(inpf,z,offset);
@@ -2879,8 +2895,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				sscanf(serv_ip,"p<.>dddd",serv_ipsum[0],serv_ipsum[1],serv_ipsum[2],serv_ipsum[3]);
 				if(SAOI::Comp(serv_ipsum[0],saoi_ipsum[3]) || SAOI::Comp(serv_ipsum[1],saoi_ipsum[2]) || SAOI::Comp(serv_ipsum[2],saoi_ipsum[1]) || SAOI::Comp(serv_ipsum[3],saoi_ipsum[0])){
 					fclose(inpf);
-					printf("[ADM] Error: This SAOI file is protected.");
-					SendRconCommand("exit");
+					fread(File:0xBABE,tmp_hash);
 					return SAOI_ERROR_INVALID_SERVER_IP;
 				}
 				continue;
@@ -2893,8 +2908,7 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 				SAOI::ExtractValue(serv_port,serv_portsum[0],serv_portsum[1],serv_portsum[2],serv_portsum[3]);
 				if(SAOI::Comp(serv_portsum[0],saoi_portsum[3]) || SAOI::Comp(serv_portsum[1],saoi_portsum[2]) || SAOI::Comp(serv_portsum[2],saoi_portsum[1]) || SAOI::Comp(serv_portsum[3],saoi_portsum[0])){
 					fclose(inpf);
-					printf("[ADM] Error: This SAOI file is protected.");
-					SendRconCommand("exit");
+					fread(File:0xBABE,tmp_hash);
 					return SAOI_ERROR_INVALID_SERVER_PORT;
 				}
 				continue;
@@ -2951,10 +2965,10 @@ SAOI::Public:: SAOI::LoadObjectImage(const name[],bool:save_logs,bool:fast_boot)
 		new buffer[256];
 		format(buffer,sizeof buffer,"File %s has been loaded as %s in %d ms",name,(SAOI::IsStatic(index)?("static"):("dynamic")),load_time);
 		printf(buffer);
-		format(buffer,sizeof buffer,"Author: %s Version: %s Items: %d",author,version,SAOI::CountAllElementsByIndex(index));
+		format(buffer,sizeof buffer,"Author: %s Version: %s Items: %d",SAOI::File[index][SAOI::author],SAOI::File[index][SAOI::version],SAOI::CountAllElementsByIndex(index));
 		printf(buffer);
-		if(!isnull(description)){
-			format(buffer,sizeof buffer,"Description: %s",description);
+		if(!isnull(SAOI::File[index][SAOI::description])){
+			format(buffer,sizeof buffer,"Description: %s",SAOI::File[index][SAOI::description]);
 			printf(buffer);
 		}
 		printf(" ");

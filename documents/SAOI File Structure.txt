@@ -4,11 +4,16 @@ Extension:      saoi
 Name:           San Andreas Object Image
 Data Type:      Binary
 Structure type: Dynamic expandable
-Version:        2.0
+Version:        2.2
 Author:         Abyss Morgan
 
-File: {
+$FILE: {
 	$HEADER_KEY
+	$HASH
+	$DATAGRAM
+}
+
+$DATAGRAM: {
 	$AUTHOR_DATA
 	$DATA
 	$EOF
@@ -16,7 +21,14 @@ File: {
 }
 
 $HEADER_KEY: {
-	static "SAOI 2.0 ADM"
+	static "SAOI 2.0 ADM" size:96b
+}
+
+$HASH: {
+	hash size:128b
+	function: {
+		OnFileCreated -> MD5($DATAGRAM);
+	}
 }
 
 $AUTHOR_DATA: {

@@ -2,7 +2,7 @@
  *                                                                                                                                *
  *                                                  )(   SAOI File Manager   )(                                                   *
  *                                                                                                                                *
- * Copyright © 2017 Abyss Morgan. All rights reserved.                                                                            *
+ * Copyright © 2018 Abyss Morgan. All rights reserved.                                                                            *
  *                                                                                                                                *
  * Download: https://github.com/AbyssMorgan/SAOI/blob/master/filterscript                                                         *
  * Publication: http://forum.sa-mp.com/showthread.php?t=618429                                                                    *
@@ -10,7 +10,7 @@
  * Plugins: Streamer, SScanf, MapAndreas/ColAndreas, YSF                                                                          *
  * Modules: SAOI, 3DTryg, StreamerFunction, IZCMD/ZCMD, SWAP                                                                      *
  *                                                                                                                                *
- * File Version: 2.1.1                                                                                                            *
+ * File Version: 2.2.0                                                                                                            *
  * SA:MP Version: 0.3.7 (REQUIRE)                                                                                                 *
  * Streamer Version: 2.9.1                                                                                                        *
  * SScanf Version: 2.8.2                                                                                                          *
@@ -72,6 +72,7 @@
 #include <SAM/StreamerFunction>
 #include <SAM/3DTryg>
 #include <SAM/SWAP>
+#include <SAM/MD5>
 #include <SAOI>
 
 #define SAOI_OLDFILE_LIST			"/SAOI/SaoiFiles.txt"
@@ -88,8 +89,14 @@
 #define SAOI_BOOT_OFFSET_FILES		(SAOI_BOOT_SIZE_HEADER + SAOI_BOOT_SIZE_CONFIG)
 #define SAOI_BOOT_OFFSET_CONFIG		(SAOI_BOOT_SIZE_HEADER)
 
-#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
-	#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+#if defined _samp_included
+	#if (!defined GetPlayerPoolSize || !defined GetSVarInt)
+		#error [ADM] This include requires SA:MP version 0.3.7 (github.com/AbyssMorgan/SA-MP/blob/master/samp/include)
+	#endif
+#elseif defined _rwmp_included
+	#error [ADM] This game currently is not supported
+#else
+	#error [ADM] Not found any general game includes
 #endif
 
 //Check Version StreamerFunction.inc
@@ -112,11 +119,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error You need SAOI.inc v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
-#elseif (SAOI_LOADER_VERSION < 20100)
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
+#elseif (SAOI_LOADER_VERSION < 20200)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #endif
 
 #if (!defined Tryg3D_MapAndreas && !defined Tryg3D_ColAndreas)
@@ -1097,7 +1104,7 @@ CMD:saoiinfo(playerid,params[]){
 	
 	PlayerLastSAOI[playerid] = index;
 	PlayerLastItem[playerid] = index-1;
-	new szLIST[1024],
+	new szLIST[2048],
 		author[MAX_SAOI_AUTHOR_SIZE],
 		version[MAX_SAOI_VERSION_SIZE],
 		description[MAX_SAOI_DESCRIPTION_SIZE],
@@ -1106,7 +1113,7 @@ CMD:saoiinfo(playerid,params[]){
 		offset;
 	
 	szLIST = "";
-	SAOI::GetFileHeader(path,author,version,description);
+	SAOI::GetFileAuthor(index,author,version,description);
 	if(isnull(description)) description = "---";
 	
 	format(buffer,sizeof buffer,"{00AAFF}Index: {00FF00}%d {00AAFF}SAOI Name: {00FF00}%s {00AAFF}Path: {00FF00}%s\n",index,params,path);
@@ -1115,7 +1122,11 @@ CMD:saoiinfo(playerid,params[]){
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Description: {00FF00}%s\n",description);
 	strcat(szLIST,buffer);
-	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s\n",(SAOI::IsStatic(index)?("Static"):("Dynamic")),(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")));
+	format(buffer,sizeof buffer,"{00AAFF}File Type: {00FF00}%s {00AAFF}Permissions: {00FF00}%s %s\n",
+		(SAOI::IsStatic(index)?("Static"):("Dynamic")),
+		(SAOI::IsReadOnly(index)?("Read-Only"):("Read/Write")),
+		(SAOI::IsProtected(index)?("(Protected)"):(""))
+	);
 	strcat(szLIST,buffer);
 	
 	if(bootid != -1){
@@ -2065,7 +2076,7 @@ stock SAOI::LoadManager(){
 	
 	printf("[SAOI] Load Boot Manager");
 	SWAP::read_array(SAOI_FILE_BOOT,SAOI_CFG_KEY,0,saoi_boot,sizeof(saoi_boot));
-	
+	printf(" ");
 	for(new i = 0; i < MAX_SAOI_FILE-1; i++){
 		if(SAOI::IsToggleConfigInformation(saoi_boot,i)){
 			SWAP::read_string(SAOI_FILE_BOOT,SAOI_CFG_KEY,SAOI_BOOT_OFFSET_FILES+(i*SAOI_BOOT_SIZE_FILE),path,SAOI_BOOT_SIZE_FILE);
