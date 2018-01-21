@@ -47,7 +47,6 @@
 #define FILTERSCRIPT
 #define LOCK_SAOI_MEMORY				"SAOI_FileManager"
 #define DISABLE_STREAMER_SPEC_FIXES		//Fix SAOI::UnloadObjectImage
-#define DISABLE_3D_TRYG_ATM
 #define DISABLE_3D_TRYG_FCNPC
 
 #include <a_samp>
@@ -149,9 +148,6 @@
 #if !defined HTTP
 	#error [ADM] You need a_http.inc
 #endif
-
-#define SAOI_SecToTimeDay(%0)					((%0) / 86400),(((%0) % 86400) / 3600),((((%0) % 86400) % 3600) / 60),((((%0) % 86400) % 3600) % 60)
-#define SAOI_MSToTimeDay(%0)					SAOI_SecToTimeDay((%0)/1000)
 
 #define SAOI_GetValueBit(%0,%1)					((%0) >>> (%1) & 0x01)
 #define SAOI_SetValueBit(%0,%1,%2)				((%0) = (((%0) & ~(0x01 << (%1))) | ((0x01 << (%1))*(%2))))
@@ -1157,7 +1153,7 @@ CMD:saoiinfo(playerid,params[]){
 	#endif
 	
 	strcat(szLIST,"\n");
-	format(buffer,sizeof buffer,"{00AAFF}Active time: {00FF00}%d:%02d:%02d:%02d {00AAFF}Load time: {00FF00}%d {00AAFF}ms\n",SAOI::MSToTimeDay(SAOI::GetActiveTime(index)),SAOI::GetLoadTime(index));
+	format(buffer,sizeof buffer,"{00AAFF}Active time: {00FF00}%d:%02d:%02d:%02d {00AAFF}Load time: {00FF00}%d {00AAFF}ms\n",Tryg3D::MSToTimeDay(SAOI::GetActiveTime(index)),SAOI::GetLoadTime(index));
 	strcat(szLIST,buffer);
 	format(buffer,sizeof buffer,"{00AAFF}Quota: {00FF00}%.2f %% {00AAFF}File Size: {00FF00}%d {00AAFF}B\n",((SAOI::CountAllElementsByIndex(index)*100.0)/SAOI::CountAllElements()),SAOI::GetFileSize(index));
 	strcat(szLIST,buffer);
