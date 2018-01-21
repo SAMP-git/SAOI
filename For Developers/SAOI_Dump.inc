@@ -2,11 +2,11 @@
 
 //Check Version SAOI.inc
 #if !defined _SAOI_LOADER
-	#error You need SAOI.inc v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error You need SAOI.inc v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #elseif !defined SAOI_LOADER_VERSION
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
-#elseif (SAOI_LOADER_VERSION < 20100)
-	#error Update you SAOI.inc to v2.1.0 (github.com/AbyssMorgan/SAOI/releases)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
+#elseif (SAOI_LOADER_VERSION < 20200)
+	#error Update you SAOI.inc to v2.2.0 (github.com/AbyssMorgan/SAOI/releases)
 #endif
 
 YCMD:saoisave(playerid,params[]){
@@ -65,6 +65,7 @@ SAOI::Public:: SAOI::Dump(const file_name[]){
 	printf("[SAOI DUMP] RemovedBuildings converted: %d",saoi_count);
 	
 	SAOI::SetEOF(file_name);
+	SAOI::WriteHash(file_name);
 	printf("[SAOI DUMP] Conversion End");
 	return 1;
 }
